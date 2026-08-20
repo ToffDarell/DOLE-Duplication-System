@@ -8,7 +8,7 @@ class StoreBeneficiaryRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasAnyRole(['Admin', 'Encoder']);
+        return $this->user()->hasAnyRole(['Admin', 'Encoder', 'Validator']);
     }
 
     public function rules(): array

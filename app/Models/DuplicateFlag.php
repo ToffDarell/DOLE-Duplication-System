@@ -13,6 +13,7 @@ class DuplicateFlag extends Model
         'match_score',
         'match_type',
         'matched_fields',
+        'household_match_flag',
         'status',
         'reviewed_by',
         'remarks',
@@ -26,6 +27,7 @@ class DuplicateFlag extends Model
         return [
             'matched_fields' => 'array',
             'match_score' => 'integer',
+            'household_match_flag' => 'boolean',
         ];
     }
 
@@ -51,5 +53,31 @@ class DuplicateFlag extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
+     * Dynamically compute the household address comparison string using live beneficiary data.
+     */
+    public function getHouseholdAddressDetail(): string
+    {
+        $newAddr = trim($this->beneficiary?->address ?? '');
+        $existAddr = trim($this->matchedBeneficiary?->address ?? '');
+
+        if (! empty($newAddr) && ! empty($existAddr) && mb_strtolower($newAddr) === mb_strtolower($existAddr)) {
+            return "SAME ADDRESS: Both records list identical address \"{$newAddr}\" — likely SAME household.";
+        }
+
+        if (empty($newAddr) && empty($existAddr)) {
+            return 'No Sitio/House Address specified on both records — Validator must confirm if applicants live in separate physical houses.';
+        }
+
+        if (empty($newAddr) || empty($existAddr)) {
+            $newDisplay = ! empty($newAddr) ? $newAddr : '(not specified)';
+            $existDisplay = ! empty($existAddr) ? $existAddr : '(not specified)';
+
+            return "Incomplete address details: New=\"{$newDisplay}\" vs Existing=\"{$existDisplay}\" — Sitio/House No. needed to confirm separate households.";
+        }
+
+        return "Different addresses detected: New=\"{$newAddr}\" vs Existing=\"{$existAddr}\" — verify if truly separate households.";
     }
 }

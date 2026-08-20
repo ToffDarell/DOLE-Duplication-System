@@ -98,10 +98,63 @@ class BeneficiaryController extends Controller
      */
     public function checkDuplicate(Request $request): JsonResponse
     {
-        $data = $request->all();
-        $dupResult = $this->duplicateService->checkDuplicates($data, $request->input('exclude_id'));
+        try {
+            $data = $request->all();
+            if (isset($data['first_name'])) {
+                $data['first_name'] = trim($data['first_name']);
+            }
+            if (isset($data['last_name'])) {
+                $data['last_name'] = trim($data['last_name']);
+            }
+            if (isset($data['middle_name'])) {
+                $data['middle_name'] = trim($data['middle_name']);
+            }
 
-        return response()->json($dupResult);
+            $dupResult = $this->duplicateService->checkDuplicates($data, $request->input('exclude_id'));
+            $householdResult = $this->duplicateService->checkHouseholdDuplicates($data, $request->input('exclude_id'));
+
+            $allFlags = array_merge($dupResult['flags'], $householdResult['flags']);
+            $hasDuplicates = count($allFlags) > 0;
+            $maxScore = 0;
+            foreach ($allFlags as $flag) {
+                if (($flag['match_score'] ?? 0) > $maxScore) {
+                    $maxScore = $flag['match_score'];
+                }
+            }
+
+            if ($hasDuplicates) {
+                return response()->json([
+                    'success' => false,
+                    'status' => 'duplicate_detected',
+                    'code' => 'DUPLICATE_ENTRY',
+                    'message' => 'Potential duplicate beneficiary or household match detected.',
+                    'has_duplicates' => true,
+                    'flags' => $allFlags,
+                    'duplicates' => $allFlags,
+                    'max_score' => $maxScore,
+                    'is_exact' => $dupResult['is_exact'] ?? false,
+                    'cross_program_conflicts' => $dupResult['cross_program_conflicts'] ?? [],
+                ], 409);
+            }
+
+            return response()->json([
+                'success' => true,
+                'has_duplicates' => false,
+                'flags' => [],
+                'duplicates' => [],
+                'max_score' => 0,
+                'is_exact' => false,
+                'cross_program_conflicts' => [],
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'code' => 'CHECK_DUPLICATE_ERROR',
+                'message' => 'An error occurred during duplicate check: '.$e->getMessage(),
+            ], 500);
+        }
     }
 
     public function store(StoreBeneficiaryRequest $request): RedirectResponse|JsonResponse
@@ -114,21 +167,36 @@ class BeneficiaryController extends Controller
             return back()->withErrors($eligibilityErrors)->withInput();
         }
 
-        // 2. Duplicate Check
+        // 2. Pre-Save Duplicate Check (Combines identity & household checks)
         $dupResult = $this->duplicateService->checkDuplicates($data);
+        $householdResult = $this->duplicateService->checkHouseholdDuplicates($data);
+        $allFlags = array_merge($dupResult['flags'], $householdResult['flags']);
 
-        // If duplicates found and user hasn't explicitly confirmed override
-        if ($dupResult['has_duplicates'] && ! $request->boolean('confirm_override')) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'duplicate_detected',
-                    'duplicates' => $dupResult['flags'],
-                    'max_score' => $dupResult['max_score'],
-                    'is_exact' => $dupResult['is_exact'],
-                ], 422);
+        $hasDuplicates = count($allFlags) > 0;
+        $confirmOverride = $request->boolean('confirm_override') || $request->boolean('override_duplicate');
+
+        if ($hasDuplicates && ! $confirmOverride) {
+            $maxScore = 0;
+            foreach ($allFlags as $flag) {
+                if (($flag['match_score'] ?? 0) > $maxScore) {
+                    $maxScore = $flag['match_score'];
+                }
             }
 
-            return back()->withInput()->with('duplicate_flags', $dupResult['flags']);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'status' => 'duplicate_detected',
+                    'code' => 'DUPLICATE_ENTRY',
+                    'message' => 'Potential duplicate beneficiary or household match detected.',
+                    'duplicates' => $allFlags,
+                    'flags' => $allFlags,
+                    'max_score' => $maxScore,
+                    'is_exact' => $dupResult['is_exact'] ?? false,
+                ], 409);
+            }
+
+            return back()->withInput()->with('duplicate_flags', $allFlags);
         }
 
         // 3. Save Record inside DB Transaction
@@ -170,8 +238,10 @@ class BeneficiaryController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-            // Link Program
+            // Link Program - if registered with duplicate flag, set status to 'pending' (Pending Verification)
             $program = Program::where('code', $data['program_code'])->firstOrFail();
+            $enrollmentStatus = $hasDuplicates ? 'pending' : 'approved';
+
             $beneficiaryProgram = BeneficiaryProgram::create([
                 'beneficiary_id' => $beneficiary->id,
                 'program_id' => $program->id,
@@ -179,7 +249,7 @@ class BeneficiaryController extends Controller
                 'enrollment_type' => $data['enrollment_type'] ?? null,
                 'dilp_group_id' => $data['dilp_group_id'] ?? null,
                 'internship_duration' => $data['internship_duration'] ?? null,
-                'status' => 'pending',
+                'status' => $enrollmentStatus,
             ]);
 
             // Save TUPAD profile if program is TUPAD
@@ -202,20 +272,9 @@ class BeneficiaryController extends Controller
                 ]);
             }
 
-            // Record duplicate flags if duplicates were flagged
-            if ($dupResult['has_duplicates']) {
-                foreach ($dupResult['flags'] as $flagData) {
-                    DuplicateFlag::create([
-                        'beneficiary_id' => $beneficiary->id,
-                        'matched_beneficiary_id' => $flagData['matched_beneficiary_id'],
-                        'match_score' => $flagData['match_score'],
-                        'match_type' => $flagData['match_type'],
-                        'matched_fields' => $flagData['matched_fields'],
-                        'status' => $request->boolean('confirm_override') ? 'overridden' : 'pending',
-                        'reviewed_by' => $request->boolean('confirm_override') ? auth()->id() : null,
-                        'remarks' => $data['override_remarks'] ?? 'Saved with override during registration',
-                    ]);
-                }
+            // Save duplicate flags if any duplicates exist
+            if ($hasDuplicates) {
+                $this->duplicateService->recordDuplicateFlags($beneficiary, $allFlags);
             }
 
             AuditLog::log([
@@ -320,6 +379,20 @@ class BeneficiaryController extends Controller
             'is_government_employee' => filter_var($data['is_government_employee'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'is_graduating_college' => filter_var($data['is_graduating_college'] ?? false, FILTER_VALIDATE_BOOLEAN),
         ]);
+
+        // Synchronize pending duplicate flags address detail if modified
+        $pendingFlags = DuplicateFlag::where(function ($q) use ($beneficiary) {
+            $q->where('beneficiary_id', $beneficiary->id)
+                ->orWhere('matched_beneficiary_id', $beneficiary->id);
+        })->where('household_match_flag', true)->get();
+
+        foreach ($pendingFlags as $pFlag) {
+            $mf = $pFlag->matched_fields ?? [];
+            if (isset($mf['household_address'])) {
+                $mf['household_address'] = $pFlag->getHouseholdAddressDetail();
+                $pFlag->update(['matched_fields' => $mf]);
+            }
+        }
 
         AuditLog::log([
             'action' => 'update',

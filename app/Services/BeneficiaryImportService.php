@@ -150,8 +150,9 @@ class BeneficiaryImportService
 
                 // Perform Duplicate Check before saving
                 $dupCheck = $this->duplicateService->checkDuplicates($payload);
+                $householdCheck = $this->duplicateService->checkHouseholdDuplicates($payload);
 
-                DB::transaction(function () use ($payload, $firstName, $middleName, $lastName, $suffix, $dob, $isSenior, $program, $epayment, $benType, $occupation, $monthlyIncome, $dupCheck) {
+                DB::transaction(function () use ($payload, $firstName, $middleName, $lastName, $suffix, $dob, $isSenior, $program, $epayment, $benType, $occupation, $monthlyIncome, $dupCheck, $householdCheck) {
                     $fullName = Beneficiary::buildFullName($firstName, $middleName, $lastName, $suffix);
 
                     $beneficiary = Beneficiary::create([
@@ -173,11 +174,12 @@ class BeneficiaryImportService
                         'created_by' => auth()->id(),
                     ]);
 
+                    $hasDupOrHousehold = $dupCheck['has_duplicates'] || $householdCheck['has_household_flags'];
                     $beneficiaryProgram = BeneficiaryProgram::create([
                         'beneficiary_id' => $beneficiary->id,
                         'program_id' => $program->id,
                         'availment_year' => (int) date('Y'),
-                        'status' => $dupCheck['has_duplicates'] ? 'pending' : 'approved',
+                        'status' => $hasDupOrHousehold ? 'pending' : 'approved',
                     ]);
 
                     if ($program->code === 'TUPAD') {
@@ -195,6 +197,10 @@ class BeneficiaryImportService
 
                     if ($dupCheck['has_duplicates']) {
                         $this->duplicateService->recordDuplicateFlags($beneficiary, $dupCheck['flags']);
+                    }
+
+                    if ($householdCheck['has_household_flags']) {
+                        $this->duplicateService->recordDuplicateFlags($beneficiary, $householdCheck['flags']);
                     }
                 });
 

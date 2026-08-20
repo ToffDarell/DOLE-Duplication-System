@@ -15,10 +15,18 @@ class DuplicateController extends Controller
         $query = DuplicateFlag::with(['beneficiary', 'matchedBeneficiary', 'reviewer']);
 
         if ($status = $request->input('status')) {
-            $query->where('status', $status);
+            if (in_array($status, ['overridden', 'resolved'])) {
+                $query->whereIn('status', ['overridden', 'resolved_not_duplicate', 'resolved_duplicate']);
+            } else {
+                $query->where('status', $status);
+            }
         } else {
             // Default to showing pending flags first
             $query->orderByRaw("CASE WHEN status = 'pending' THEN 1 ELSE 2 END");
+        }
+
+        if ($request->boolean('household')) {
+            $query->where('household_match_flag', true);
         }
 
         if ($matchType = $request->input('match_type')) {
@@ -53,11 +61,13 @@ class DuplicateController extends Controller
             'reviewed_by' => auth()->id(),
         ]);
 
+        $auditAction = $flag->household_match_flag ? 'override_household_duplicate' : 'duplicate_override';
+
         AuditLog::log([
-            'action' => 'duplicate_override',
+            'action' => $auditAction,
             'model_type' => DuplicateFlag::class,
             'model_id' => $flag->id,
-            'description' => "Resolved duplicate flag #{$flag->id} as {$request->input('status')}. Remarks: {$request->input('remarks')}",
+            'description' => "Resolved {$auditAction} flag #{$flag->id} as {$request->input('status')}. Remarks: {$request->input('remarks')}",
         ]);
 
         return redirect()->route('duplicates.index')->with('success', "Duplicate flag #{$flag->id} updated successfully.");

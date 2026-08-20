@@ -34,7 +34,7 @@ Route::middleware(['auth', 'track.activity', 'check.password.reset'])->group(fun
 
     // Beneficiaries CRUD & Search
     Route::post('beneficiaries/bulk-delete', [BeneficiaryController::class, 'bulkDestroy'])->name('beneficiaries.bulk-delete');
-    Route::get('beneficiaries/check-duplicate', [BeneficiaryController::class, 'checkDuplicate'])->name('beneficiaries.check-duplicate');
+    Route::match(['get', 'post'], 'beneficiaries/check-duplicate', [BeneficiaryController::class, 'checkDuplicate'])->name('beneficiaries.check-duplicate');
     Route::resource('beneficiaries', BeneficiaryController::class);
 
     // Export Options

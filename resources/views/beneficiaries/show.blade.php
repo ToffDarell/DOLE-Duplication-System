@@ -38,7 +38,7 @@
             <div><span class="text-gray-400">Civil Status:</span> <span class="font-medium text-gray-800">{{ $beneficiary->civil_status ?? '—' }}</span></div>
             <div><span class="text-gray-400">Government ID:</span> <span class="font-medium text-gray-800">{{ $beneficiary->government_id_type }} {{ $beneficiary->government_id_number ?? '—' }}</span></div>
             <div><span class="text-gray-400">Contact:</span> <span class="font-medium text-gray-800">{{ $beneficiary->contact_number ?? '—' }}</span></div>
-            <div><span class="text-gray-400">Location:</span> <span class="font-medium text-gray-800">Brgy. {{ $beneficiary->barangay }}, {{ $beneficiary->municipality }}</span></div>
+            <div><span class="text-gray-400">Location:</span> <span class="font-semibold text-gray-900">{{ $beneficiary->address ? $beneficiary->address . ', ' : '' }}Brgy. {{ $beneficiary->barangay }}, {{ $beneficiary->municipality }}</span></div>
         </div>
 
         <div class="mt-6 flex flex-wrap gap-1.5 border-t pt-4">

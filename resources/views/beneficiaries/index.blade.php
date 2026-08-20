@@ -205,7 +205,7 @@
                             </td>
                             <td class="px-6 py-4 text-slate-700">
                                 <span class="font-bold text-slate-900">{{ $b->municipality }}</span>
-                                <span class="block text-xs text-slate-500 font-semibold">Brgy. {{ $b->barangay }}</span>
+                                <span class="block text-xs text-slate-500 font-semibold">{{ $b->address ? $b->address . ', ' : '' }}Brgy. {{ $b->barangay }}</span>
                             </td>
                             <td class="px-6 py-4 text-slate-700">
                                 <span class="font-semibold">{{ $b->government_id_number ?? '—' }}</span>

@@ -56,7 +56,8 @@
                             <p class="font-mono text-[11px] text-blue-800 bg-blue-100/70 p-2 rounded border border-blue-200 overflow-x-auto">{{ $err['info'] }}</p>
                             @if(isset($err['skipped_footer_rows']) && $err['skipped_footer_rows'] > 0)
                                 <p class="mt-2 font-bold text-blue-800 flex items-center gap-1">
-                                    <span>✓ Skipped {{ $err['skipped_footer_rows'] }} legend/footer note block(s) at bottom of document.</span>
+                                    <svg class="h-4 w-4 text-blue-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                                    <span>Skipped {{ $err['skipped_footer_rows'] }} legend/footer note block(s) at bottom of document.</span>
                                 </p>
                             @endif
                         </div>

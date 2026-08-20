@@ -115,6 +115,34 @@ class EligibilityService
             }
         }
 
+        // Cross-Program Simultaneous Availment Checks
+        if ($beneficiary) {
+            $crossConflicts = [
+                'TUPAD' => ['SPES', 'GIP'],
+                'SPES' => ['TUPAD', 'GIP'],
+                'GIP' => ['TUPAD', 'SPES'],
+            ];
+
+            $conflictingCodes = $crossConflicts[$programCode] ?? [];
+            if (! empty($conflictingCodes)) {
+                $conflictingPrograms = Program::whereIn('code', $conflictingCodes)->pluck('id', 'code');
+
+                foreach ($conflictingPrograms as $conflictCode => $conflictProgramId) {
+                    $hasConflict = BeneficiaryProgram::where('beneficiary_id', $beneficiary->id)
+                        ->where('program_id', $conflictProgramId)
+                        ->where('availment_year', $programYear)
+                        ->whereIn('status', ['pending', 'approved'])
+                        ->exists();
+
+                    if ($hasConflict) {
+                        $errors['program_code'] = "Cannot enroll in {$programCode} — beneficiary is currently enrolled in {$conflictCode} for {$programYear}. Cross-program simultaneous availment is not allowed.";
+
+                        break;
+                    }
+                }
+            }
+        }
+
         return $errors;
     }
 }

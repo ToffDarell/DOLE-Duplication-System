@@ -5,11 +5,12 @@
 
 @section('content')
 <div class="mx-auto max-w-4xl" x-data="beneficiaryForm()">
-    <form @submit.prevent="submitForm" action="{{ route('beneficiaries.store') }}" method="POST" id="registration-form" class="space-y-6">
+    <form @submit.prevent="submitForm($event)" action="{{ route('beneficiaries.store') }}" method="POST" id="registration-form" class="space-y-6">
         @csrf
 
         {{-- Hidden Override Signals --}}
         <input type="hidden" name="confirm_override" x-model="confirmOverride">
+        <input type="hidden" name="override_duplicate" x-model="confirmOverride">
         <input type="hidden" name="override_remarks" x-model="overrideRemarks">
 
         {{-- Step 1: Program Selection --}}
@@ -150,10 +151,10 @@
             {{-- Auto Highlights --}}
             <div class="mt-4 flex flex-wrap gap-2">
                 <span x-show="calculatedAge >= 60" x-transition class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-900 border border-amber-300 shadow-2xs">
-                    👵 Senior Citizen Highlight (60+)
+                    Senior Citizen Highlight (60+)
                 </span>
                 <span x-show="selectedProgram === 'SPES' && isGraduating" x-transition class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-extrabold text-emerald-900 border border-emerald-300 shadow-2xs">
-                    🎓 Graduating College Student Highlight
+                    Graduating College Student Highlight
                 </span>
             </div>
         </div>
@@ -172,7 +173,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-800">Municipality (Bukidnon) *</label>
                     <select name="municipality" x-model="municipality" @change="onMunicipalityChange" required
@@ -205,6 +206,47 @@
                 </div>
 
                 <div>
+                    <label class="mb-1.5 block text-xs font-bold text-slate-800">Purok / Sitio / Address *</label>
+                    <select x-model="selectedPurok" @change="onPurokSelect" required
+                            class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
+                        <option value="">Select Purok / Sitio</option>
+                        <option value="Purok 1">Purok 1</option>
+                        <option value="Purok 2">Purok 2</option>
+                        <option value="Purok 3">Purok 3</option>
+                        <option value="Purok 4">Purok 4</option>
+                        <option value="Purok 5">Purok 5</option>
+                        <option value="Purok 6">Purok 6</option>
+                        <option value="Purok 7">Purok 7</option>
+                        <option value="Purok 8">Purok 8</option>
+                        <option value="Purok 9">Purok 9</option>
+                        <option value="Purok 10">Purok 10</option>
+                        <option value="Purok 11">Purok 11</option>
+                        <option value="Purok 12">Purok 12</option>
+                        <option value="Purok 1A">Purok 1A</option>
+                        <option value="Purok 1B">Purok 1B</option>
+                        <option value="Purok 2A">Purok 2A</option>
+                        <option value="Purok 2B">Purok 2B</option>
+                        <option value="Purok 3A">Purok 3A</option>
+                        <option value="Purok 3B">Purok 3B</option>
+                        <option value="Purok Centro">Purok Centro / Poblacion</option>
+                        <option value="Zone 1">Zone 1</option>
+                        <option value="Zone 2">Zone 2</option>
+                        <option value="Zone 3">Zone 3</option>
+                        <option value="Zone 4">Zone 4</option>
+                        <option value="Zone 5">Zone 5</option>
+                        <option value="Zone 6">Zone 6</option>
+                        <option value="__OTHER__">+ Custom Sitio / Street Address...</option>
+                    </select>
+
+                    <input type="hidden" name="address" :value="customAddressMode ? customAddressInput : selectedPurok">
+
+                    <div x-show="customAddressMode" class="mt-2">
+                        <input type="text" x-model="customAddressInput" placeholder="Enter custom Sitio name or House No..."
+                               class="w-full rounded-xl border border-blue-400 bg-blue-50/50 px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-800">Contact Number (PH format)</label>
                     <input type="text" name="contact_number" x-model="contactNumber" placeholder="09171234567"
                            class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
@@ -214,8 +256,30 @@
             <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-800">Government ID Type</label>
-                    <input type="text" name="government_id_type" placeholder="PhilSys, UMID, TIN, SSS"
-                           class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
+                    <select name="government_id_type" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
+                        <option value="">Select Government ID Type</option>
+                        <option value="PhilSys ID" {{ old('government_id_type') == 'PhilSys ID' ? 'selected' : '' }}>Philippine National ID (PhilSys)</option>
+                        <option value="UMID" {{ old('government_id_type') == 'UMID' ? 'selected' : '' }}>Unified Multi-Purpose ID (UMID)</option>
+                        <option value="SSS ID" {{ old('government_id_type') == 'SSS ID' ? 'selected' : '' }}>Social Security System (SSS) ID</option>
+                        <option value="GSIS ID" {{ old('government_id_type') == 'GSIS ID' ? 'selected' : '' }}>GSIS eCard / ID</option>
+                        <option value="TIN Card" {{ old('government_id_type') == 'TIN Card' ? 'selected' : '' }}>Tax Identification Number (TIN) Card</option>
+                        <option value="Pag-IBIG ID" {{ old('government_id_type') == 'Pag-IBIG ID' ? 'selected' : '' }}>Pag-IBIG (HDMF) ID / Loyalty Card</option>
+                        <option value="PhilHealth ID" {{ old('government_id_type') == 'PhilHealth ID' ? 'selected' : '' }}>PhilHealth Healthpass / ID</option>
+                        <option value="Voter's ID" {{ old('government_id_type') == "Voter's ID" ? 'selected' : '' }}>Voter's ID / Voter Certification</option>
+                        <option value="Driver's License" {{ old('government_id_type') == "Driver's License" ? 'selected' : '' }}>Driver's License (LTO)</option>
+                        <option value="Passport" {{ old('government_id_type') == 'Passport' ? 'selected' : '' }}>Philippine Passport (DFA)</option>
+                        <option value="Senior Citizen ID" {{ old('government_id_type') == 'Senior Citizen ID' ? 'selected' : '' }}>Senior Citizen ID</option>
+                        <option value="PWD ID" {{ old('government_id_type') == 'PWD ID' ? 'selected' : '' }}>Person with Disability (PWD) ID</option>
+                        <option value="Postal ID" {{ old('government_id_type') == 'Postal ID' ? 'selected' : '' }}>Postal ID</option>
+                        <option value="Barangay ID" {{ old('government_id_type') == 'Barangay ID' ? 'selected' : '' }}>Barangay ID / Barangay Clearance</option>
+                        <option value="PRC ID" {{ old('government_id_type') == 'PRC ID' ? 'selected' : '' }}>Professional Regulation Commission (PRC) ID</option>
+                        <option value="OWWA ID" {{ old('government_id_type') == 'OWWA ID' ? 'selected' : '' }}>OWWA / E-Card ID</option>
+                        <option value="Solo Parent ID" {{ old('government_id_type') == 'Solo Parent ID' ? 'selected' : '' }}>Solo Parent ID</option>
+                        <option value="NBI Clearance" {{ old('government_id_type') == 'NBI Clearance' ? 'selected' : '' }}>NBI Clearance</option>
+                        <option value="Police Clearance" {{ old('government_id_type') == 'Police Clearance' ? 'selected' : '' }}>Police Clearance</option>
+                        <option value="Student ID" {{ old('government_id_type') == 'Student ID' ? 'selected' : '' }}>Student / School ID</option>
+                        <option value="Other ID" {{ old('government_id_type') == 'Other ID' ? 'selected' : '' }}>Other Government Valid ID</option>
+                    </select>
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-800">Government ID Number</label>
@@ -262,11 +326,33 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-800">Beneficiary Sector/Type</label>
-                    <input type="text" name="beneficiary_type" placeholder="Underemployed, IP, Displaced" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
+                    <select name="beneficiary_type" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
+                        <option value="">Select Sector/Type</option>
+                        <option value="Underemployed" {{ old('beneficiary_type') == 'Underemployed' ? 'selected' : '' }}>Underemployed Worker</option>
+                        <option value="Unemployed (Displaced)" {{ old('beneficiary_type') == 'Unemployed (Displaced)' ? 'selected' : '' }}>Unemployed / Displaced Worker</option>
+                        <option value="Informal Sector Worker" {{ old('beneficiary_type') == 'Informal Sector Worker' ? 'selected' : '' }}>Informal Sector Worker</option>
+                        <option value="Indigenous People (IP)" {{ old('beneficiary_type') == 'Indigenous People (IP)' ? 'selected' : '' }}>Indigenous People (IP)</option>
+                        <option value="Senior Citizen" {{ old('beneficiary_type') == 'Senior Citizen' ? 'selected' : '' }}>Senior Citizen (60+)</option>
+                        <option value="Person with Disability (PWD)" {{ old('beneficiary_type') == 'Person with Disability (PWD)' ? 'selected' : '' }}>Person with Disability (PWD)</option>
+                        <option value="Youth / Student" {{ old('beneficiary_type') == 'Youth / Student' ? 'selected' : '' }}>Youth / Student</option>
+                        <option value="Solo Parent" {{ old('beneficiary_type') == 'Solo Parent' ? 'selected' : '' }}>Solo Parent</option>
+                        <option value="Farmer / Fisherfolk" {{ old('beneficiary_type') == 'Farmer / Fisherfolk' ? 'selected' : '' }}>Farmer / Fisherfolk</option>
+                        <option value="OFW Returnee" {{ old('beneficiary_type') == 'OFW Returnee' ? 'selected' : '' }}>OFW Returnee</option>
+                        <option value="Victim of Calamity / Disaster" {{ old('beneficiary_type') == 'Victim of Calamity / Disaster' ? 'selected' : '' }}>Victim of Calamity / Disaster</option>
+                        <option value="Other Sector" {{ old('beneficiary_type') == 'Other Sector' ? 'selected' : '' }}>Other Sector</option>
+                    </select>
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-800">Average Monthly Income</label>
-                    <input type="text" name="average_monthly_income" placeholder="e.g. 5000-10000" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
+                    <select name="average_monthly_income" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
+                        <option value="">Select Monthly Income Bracket</option>
+                        <option value="No Regular Income" {{ old('average_monthly_income') == 'No Regular Income' ? 'selected' : '' }}>No Regular Income / Sub-poverty</option>
+                        <option value="Below ₱5,000" {{ old('average_monthly_income') == 'Below ₱5,000' ? 'selected' : '' }}>Below ₱5,000</option>
+                        <option value="₱5,000 - ₱10,000" {{ old('average_monthly_income') == '₱5,000 - ₱10,000' ? 'selected' : '' }}>₱5,000 - ₱10,000</option>
+                        <option value="₱10,001 - ₱15,000" {{ old('average_monthly_income') == '₱10,001 - ₱15,000' ? 'selected' : '' }}>₱10,001 - ₱15,000</option>
+                        <option value="₱15,001 - ₱20,000" {{ old('average_monthly_income') == '₱15,001 - ₱20,000' ? 'selected' : '' }}>₱15,001 - ₱20,000</option>
+                        <option value="Above ₱20,000" {{ old('average_monthly_income') == 'Above ₱20,000' ? 'selected' : '' }}>Above ₱20,000</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -282,7 +368,7 @@
                 Special Program for Employment of Students
             </h3>
             <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-medium text-emerald-900">
-                <p class="font-bold mb-1">🎓 SPES Eligibility Guidelines:</p>
+                <p class="font-bold mb-1">SPES Eligibility Guidelines:</p>
                 <p>Applicant must be between 15 and 30 years old. Students are automatically flagged as enrolled students.</p>
             </div>
         </div>
@@ -373,11 +459,18 @@
             
             <div class="mb-5 flex items-center gap-3.5 border-b border-slate-200 pb-4">
                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500 font-black text-white text-xl shadow-md">
-                    ⚠️
+                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
                 </div>
                 <div>
-                    <h3 class="text-base font-extrabold text-slate-900">Possible Duplicate Record Flagged!</h3>
-                    <p class="text-xs font-semibold text-slate-600">The engine detected existing beneficiary records matching this applicant</p>
+                    <h3 class="text-base font-extrabold text-slate-900">Potential Duplicate Detected!</h3>
+                    <p class="text-xs font-semibold text-slate-600">
+                        <template x-if="duplicateMatches.length > 0">
+                            <span>Matched with <strong class="text-amber-900" x-text="duplicateMatches[0].matched_beneficiary ? duplicateMatches[0].matched_beneficiary.full_name + ' (' + duplicateMatches[0].match_score + '% Match)' : ''"></strong>. Are you sure this is a different person or separate household?</span>
+                        </template>
+                        <template x-if="duplicateMatches.length === 0">
+                            <span>Potential duplicate record flagged. Please verify beneficiary identity or household details.</span>
+                        </template>
+                    </p>
                 </div>
             </div>
 
@@ -386,10 +479,10 @@
                     <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-2xs">
                         <div class="flex items-start justify-between gap-3">
                             <div>
-                                <h4 class="font-extrabold text-slate-900 text-sm" x-text="match.matched_beneficiary.full_name"></h4>
+                                <h4 class="font-extrabold text-slate-900 text-sm" x-text="match.matched_beneficiary ? match.matched_beneficiary.full_name : 'Matched Beneficiary'"></h4>
                                 <p class="mt-0.5 text-xs font-semibold text-slate-700">
-                                    DOB: <span x-text="match.matched_beneficiary.date_of_birth"></span> |
-                                    Brgy. <span x-text="match.matched_beneficiary.barangay"></span>, <span x-text="match.matched_beneficiary.municipality"></span>
+                                    DOB: <span x-text="match.matched_beneficiary ? match.matched_beneficiary.date_of_birth : 'N/A'"></span> |
+                                    Brgy. <span x-text="match.matched_beneficiary ? match.matched_beneficiary.barangay : ''"></span>, <span x-text="match.matched_beneficiary ? match.matched_beneficiary.municipality : ''"></span>
                                 </p>
                             </div>
                             <span class="rounded-full bg-amber-600 px-3 py-1 text-xs font-extrabold text-white shadow-2xs" x-text="match.match_score + '% Match'"></span>
@@ -407,12 +500,12 @@
             @endhasanyrole
 
             <div class="flex justify-end gap-3 border-t border-slate-200 pt-4">
-                <button @click="showModal = false" class="rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition">
-                    Cancel & Edit Form
+                <button @click="showModal = false" type="button" class="rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition">
+                    Review & Cancel
                 </button>
                 @hasanyrole('Admin|Validator')
-                <button @click="forceSave" class="rounded-xl bg-amber-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-amber-700 transition">
-                    Approve & Save Record
+                <button @click="forceSave" type="button" class="rounded-xl bg-amber-600 px-5 py-2.5 text-xs font-extrabold text-white shadow-md hover:bg-amber-700 transition">
+                    Override & Proceed Registration
                 </button>
                 @else
                 <p class="text-xs text-rose-600 font-bold self-center">Encoder role cannot override duplicates. Request a Validator/Admin to approve.</p>
@@ -436,6 +529,9 @@
             customBarangayInput: '',
             customBarangayMode: false,
             availableBarangays: [],
+            selectedPurok: '',
+            customAddressInput: '',
+            customAddressMode: false,
             contactNumber: '',
             govIdNumber: '',
             isStudent: false,
@@ -471,6 +567,13 @@
                 'San Fernando': ['Bonacao', 'Cabuling', 'Capanawasan', 'Halapitan', 'Iglugsad', 'Katipunan', 'Kawayan', 'Little Baguio', 'Mabuhay', 'Matupe', 'Namnam', 'Palacpacan', 'Poblacion', 'Sacred Heart', 'Santo Niño', 'Tugop']
             },
 
+            init() {
+                @if(session('duplicate_flags'))
+                    this.duplicateMatches = @json(session('duplicate_flags'));
+                    this.showModal = true;
+                @endif
+            },
+
             onProgramChange() {
                 if (this.selectedProgram === 'SPES') {
                     this.isStudent = true;
@@ -496,6 +599,14 @@
                 }
             },
 
+            onPurokSelect() {
+                if (this.selectedPurok === '__OTHER__') {
+                    this.customAddressMode = true;
+                } else {
+                    this.customAddressMode = false;
+                }
+            },
+
             calculateAge() {
                 if (!this.dob) return;
                 const birth = new Date(this.dob);
@@ -504,13 +615,29 @@
                 this.calculatedAge = Math.abs(ageDate.getUTCFullYear() - 1970);
             },
 
-            async submitForm() {
+            async submitForm(e) {
+                if (e && typeof e.preventDefault === 'function') {
+                    e.preventDefault();
+                }
+
                 if (this.confirmOverride) {
                     document.getElementById('registration-form').submit();
                     return;
                 }
 
+                const form = document.getElementById('registration-form');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
                 const finalBrgy = this.customBarangayMode ? this.customBarangayInput : this.selectedBarangay;
+                if (!finalBrgy) {
+                    alert('Please select or specify a Barangay.');
+                    return;
+                }
+
+                const finalAddress = this.customAddressMode ? this.customAddressInput : this.selectedPurok;
 
                 this.checking = true;
                 try {
@@ -518,6 +645,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
                         body: JSON.stringify({
@@ -527,23 +655,39 @@
                             date_of_birth: this.dob,
                             municipality: this.municipality,
                             barangay: finalBrgy,
+                            address: finalAddress,
                             contact_number: this.contactNumber,
-                            government_id_number: this.govIdNumber
+                            government_id_number: this.govIdNumber,
+                            program_code: this.selectedProgram,
+                            availment_year: document.querySelector('input[name="availment_year"]')?.value || new Date().getFullYear()
                         })
                     });
+
+                    if (response.status === 409 || !response.ok) {
+                        const errJson = await response.json().catch(() => ({}));
+                        this.checking = false;
+                        if (response.status === 409 || errJson.status === 'duplicate_detected' || errJson.has_duplicates) {
+                            this.duplicateMatches = errJson.flags || errJson.duplicates || [];
+                            this.showModal = true;
+                            return;
+                        }
+                        alert(errJson.message || `Server returned error (${response.status}) while checking for duplicates.`);
+                        return;
+                    }
 
                     const res = await response.json();
                     this.checking = false;
 
-                    if (res.has_duplicates) {
-                        this.duplicateMatches = res.flags;
+                    if (res.has_duplicates || (res.flags && res.flags.length > 0)) {
+                        this.duplicateMatches = res.flags || [];
                         this.showModal = true;
                     } else {
-                        document.getElementById('registration-form').submit();
+                        form.submit();
                     }
-                } catch (e) {
+                } catch (err) {
                     this.checking = false;
-                    document.getElementById('registration-form').submit();
+                    console.error('Duplicate check exception:', err);
+                    alert('Network connection error while validating duplicate status. Please check your connection.');
                 }
             },
 
