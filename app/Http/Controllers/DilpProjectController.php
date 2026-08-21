@@ -7,6 +7,7 @@ use App\Models\DilpGroup;
 use App\Models\DilpProject;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class DilpProjectController extends Controller
@@ -43,8 +44,26 @@ class DilpProjectController extends Controller
             'description' => ['nullable', 'string'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'liquidation_status' => ['required', 'in:pending,partial,liquidated'],
+            'liquidation_status' => ['required', 'in:pending,partial,liquidated,overdue,unliquidated'],
         ]);
+
+        // DILP Gatekeeper Rule: Associated Group must be Fully Liquidated before receiving a new grant.
+        if (! empty($data['dilp_group_id'])) {
+            $unliquidatedProject = DilpProject::where('dilp_group_id', $data['dilp_group_id'])
+                ->where(function ($q) {
+                    $q->whereIn('liquidation_status', ['pending', 'partial', 'unliquidated', 'overdue', 'Pending', 'Partial Liquidation', 'PENDING', 'PARTIAL'])
+                        ->orWhere(function ($sub) {
+                            $sub->whereNotIn('liquidation_status', ['liquidated', 'Liquidated', 'LIQUIDATED']);
+                        });
+                })
+                ->exists();
+
+            if ($unliquidatedProject) {
+                throw ValidationException::withMessages([
+                    'dilp_group_id' => 'Cannot create new DILP grant. The selected group has an unliquidated past project (Pending or Partial).',
+                ]);
+            }
+        }
 
         $project = DilpProject::create($data);
 
@@ -73,8 +92,21 @@ class DilpProjectController extends Controller
             'description' => ['nullable', 'string'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'liquidation_status' => ['required', 'in:pending,partial,liquidated'],
+            'liquidation_status' => ['required', 'in:pending,partial,liquidated,overdue,unliquidated'],
         ]);
+
+        if (! empty($data['dilp_group_id']) && (int) $data['dilp_group_id'] !== (int) $project->dilp_group_id) {
+            $unliquidatedProject = DilpProject::where('dilp_group_id', $data['dilp_group_id'])
+                ->where('id', '!=', $project->id)
+                ->whereNotIn('liquidation_status', ['liquidated', 'Liquidated', 'LIQUIDATED'])
+                ->exists();
+
+            if ($unliquidatedProject) {
+                throw ValidationException::withMessages([
+                    'dilp_group_id' => 'Cannot assign to DILP group. The selected group has an unliquidated past project (Pending or Partial).',
+                ]);
+            }
+        }
 
         $project->update($data);
 
@@ -90,14 +122,15 @@ class DilpProjectController extends Controller
 
     public function destroy(DilpProject $project): RedirectResponse
     {
+        $id = $project->id;
         $name = $project->project_name;
         $project->delete();
 
         AuditLog::log([
-            'action' => 'delete',
+            'action' => 'DILP_PROJECT_DELETED',
             'model_type' => DilpProject::class,
-            'model_id' => $project->id,
-            'description' => "Deleted DILP project {$name}",
+            'model_id' => $id,
+            'description' => "Deleted DILP Project ID: {$id} ({$name})",
         ]);
 
         return redirect()->route('dilp.projects.index')->with('success', "DILP Project {$name} deleted.");

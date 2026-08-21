@@ -3,7 +3,9 @@
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\AvailmentController;
 use App\Http\Controllers\BeneficiaryController;
+use App\Http\Controllers\BeneficiaryMergeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DilpGroupController;
 use App\Http\Controllers\DilpProjectController;
@@ -32,7 +34,14 @@ Route::middleware(['auth', 'track.activity', 'check.password.reset'])->group(fun
     // Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Beneficiaries CRUD & Search
+    // Beneficiary Program Availments
+    Route::post('beneficiaries/{beneficiary}/availments', [AvailmentController::class, 'store'])->name('beneficiaries.availments.store');
+    Route::put('availments/{availment}', [AvailmentController::class, 'update'])->name('availments.update');
+    Route::delete('availments/{availment}', [AvailmentController::class, 'destroy'])->name('availments.destroy');
+
+    // Beneficiaries CRUD, Merge & Search
+    Route::post('beneficiaries/merge', [BeneficiaryMergeController::class, 'merge'])->name('beneficiaries.merge');
+    Route::get('beneficiaries/search-candidates', [BeneficiaryMergeController::class, 'searchCandidates'])->name('beneficiaries.search-candidates');
     Route::post('beneficiaries/bulk-delete', [BeneficiaryController::class, 'bulkDestroy'])->name('beneficiaries.bulk-delete');
     Route::match(['get', 'post'], 'beneficiaries/check-duplicate', [BeneficiaryController::class, 'checkDuplicate'])->name('beneficiaries.check-duplicate');
     Route::resource('beneficiaries', BeneficiaryController::class);
@@ -48,6 +57,8 @@ Route::middleware(['auth', 'track.activity', 'check.password.reset'])->group(fun
     });
 
     // DILP Management
+    Route::post('dilp-groups/{group}/import-members', [DilpGroupController::class, 'importCoPartnerMembers'])->name('dilp.groups.import-members');
+    Route::post('dilp/groups/{group}/import-members', [DilpGroupController::class, 'importCoPartnerMembers']);
     Route::resource('dilp/groups', DilpGroupController::class)->names('dilp.groups');
     Route::resource('dilp/projects', DilpProjectController::class)->names('dilp.projects');
 

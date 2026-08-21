@@ -31,8 +31,13 @@ class StoreBeneficiaryRequest extends FormRequest
             'is_senior_citizen' => ['nullable', 'boolean'],
             'is_pwd' => ['nullable', 'boolean'],
             'is_student' => ['nullable', 'boolean'],
+            'is_enrolled' => ['nullable', 'boolean'],
             'is_government_employee' => ['nullable', 'boolean'],
+            'is_graduating_student' => ['nullable', 'boolean'],
             'is_graduating_college' => ['nullable', 'boolean'],
+            'is_out_of_school_youth' => ['nullable', 'boolean'],
+            'is_osy' => ['nullable', 'boolean'],
+            'educational_attainment' => ['nullable', 'string', 'max:100'],
 
             // Program Selection
             'program_code' => ['required', 'string', 'in:TUPAD,SPES,DILP,GIP'],
@@ -42,6 +47,7 @@ class StoreBeneficiaryRequest extends FormRequest
             'enrollment_type' => ['nullable', 'required_if:program_code,DILP', 'in:individual,group'],
             'dilp_group_id' => ['nullable', 'required_if:enrollment_type,group', 'exists:dilp_groups,id'],
             'internship_duration' => ['nullable', 'required_if:program_code,GIP', 'in:6_months,1_year'],
+            'internship_duration_months' => ['nullable', 'integer', 'min:1', 'max:24'],
 
             // TUPAD Annex D Profile fields
             'project_location_barangay' => ['nullable', 'string', 'max:100'],
@@ -58,7 +64,10 @@ class StoreBeneficiaryRequest extends FormRequest
             'employment_interest_detail' => ['nullable', 'string', 'max:150'],
             'skills_training_needed' => ['nullable', 'string', 'max:255'],
 
-            // Override flag parameters
+            // Calamity, Duplicate Override, and Master Profile Linking parameters
+            'existing_beneficiary_id' => ['nullable', 'integer', 'exists:beneficiaries,id'],
+            'is_calamity_override' => ['nullable', 'boolean'],
+            'calamity_remarks' => ['nullable', 'required_if:is_calamity_override,1', 'string', 'max:500'],
             'confirm_override' => ['nullable', 'boolean'],
             'override_remarks' => ['nullable', 'required_if:confirm_override,1', 'string', 'max:500'],
         ];

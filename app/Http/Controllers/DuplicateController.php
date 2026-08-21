@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
+use App\Models\BeneficiaryProgram;
 use App\Models\DuplicateFlag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,21 +56,65 @@ class DuplicateController extends Controller
             'remarks' => ['required', 'string', 'max:500'],
         ]);
 
+        $decision = $request->input('status');
+        $remarks = $request->input('remarks');
+
+        $candidate = $flag->beneficiary;
+        $matched = $flag->matchedBeneficiary;
+        $candidateName = $candidate?->full_name ?? ($flag->matched_fields['rejected_applicant_name'] ?? 'Candidate');
+        $matchedName = $matched?->full_name ?? 'Matched Beneficiary';
+
+        if ($decision === 'resolved_duplicate') {
+            // Store candidate snapshot in matched_fields so the flag retains full info in audit history
+            $mf = $flag->matched_fields ?? [];
+            $mf['rejected_applicant_name'] = $candidateName;
+            $mf['rejected_applicant_dob'] = $candidate?->date_of_birth?->format('M d, Y');
+            $mf['rejected_applicant_address'] = $candidate?->address;
+            $mf['rejected_applicant_gov_id'] = $candidate?->government_id_number;
+            $mf['rejection_reason'] = $remarks;
+
+            $flag->update([
+                'status' => 'resolved_duplicate',
+                'remarks' => $remarks,
+                'reviewed_by' => auth()->id(),
+                'matched_fields' => $mf,
+            ]);
+
+            // Completely delete the duplicate candidate so they are NOT recorded in beneficiaries
+            if ($candidate) {
+                $candidate->delete();
+            }
+
+            AuditLog::log([
+                'action' => 'reject_duplicate_beneficiary',
+                'model_type' => DuplicateFlag::class,
+                'model_id' => $flag->id,
+                'description' => "Rejected duplicate registration for {$candidateName} (matched with existing beneficiary {$matchedName}). Duplicate applicant removed from database.",
+            ]);
+
+            return redirect()->route('duplicates.index')->with('success', "Duplicate applicant {$candidateName} rejected and removed from registered beneficiaries.");
+        }
+
+        // For approved decisions (resolved_not_duplicate or overridden)
         $flag->update([
-            'status' => $request->input('status'),
-            'remarks' => $request->input('remarks'),
+            'status' => $decision,
+            'remarks' => $remarks,
             'reviewed_by' => auth()->id(),
         ]);
 
-        $auditAction = $flag->household_match_flag ? 'override_household_duplicate' : 'duplicate_override';
+        if ($candidate) {
+            BeneficiaryProgram::where('beneficiary_id', $candidate->id)
+                ->where('status', 'pending')
+                ->update(['status' => 'approved']);
+        }
 
         AuditLog::log([
-            'action' => $auditAction,
+            'action' => $flag->household_match_flag ? 'override_household_duplicate' : 'duplicate_override',
             'model_type' => DuplicateFlag::class,
             'model_id' => $flag->id,
-            'description' => "Resolved {$auditAction} flag #{$flag->id} as {$request->input('status')}. Remarks: {$request->input('remarks')}",
+            'description' => "Approved {$candidateName} despite duplicate flag (matched with {$matchedName}) as {$decision}. Remarks: {$remarks}",
         ]);
 
-        return redirect()->route('duplicates.index')->with('success', "Duplicate flag #{$flag->id} updated successfully.");
+        return redirect()->route('duplicates.index')->with('success', "Beneficiary {$candidateName} verified and approved.");
     }
 }

@@ -28,4 +28,12 @@ class DilpGroup extends Model
     {
         return $this->hasMany(BeneficiaryProgram::class);
     }
+
+    /**
+     * @return HasMany<DilpGroupMember, $this>
+     */
+    public function members(): HasMany
+    {
+        return $this->hasMany(DilpGroupMember::class);
+    }
 }

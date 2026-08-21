@@ -15,7 +15,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
-            $table->enum('liquidation_status', ['pending', 'partial', 'liquidated'])->default('pending');
+            $table->enum('liquidation_status', ['pending', 'partial', 'liquidated', 'overdue', 'unliquidated'])->default('pending');
             $table->timestamps();
         });
     }

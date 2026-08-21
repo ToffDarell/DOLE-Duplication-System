@@ -124,3 +124,50 @@ test('eligibility rules enforce GIP lifetime limit', function () {
     expect($errors)->toHaveKey('program_code');
     expect($errors['program_code'])->toContain('ONCE IN A LIFETIME');
 });
+
+test('exact name match with different birthdates and IDs automatically triggers duplicate alert', function () {
+    // Existing record: Toff Tinggoy, DOB: 1997-10-19, Brgy. Managok
+    Beneficiary::create([
+        'full_name' => 'TOFF TINGGOY',
+        'first_name' => 'TOFF',
+        'last_name' => 'TINGGOY',
+        'date_of_birth' => '1997-10-19',
+        'sex' => 'Male',
+        'municipality' => 'Malaybalay City',
+        'barangay' => 'Managok',
+        'contact_number' => '09171112222',
+        'government_id_number' => 'ID-1997-888',
+    ]);
+
+    // New payload: Exact same name (Toff Tinggoy), same location (Brgy. Managok), but different birthdate (2003-07-14) and ID
+    $payload = [
+        'first_name' => 'Toff',
+        'last_name' => 'Tinggoy',
+        'date_of_birth' => '2003-07-14',
+        'sex' => 'Male',
+        'municipality' => 'Malaybalay City',
+        'barangay' => 'Managok',
+        'contact_number' => '09183334444',
+        'government_id_number' => 'ID-2003-999',
+        'program_code' => 'TUPAD',
+        'availment_year' => 2026,
+    ];
+
+    // 1. Service evaluation
+    $result = $this->duplicateService->checkDuplicates($payload);
+
+    expect($result['has_duplicates'])->toBeTrue();
+    expect($result['max_score'])->toBeGreaterThanOrEqual(75);
+    expect($result['is_same_name_diff_identity'])->toBeTrue();
+
+    // 2. Controller endpoint verification (409 Conflict with same_name_detected status)
+    $response = $this->actingAs($this->admin)->postJson(route('beneficiaries.check-duplicate'), $payload);
+
+    $response->assertStatus(409)
+        ->assertJson([
+            'success' => false,
+            'status' => 'same_name_detected',
+            'has_duplicates' => true,
+            'is_same_name_diff_identity' => true,
+        ]);
+});

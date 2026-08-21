@@ -15,6 +15,8 @@ class BeneficiaryProgram extends Model
         'enrollment_type',
         'dilp_group_id',
         'internship_duration',
+        'is_calamity_override',
+        'calamity_remarks',
         'status',
         'remarks',
         'reviewed_by',
@@ -27,6 +29,7 @@ class BeneficiaryProgram extends Model
     {
         return [
             'availment_year' => 'integer',
+            'is_calamity_override' => 'boolean',
         ];
     }
 

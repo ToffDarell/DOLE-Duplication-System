@@ -17,8 +17,8 @@ class DashboardController extends Controller
         $totalBeneficiaries = Beneficiary::count();
         $totalDuplicates = DuplicateFlag::count();
         $pendingDuplicates = DuplicateFlag::where('status', 'pending')->count();
-        $overriddenCount = DuplicateFlag::where('status', 'overridden')->count();
-        $resolvedDuplicates = DuplicateFlag::whereIn('status', ['resolved_duplicate', 'resolved_not_duplicate', 'overridden'])->count();
+        $overriddenCount = DuplicateFlag::whereIn('status', ['overridden', 'resolved_not_duplicate', 'resolved_duplicate'])->count();
+        $resolvedDuplicates = $overriddenCount;
 
         // 1. Duplicate Status Breakdown (Pie / Donut Chart)
         $cleanRecords = Beneficiary::whereDoesntHave('duplicateFlags')

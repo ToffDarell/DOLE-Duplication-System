@@ -38,7 +38,7 @@
 </form>
 
 {{-- Duplicate Flags List --}}
-<div class="space-y-4" x-data="{ showResolveModal(flag) { this.activeFlag = flag; this.resolveModal = true; } }">
+<div class="space-y-4" x-data="{ resolveModal: false, activeFlag: null, showResolveModal(flag) { this.activeFlag = flag; this.resolveModal = true; } }">
     @forelse($flags as $flag)
         <div class="rounded-2xl border {{ $flag->household_match_flag ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200/60 bg-white' }} p-6 shadow-sm">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -48,7 +48,7 @@
                     </div>
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
-                            <h4 class="font-bold text-gray-900">{{ $flag->beneficiary?->full_name }}</h4>
+                            <h4 class="font-bold text-gray-900">{{ $flag->beneficiary?->full_name ?? ($flag->matched_fields['rejected_applicant_name'] ?? 'Applicant') }}</h4>
                             <span class="text-xs text-gray-400">{{ $flag->household_match_flag ? 'household with' : 'matches' }}</span>
                             <h4 class="font-bold text-gray-900">{{ $flag->matchedBeneficiary?->full_name }}</h4>
                         </div>
@@ -67,12 +67,20 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('beneficiaries.show', $flag->beneficiary) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">
-                        View Profile 1
-                    </a>
-                    <a href="{{ route('beneficiaries.show', $flag->matchedBeneficiary) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">
-                        View Profile 2
-                    </a>
+                    @if($flag->beneficiary)
+                        <a href="{{ route('beneficiaries.show', $flag->beneficiary) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                            View Profile 1
+                        </a>
+                    @else
+                        <span class="rounded-lg bg-rose-100 border border-rose-200 px-2.5 py-1 text-[11px] font-extrabold text-rose-900">
+                            Duplicate Removed
+                        </span>
+                    @endif
+                    @if($flag->matchedBeneficiary)
+                        <a href="{{ route('beneficiaries.show', $flag->matchedBeneficiary) }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                            View Profile 2
+                        </a>
+                    @endif
                     @if($flag->status === 'pending')
                         <button @click="showResolveModal({{ json_encode($flag) }})" class="rounded-lg bg-dole-blue px-4 py-1.5 text-xs font-semibold text-white hover:bg-dole-blue-dark">
                             Resolve Flag
@@ -81,32 +89,36 @@
                 </div>
             </div>
 
-            {{-- Side-by-Side Comparison for Household Flags --}}
-            @if($flag->household_match_flag)
-                <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div class="rounded-xl border border-blue-200 bg-white p-3.5">
-                        <p class="mb-2 text-[10px] font-extrabold uppercase tracking-wider text-blue-800">Individual 1 (New Record)</p>
-                        <p class="text-sm font-bold text-gray-900">{{ $flag->beneficiary?->full_name }}</p>
-                        <p class="text-xs text-gray-600">DOB: {{ $flag->beneficiary?->date_of_birth?->format('M d, Y') ?? '—' }}</p>
-                        <p class="text-xs text-gray-600">Address: {{ $flag->beneficiary?->address ?? '(not specified)' }}</p>
-                        <p class="text-xs text-gray-600">Barangay: {{ $flag->beneficiary?->barangay }}</p>
-                        <p class="text-xs text-gray-600">Gov ID: {{ $flag->beneficiary?->government_id_number ?? '—' }}</p>
+            {{-- Side-by-Side Comparison for ALL Flags (Identity, Sibling, Household) --}}
+            <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="rounded-xl border {{ $flag->household_match_flag ? 'border-blue-200 bg-white' : 'border-amber-200 bg-white' }} p-3.5 shadow-2xs">
+                    <div class="mb-2 flex items-center justify-between">
+                        <p class="text-[10px] font-extrabold uppercase tracking-wider {{ $flag->household_match_flag ? 'text-blue-800' : 'text-amber-800' }}">Individual 1 (New Record)</p>
+                        <span class="rounded px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-700">NEW</span>
                     </div>
-                    <div class="rounded-xl border border-blue-200 bg-white p-3.5">
-                        <p class="mb-2 text-[10px] font-extrabold uppercase tracking-wider text-blue-800">Individual 2 (Existing Record)</p>
-                        <p class="text-sm font-bold text-gray-900">{{ $flag->matchedBeneficiary?->full_name }}</p>
-                        <p class="text-xs text-gray-600">DOB: {{ $flag->matchedBeneficiary?->date_of_birth?->format('M d, Y') ?? '—' }}</p>
-                        <p class="text-xs text-gray-600">Address: {{ $flag->matchedBeneficiary?->address ?? '(not specified)' }}</p>
-                        <p class="text-xs text-gray-600">Barangay: {{ $flag->matchedBeneficiary?->barangay }}</p>
-                        <p class="text-xs text-gray-600">Gov ID: {{ $flag->matchedBeneficiary?->government_id_number ?? '—' }}</p>
-                    </div>
+                    <p class="text-sm font-bold text-gray-900">{{ $flag->beneficiary?->full_name ?? ($flag->matched_fields['rejected_applicant_name'] ?? 'Candidate') }}</p>
+                    <p class="text-xs text-gray-600">DOB: {{ $flag->beneficiary?->date_of_birth?->format('M d, Y') ?? ($flag->matched_fields['rejected_applicant_dob'] ?? '—') }}</p>
+                    <p class="text-xs font-bold text-gray-900">Purok / Address: <span class="text-blue-800 font-extrabold">{{ $flag->beneficiary?->address ?? ($flag->matched_fields['rejected_applicant_address'] ?? '(not specified)') }}</span></p>
+                    <p class="text-xs text-gray-600">Barangay: {{ $flag->beneficiary?->barangay ?? '' }}, {{ $flag->beneficiary?->municipality ?? '' }}</p>
+                    <p class="text-xs text-gray-600">Gov ID: {{ $flag->beneficiary?->government_id_number ?? ($flag->matched_fields['rejected_applicant_gov_id'] ?? '—') }}</p>
                 </div>
-            @endif
+                <div class="rounded-xl border {{ $flag->household_match_flag ? 'border-blue-200 bg-white' : 'border-amber-200 bg-white' }} p-3.5 shadow-2xs">
+                    <div class="mb-2 flex items-center justify-between">
+                        <p class="text-[10px] font-extrabold uppercase tracking-wider {{ $flag->household_match_flag ? 'text-blue-800' : 'text-amber-800' }}">Individual 2 (Existing Record)</p>
+                        <span class="rounded px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-700">EXISTING</span>
+                    </div>
+                    <p class="text-sm font-bold text-gray-900">{{ $flag->matchedBeneficiary?->full_name }}</p>
+                    <p class="text-xs text-gray-600">DOB: {{ $flag->matchedBeneficiary?->date_of_birth?->format('M d, Y') ?? '—' }}</p>
+                    <p class="text-xs font-bold text-gray-900">Purok / Address: <span class="text-blue-800 font-extrabold">{{ $flag->matchedBeneficiary?->address ?? '(not specified)' }}</span></p>
+                    <p class="text-xs text-gray-600">Barangay: {{ $flag->matchedBeneficiary?->barangay }}, {{ $flag->matchedBeneficiary?->municipality }}</p>
+                    <p class="text-xs text-gray-600">Gov ID: {{ $flag->matchedBeneficiary?->government_id_number ?? '—' }}</p>
+                </div>
+            </div>
 
-            {{-- Matched Fields Breakdown --}}
+            {{-- Matched Fields Breakdown & Sibling / Household Insights --}}
             @if(!empty($flag->matched_fields))
                 <div class="mt-4 rounded-xl bg-gray-50 p-3 text-xs text-gray-600 space-y-1.5">
-                    <p class="font-semibold text-gray-700">{{ $flag->household_match_flag ? 'Household Detection Details:' : 'Scoring Breakdown:' }}</p>
+                    <p class="font-semibold text-gray-700">{{ $flag->household_match_flag ? 'Household Detection Details:' : 'Detection & Sibling Insights Breakdown:' }}</p>
                     @foreach($flag->matched_fields as $key => $detail)
                         @if($key === 'cross_program')
                             @foreach(explode(' | ', $detail) as $conflict)
@@ -115,6 +127,11 @@
                                     {{ $conflict }}
                                 </p>
                             @endforeach
+                        @elseif($key === 'purok_insight')
+                            <p class="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 p-2 text-blue-900 font-bold">
+                                <svg class="h-4 w-4 shrink-0 text-blue-700 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                {{ $detail }}
+                            </p>
                         @elseif($key === 'same_program')
                             <p class="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-2 text-amber-900 font-bold">
                                 <svg class="h-4 w-4 shrink-0 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -154,7 +171,7 @@
 
     {{-- Resolve Modal --}}
     <div x-show="resolveModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm" style="display: none;">
-        <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" @click.away="resolveModal = false">
+        <div class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl" @click.away="resolveModal = false">
             <h3 class="mb-2 text-lg font-bold text-gray-900" x-text="activeFlag?.household_match_flag ? 'Resolve Household Flag' : 'Resolve Duplicate Flag'"></h3>
             <p class="mb-4 text-xs text-gray-500" x-text="'Resolving flag for ' + (activeFlag?.beneficiary?.full_name ?? '')"></p>
 

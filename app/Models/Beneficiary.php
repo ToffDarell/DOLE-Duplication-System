@@ -6,11 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Beneficiary extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'full_name',
@@ -62,6 +61,16 @@ class Beneficiary extends Model
      * @return HasMany<BeneficiaryProgram, $this>
      */
     public function beneficiaryPrograms(): HasMany
+    {
+        return $this->hasMany(BeneficiaryProgram::class);
+    }
+
+    /**
+     * Alias for beneficiaryPrograms relationship (Availments history).
+     *
+     * @return HasMany<BeneficiaryProgram, $this>
+     */
+    public function availments(): HasMany
     {
         return $this->hasMany(BeneficiaryProgram::class);
     }

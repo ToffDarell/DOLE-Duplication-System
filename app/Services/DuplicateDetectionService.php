@@ -15,10 +15,10 @@ class DuplicateDetectionService
      * @var array<string, array<string>>
      */
     private const CROSS_PROGRAM_CONFLICTS = [
-        'TUPAD' => ['SPES', 'GIP'],
+        'TUPAD' => ['SPES', 'GIP', 'DILP'],
         'SPES' => ['TUPAD', 'GIP'],
         'GIP' => ['TUPAD', 'SPES'],
-        'DILP' => [],
+        'DILP' => ['TUPAD'],
     ];
 
     /**
@@ -70,65 +70,101 @@ class DuplicateDetectionService
             $cleanInputFirst = preg_replace('/[^a-z0-9]/', '', $inputFirstName);
             $cleanCandFirst = preg_replace('/[^a-z0-9]/', '', $candFirstName);
 
+            $isExactNameMatch = false;
+            $isTransposedNameMatch = false;
+            $isCompoundSurnameMatch = false;
             $nameScore = 0;
+
             if ($inputLastName === $candLastName && $inputFirstName === $candFirstName) {
+                $isExactNameMatch = true;
                 $nameScore = 40;
                 $matchedFields['name'] = 'Exact name match (40 pts)';
             } elseif (! empty($cleanInputLast) && $cleanInputLast === $cleanCandLast && ! empty($cleanInputFirst) && $cleanInputFirst === $cleanCandFirst) {
+                $isExactNameMatch = true;
                 $nameScore = 40;
                 $matchedFields['name'] = 'Normalized name match (e.g. De la Cruz vs Dela Cruz) (40 pts)';
+            } elseif (
+                // Transposed First & Last Names (e.g., Cruz, Juan vs Juan, Cruz)
+                (! empty($cleanInputLast) && ! empty($cleanCandFirst) && $cleanInputLast === $cleanCandFirst) &&
+                (! empty($cleanInputFirst) && ! empty($cleanCandLast) && $cleanInputFirst === $cleanCandLast)
+            ) {
+                $isTransposedNameMatch = true;
+                $nameScore = 38;
+                $matchedFields['name'] = 'Transposed name match (Swapped First and Last Name) (38 pts)';
             } else {
-                // Enhanced Phonetic (Metaphone/Soundex) & Levenshtein matching for misspelled names
-                $lastLev = (! empty($cleanInputLast) && ! empty($cleanCandLast)) ? levenshtein($cleanInputLast, $cleanCandLast) : 99;
-                $lastMetaMatch = (! empty($cleanInputLast) && ! empty($cleanCandLast)) &&
-                    (metaphone($cleanInputLast) === metaphone($cleanCandLast) || soundex($cleanInputLast) === soundex($cleanCandLast));
+                // Check for Compound / Maiden Name Variation (e.g., Santos vs Santos-Cruz, Santos Cruz, Cruz-Santos)
+                $inputLastTokens = preg_split('/[\s\-]+/', $inputLastName, -1, PREG_SPLIT_NO_EMPTY);
+                $candLastTokens = preg_split('/[\s\-]+/', $candLastName, -1, PREG_SPLIT_NO_EMPTY);
 
-                $firstTokensInput = array_filter(explode(' ', $inputFirstName));
-                $firstTokensCand = array_filter(explode(' ', $candFirstName));
-
-                $firstMetaMatch = false;
-                $firstLevMatch = false;
-                foreach ($firstTokensInput as $tIn) {
-                    $cIn = preg_replace('/[^a-z0-9]/', '', $tIn);
-                    if (empty($cIn)) {
-                        continue;
-                    }
-                    foreach ($firstTokensCand as $tCand) {
-                        $cCand = preg_replace('/[^a-z0-9]/', '', $tCand);
-                        if (empty($cCand)) {
-                            continue;
-                        }
-                        if (metaphone($cIn) === metaphone($cCand) || soundex($cIn) === soundex($cCand)) {
-                            $firstMetaMatch = true;
-                        }
-                        if (levenshtein($cIn, $cCand) <= 2) {
-                            $firstLevMatch = true;
-                        }
+                $hasCompoundMatch = false;
+                if ($inputFirstName === $candFirstName || $cleanInputFirst === $cleanCandFirst) {
+                    if (
+                        (! empty($cleanInputLast) && ! empty($cleanCandLast) && (str_contains($cleanInputLast, $cleanCandLast) || str_contains($cleanCandLast, $cleanInputLast))) ||
+                        ! empty(array_intersect($inputLastTokens, $candLastTokens))
+                    ) {
+                        $hasCompoundMatch = true;
                     }
                 }
 
-                similar_text($cleanInputLast.' '.$cleanInputFirst, $cleanCandLast.' '.$cleanCandFirst, $percent);
-
-                if (($lastLev <= 2 || $lastMetaMatch) && ($firstLevMatch || $firstMetaMatch)) {
+                if ($hasCompoundMatch) {
+                    $isCompoundSurnameMatch = true;
                     $nameScore = 35;
-                    $matchedFields['name'] = 'Phonetic & Fuzzy name match (misspelled name detected) (35 pts)';
-                } elseif ($percent >= 70) {
-                    $nameScore = round(($percent / 100) * 40);
-                    $matchedFields['name'] = sprintf('Fuzzy name match (%.0f%% similarity, %d pts)', $percent, $nameScore);
+                    $matchedFields['name'] = 'Compound / Maiden name variation match (e.g. Santos vs Santos-Cruz) (35 pts)';
+                } else {
+                    // Enhanced Phonetic (Metaphone/Soundex) & Levenshtein matching for misspelled names
+                    $lastLev = (! empty($cleanInputLast) && ! empty($cleanCandLast)) ? levenshtein($cleanInputLast, $cleanCandLast) : 99;
+                    $lastMetaMatch = (! empty($cleanInputLast) && ! empty($cleanCandLast)) &&
+                        (metaphone($cleanInputLast) === metaphone($cleanCandLast) || soundex($cleanInputLast) === soundex($cleanCandLast));
+
+                    $firstTokensInput = array_filter(explode(' ', $inputFirstName));
+                    $firstTokensCand = array_filter(explode(' ', $candFirstName));
+
+                    $firstMetaMatch = false;
+                    $firstLevMatch = false;
+                    foreach ($firstTokensInput as $tIn) {
+                        $cIn = preg_replace('/[^a-z0-9]/', '', $tIn);
+                        if (empty($cIn)) {
+                            continue;
+                        }
+                        foreach ($firstTokensCand as $tCand) {
+                            $cCand = preg_replace('/[^a-z0-9]/', '', $tCand);
+                            if (empty($cCand)) {
+                                continue;
+                            }
+                            if (metaphone($cIn) === metaphone($cCand) || soundex($cIn) === soundex($cCand)) {
+                                $firstMetaMatch = true;
+                            }
+                            if (levenshtein($cIn, $cCand) <= 2) {
+                                $firstLevMatch = true;
+                            }
+                        }
+                    }
+
+                    similar_text($cleanInputLast.' '.$cleanInputFirst, $cleanCandLast.' '.$cleanCandFirst, $percent);
+
+                    if (($lastLev <= 2 || $lastMetaMatch) && ($firstLevMatch || $firstMetaMatch)) {
+                        $nameScore = 35;
+                        $matchedFields['name'] = 'Phonetic & Fuzzy name match (misspelled name detected) (35 pts)';
+                    } elseif ($percent >= 70) {
+                        $nameScore = round(($percent / 100) * 40);
+                        $matchedFields['name'] = sprintf('Fuzzy name match (%.0f%% similarity, %d pts)', $percent, $nameScore);
+                    }
                 }
             }
             $score += $nameScore;
 
             // 2. Date of Birth Match (30 pts)
             $candDob = $candidate->date_of_birth ? $candidate->date_of_birth->format('Y-m-d') : null;
-            if ($enableDobCheck && $inputDob && $candDob && $inputDob === $candDob) {
+            $isSameDob = ($enableDobCheck && $inputDob && $candDob && $inputDob === $candDob);
+            if ($isSameDob) {
                 $score += 30;
                 $matchedFields['dob'] = 'Same Date of Birth (30 pts)';
             }
 
             // 3. Government ID Check (35 pts)
             $candGovId = ! empty($candidate->government_id_number) ? preg_replace('/[^a-zA-Z0-9]/', '', $candidate->government_id_number) : null;
-            if ($enableGovIdCheck && $inputGovId && $candGovId && $inputGovId === $candGovId) {
+            $isSameGovId = ($enableGovIdCheck && $inputGovId && $candGovId && $inputGovId === $candGovId);
+            if ($isSameGovId) {
                 $score += 35;
                 $matchedFields['gov_id'] = 'Same Government ID Number (35 pts)';
             }
@@ -136,29 +172,111 @@ class DuplicateDetectionService
             // 4. Address Match (15 pts)
             $candMuni = mb_strtolower(trim($candidate->municipality ?? ''));
             $candBrgy = mb_strtolower(trim($candidate->barangay ?? ''));
-            if ($inputMuni && $candMuni && $inputMuni === $candMuni && $inputBrgy && $candBrgy && $inputBrgy === $candBrgy) {
+            $isSameAddress = ($inputMuni && $candMuni && $inputMuni === $candMuni && $inputBrgy && $candBrgy && $inputBrgy === $candBrgy);
+            if ($isSameAddress) {
                 $score += 15;
                 $matchedFields['address'] = 'Same Municipality & Barangay (15 pts)';
             }
 
             // 5. Contact Match (15 pts)
             $candContact = ! empty($candidate->contact_number) ? preg_replace('/[^0-9]/', '', $candidate->contact_number) : null;
-            if ($inputContact && $candContact && $inputContact === $candContact) {
+            $isSameContact = ($inputContact && $candContact && $inputContact === $candContact);
+            if ($isSameContact) {
                 $score += 15;
                 $matchedFields['contact'] = 'Same Contact Number (15 pts)';
             }
 
-            // 6. Check Exact Match Criteria: full name + DOB + government ID / contact number
-            $isExactMatch = false;
-            if ($inputLastName === $candLastName && $inputFirstName === $candFirstName && $inputDob === $candDob) {
-                if (($inputGovId && $candGovId && $inputGovId === $candGovId) || ($inputContact && $candContact && $inputContact === $candContact)) {
-                    $isExactMatch = true;
-                    $score = 100;
-                    $matchedFields['exact'] = 'Exact match across Name, DOB, and Gov ID / Contact (100 pts)';
+            // 6. Name-First Priority & Permutation Override Rules
+            // Exact Name Rule:
+            $isSameNameDifferentIdentity = false;
+            if ($isExactNameMatch) {
+                if ($score < 75) {
+                    $score = 75;
+                }
+                if (! $isSameDob || ! $isSameGovId) {
+                    $isSameNameDifferentIdentity = true;
+                    $matchedFields['same_name_alert'] = sprintf(
+                        'Exact Name Match with different profile details (Existing DOB: %s vs Entered: %s)',
+                        $candDob ?? 'N/A',
+                        $inputDob ?? 'N/A'
+                    );
                 }
             }
 
-            if ($score >= $threshold || $isExactMatch) {
+            // Transposed Name Rule (Swapped First and Last Names with matching DOB):
+            if ($isTransposedNameMatch && $isSameDob) {
+                if ($score < 75) {
+                    $score = 75;
+                }
+                $matchedFields['transposed_alert'] = sprintf(
+                    'Transposed Name Match (Swapped First and Last Name) with matching Date of Birth (%s)',
+                    $candDob ?? 'N/A'
+                );
+            }
+
+            // Compound / Maiden Name Rule (with matching DOB):
+            if ($isCompoundSurnameMatch && $isSameDob) {
+                if ($score < 75) {
+                    $score = 75;
+                }
+                $matchedFields['compound_alert'] = sprintf(
+                    'Compound / Maiden Name Match (%s vs %s) with matching Date of Birth (%s)',
+                    $candidate->last_name,
+                    $data['last_name'] ?? '',
+                    $candDob ?? 'N/A'
+                );
+            }
+
+            // Fuzzy Token & SOUNDEX First-Name Rule:
+            // e.g. "Caliao, Atheo" vs "Caliao, Atheo Jessar" (same last name, matching primary first name or SOUNDEX)
+            $inputFirstToken = explode(' ', $inputFirstName)[0] ?? '';
+            $candFirstToken = explode(' ', $candFirstName)[0] ?? '';
+
+            if (! empty($cleanInputLast) && $cleanInputLast === $cleanCandLast) {
+                $isTokenMatch = (! empty($inputFirstToken) && ! empty($candFirstToken)) &&
+                    ($inputFirstToken === $candFirstToken || str_contains($candFirstName, $inputFirstToken) || str_contains($inputFirstName, $candFirstToken));
+                $isSoundexMatch = (! empty($cleanInputFirst) && ! empty($cleanCandFirst)) &&
+                    soundex($cleanInputFirst) === soundex($cleanCandFirst);
+
+                if ($isTokenMatch || $isSoundexMatch) {
+                    if ($score < 75) {
+                        $score = 75;
+                    }
+                    if (! $isSameDob || ! $isSameGovId) {
+                        $isSameNameDifferentIdentity = true;
+                        $matchedFields['fuzzy_token_alert'] = sprintf(
+                            'Fuzzy Name / Token Variation Match ("%s, %s" vs "%s, %s")',
+                            $candidate->last_name,
+                            $candidate->first_name,
+                            $data['last_name'] ?? '',
+                            $data['first_name'] ?? ''
+                        );
+                    }
+                }
+            }
+
+            // 7. Check Exact Match Criteria: full name + DOB + government ID / contact number
+            $isExactMatch = false;
+            if ($isExactNameMatch && $isSameDob && ($isSameGovId || $isSameContact)) {
+                $isExactMatch = true;
+                $score = 100;
+                $matchedFields['exact'] = 'Exact match across Name, DOB, and Gov ID / Contact (100 pts)';
+            }
+
+            // Purok / Address & Sibling Comparison insight
+            $rawInputAddr = trim($data['address'] ?? '');
+            $rawCandAddr = trim($candidate->address ?? '');
+            if ($rawInputAddr !== '' && $rawCandAddr !== '') {
+                if (mb_strtolower($rawInputAddr) === mb_strtolower($rawCandAddr)) {
+                    $matchedFields['purok_insight'] = "Identical Address / Purok: \"{$candidate->address}\" in {$candidate->barangay} — likely same household.";
+                } else {
+                    $matchedFields['purok_insight'] = "Different Address / Purok: New=\"{$rawInputAddr}\" vs Existing=\"{$rawCandAddr}\" in {$candidate->barangay} — potential siblings or relatives in separate houses.";
+                }
+            } elseif ($rawCandAddr !== '') {
+                $matchedFields['purok_insight'] = "Existing Address: \"{$rawCandAddr}\" in {$candidate->barangay} — verify if new applicant lives in a separate home.";
+            }
+
+            if ($score >= $threshold || $isExactMatch || $isExactNameMatch) {
                 $matchType = 'low';
                 if ($isExactMatch || $score >= 90) {
                     $matchType = 'exact';
@@ -176,7 +294,7 @@ class DuplicateDetectionService
                     $maxScore = $score;
                 }
 
-                // 7. Cross-Program Conflict Detection
+                // Cross-Program Conflict Detection
                 $conflicts = $this->detectCrossProgramConflicts(
                     $candidate,
                     $inputProgramCode,
@@ -203,12 +321,42 @@ class DuplicateDetectionService
                     $matchedFields['same_program'] = $sameProgramSameYear;
                 }
 
+                // Check for previous availment history and returning beneficiary status
+                $latestEnrollment = $candidate->beneficiaryPrograms->sortByDesc('availment_year')->first();
+                $lastAvailedInfo = null;
+                if ($latestEnrollment && $latestEnrollment->program) {
+                    $lastAvailedInfo = "{$latestEnrollment->program->code} {$latestEnrollment->availment_year}";
+                }
+
+                $alreadyEnrolledCurrentYear = $candidate->beneficiaryPrograms
+                    ->filter(fn ($bp) => $bp->program?->code === $inputProgramCode && $bp->availment_year == $inputYear)
+                    ->filter(fn ($bp) => in_array($bp->status, ['pending', 'approved']))
+                    ->isNotEmpty();
+
+                $isReturning = false;
+                if (($isExactMatch || $score >= 80) && ! $alreadyEnrolledCurrentYear && $candidate->beneficiaryPrograms->isNotEmpty()) {
+                    $isReturning = true;
+                }
+
                 $matches[] = [
                     'matched_beneficiary' => $candidate,
                     'matched_beneficiary_id' => $candidate->id,
+                    'matched_beneficiary_name' => $candidate->full_name,
+                    'existing_dob' => $candDob,
+                    'input_dob' => $inputDob,
                     'match_score' => $score,
                     'match_type' => $matchType,
                     'matched_fields' => $matchedFields,
+                    'is_exact_name_match' => $isExactNameMatch,
+                    'is_transposed_name_match' => $isTransposedNameMatch,
+                    'is_compound_surname_match' => $isCompoundSurnameMatch,
+                    'is_same_name_diff_dob' => $isExactNameMatch && ! $isSameDob,
+                    'is_same_name_diff_identity' => $isSameNameDifferentIdentity,
+                    'is_returning_beneficiary' => $isReturning,
+                    'last_availment' => $lastAvailedInfo,
+                    'latest_program_code' => $latestEnrollment?->program?->code,
+                    'latest_availment_year' => $latestEnrollment?->availment_year,
+                    'same_program_current_year' => $alreadyEnrolledCurrentYear,
                 ];
             }
         }
@@ -216,12 +364,21 @@ class DuplicateDetectionService
         // Sort matches by score descending
         usort($matches, fn ($a, $b) => $b['match_score'] <=> $a['match_score']);
 
+        $topMatch = $matches[0] ?? null;
+        $hasReturningMatch = $topMatch['is_returning_beneficiary'] ?? false;
+        $hasSameNameDiffIdentity = $topMatch['is_same_name_diff_identity'] ?? false;
+
         return [
             'has_duplicates' => count($matches) > 0,
             'flags' => $matches,
+            'duplicates' => $matches,
             'is_exact' => $hasExact,
             'max_score' => $maxScore,
             'cross_program_conflicts' => $crossProgramConflicts,
+            'is_returning_beneficiary' => $hasReturningMatch,
+            'is_same_name_diff_identity' => $hasSameNameDiffIdentity,
+            'returning_match' => $hasReturningMatch ? $topMatch : null,
+            'top_match' => $topMatch,
         ];
     }
 
@@ -412,17 +569,24 @@ class DuplicateDetectionService
     /**
      * Create DuplicateFlag records for a saved beneficiary.
      */
-    public function recordDuplicateFlags(Beneficiary $beneficiary, array $flags): void
+    public function recordDuplicateFlags(Beneficiary $beneficiary, array $flags, string $status = 'pending', ?string $remarks = null, ?int $reviewedBy = null): void
     {
         foreach ($flags as $flag) {
+            $flagMatchedId = $flag['matched_beneficiary_id'] ?? ($flag['matched_beneficiary'] ? $flag['matched_beneficiary']->id : null);
+            if (! $flagMatchedId || $flagMatchedId == $beneficiary->id) {
+                continue;
+            }
+
             DuplicateFlag::create([
                 'beneficiary_id' => $beneficiary->id,
-                'matched_beneficiary_id' => $flag['matched_beneficiary_id'],
-                'match_score' => $flag['match_score'],
-                'match_type' => $flag['match_type'],
-                'matched_fields' => $flag['matched_fields'],
+                'matched_beneficiary_id' => $flagMatchedId,
+                'match_score' => $flag['match_score'] ?? 75,
+                'match_type' => $flag['match_type'] ?? 'medium',
+                'matched_fields' => $flag['matched_fields'] ?? [],
                 'household_match_flag' => $flag['household_match_flag'] ?? false,
-                'status' => 'pending',
+                'status' => $status,
+                'remarks' => $remarks,
+                'reviewed_by' => $reviewedBy,
             ]);
         }
     }
