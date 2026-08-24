@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\BeneficiariesImport;
 use App\Models\ImportLog;
 use App\Services\BeneficiaryImportService;
 use Illuminate\Http\JsonResponse;
@@ -143,10 +144,12 @@ class ImportController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'],
+            'file' => ['required', 'file', 'max:51200'],
             'program_code' => ['required', 'in:TUPAD,SPES,DILP,GIP'],
             'start_row' => ['nullable', 'integer', 'min:1'],
             'end_row' => ['nullable', 'integer', 'min:1'],
+        ], [
+            'file.uploaded' => 'The file failed to upload. Please ensure the file is saved and not locked by another application.',
         ]);
 
         $file = $request->file('file');
@@ -158,20 +161,31 @@ class ImportController extends Controller
             $fullPath = storage_path('app/'.$filePath);
         }
 
-        $importLog = $this->importService->import(
-            $fullPath,
-            $request->input('program_code'),
-            $request->filled('start_row') ? (int) $request->input('start_row') : null,
-            $request->filled('end_row') ? (int) $request->input('end_row') : null
-        );
+        try {
+            $importer = new BeneficiariesImport(
+                $request->input('program_code'),
+                $request->filled('start_row') ? (int) $request->input('start_row') : null,
+                $request->filled('end_row') ? (int) $request->input('end_row') : null
+            );
 
-        if ($importLog->failed_rows > 0) {
+            $importLog = $importer->import($fullPath);
+
+            if ($importLog->failed_rows > 0 && $importLog->imported_rows === 0) {
+                return redirect()->route('import.show', $importLog)
+                    ->with('error', "Import failed. 0 beneficiaries imported, {$importLog->failed_rows} rows had validation errors.");
+            }
+
+            if ($importLog->failed_rows > 0) {
+                return redirect()->route('import.show', $importLog)
+                    ->with('warning', "Import completed with {$importLog->imported_rows} successful and {$importLog->failed_rows} failed rows.");
+            }
+
             return redirect()->route('import.show', $importLog)
-                ->with('warning', "Import completed with {$importLog->imported_rows} successful and {$importLog->failed_rows} failed rows.");
+                ->with('success', "Successfully imported {$importLog->imported_rows} beneficiaries.");
+        } catch (\Throwable $e) {
+            return redirect()->route('import.index')
+                ->with('error', 'Import failed: '.$e->getMessage());
         }
-
-        return redirect()->route('import.show', $importLog)
-            ->with('success', "Successfully imported {$importLog->imported_rows} beneficiaries.");
     }
 
     public function show(ImportLog $importLog): View

@@ -238,27 +238,30 @@
 
                     if (data && data.success) {
                         this.previewData = data;
-                        this.startRow = data.detected_start_row || ((this.programCode === 'TUPAD') ? 16 : 2);
+                        this.startRow = data.detected_start_row || 3;
                         this.endRow = data.detected_end_row || '';
                     } else {
-                        // Resilient fallback: ensure inputs are always populated and visible
+                        // Scan couldn't read file (e.g. locked by Excel or format issue)
                         this.previewData = {
+                            success: false,
                             total_rows_found: data?.total_rows_found || 0,
                             filename: this.selectedFile.name,
                             header_row: data?.header_row || '—',
+                            message: data?.message || 'File locked by Excel or unreadable. Please close Excel.',
                         };
-                        this.startRow = data?.detected_start_row || ((this.programCode === 'TUPAD') ? 16 : 2);
+                        this.startRow = data?.detected_start_row || 3;
                         this.endRow = data?.detected_end_row || '';
                     }
                 } catch (err) {
                     console.error('Scan preview error:', err);
-                    // Safe fallback on network failure
                     this.previewData = {
+                        success: false,
                         total_rows_found: 0,
                         filename: this.selectedFile.name,
                         header_row: '—',
+                        message: 'Connection error during preview scan.',
                     };
-                    this.startRow = (this.programCode === 'TUPAD') ? 16 : 2;
+                    this.startRow = 3;
                     this.endRow = '';
                 } finally {
                     this.isScanning = false;
