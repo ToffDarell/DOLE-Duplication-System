@@ -24,10 +24,12 @@ class StoreBeneficiaryRequest extends FormRequest
             'civil_status' => ['nullable', 'string', 'max:50'],
             'government_id_type' => ['nullable', 'string', 'max:50'],
             'government_id_number' => ['nullable', 'string', 'max:100'],
-            'contact_number' => ['nullable', 'string', 'regex:/^(09|\+639)\d{9}$/'],
+            'contact_number' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string'],
             'barangay' => ['required', 'string', 'max:100'],
             'municipality' => ['required', 'string', 'max:100'],
+            'province' => ['nullable', 'string', 'max:100'],
+            'district' => ['nullable', 'string', 'max:50'],
             'is_senior_citizen' => ['nullable', 'boolean'],
             'is_pwd' => ['nullable', 'boolean'],
             'is_student' => ['nullable', 'boolean'],
@@ -56,10 +58,13 @@ class StoreBeneficiaryRequest extends FormRequest
             'project_location_district' => ['nullable', 'string', 'max:20'],
             'epayment_account_no' => ['nullable', 'string', 'max:100'],
             'beneficiary_type' => ['nullable', 'string', 'max:100'],
-            'occupation' => ['nullable', 'string', 'max:150'],
+            'occupation' => ['nullable', 'string', 'max:255'],
             'average_monthly_income' => ['nullable', 'string', 'max:50'],
-            'dependent_name' => ['nullable', 'string', 'max:150'],
-            'dependent_relationship' => ['nullable', 'string', 'max:50'],
+            'dependent_name' => ['nullable', 'string', 'max:255'],
+            'dependent_relationship' => ['nullable', 'string', 'max:100'],
+            // Aliases from create form field names (mapped in controller to dependent_name / dependent_relationship)
+            'dependent' => ['nullable', 'string', 'max:255'],
+            'relationship_dependent' => ['nullable', 'string', 'max:100'],
             'interested_in_employment' => ['nullable', 'boolean'],
             'employment_interest_detail' => ['nullable', 'string', 'max:150'],
             'skills_training_needed' => ['nullable', 'string', 'max:255'],
@@ -76,7 +81,6 @@ class StoreBeneficiaryRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'contact_number.regex' => 'Contact number must be a valid PH mobile number (e.g., 09171234567 or +639171234567).',
             'date_of_birth.before' => 'Date of birth cannot be in the future.',
             'override_remarks.required_if' => 'Remarks are required when approving/saving a flagged duplicate.',
         ];

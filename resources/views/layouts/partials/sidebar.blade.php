@@ -6,7 +6,7 @@
     <div class="flex h-16 items-center border-b border-slate-200 px-4">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-3 overflow-hidden">
             <div class="rounded-lg bg-white p-1 border border-slate-200 shadow-2xs shrink-0 flex items-center justify-center">
-                <img src="{{ asset('dole-logo.png') }}" alt="DOLE Logo" class="h-8 w-8 object-contain bg-white">
+                <img src="{{ asset('logo dole.png') }}" alt="DOLE Logo" class="h-8 w-8 object-contain bg-white">
             </div>
             <div x-show="sidebarOpen" class="transition-opacity">
                 <h1 class="text-sm font-extrabold leading-tight text-slate-900 tracking-tight">DOLE Bukidnon</h1>

@@ -66,12 +66,23 @@
 
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-800">Civil Status</label>
+                    @php
+                        $civilStatusVal = old('civil_status', $beneficiary->civil_status ?? '');
+                        $standardCivilStatuses = ['Single', 'Married', 'Widowed', 'Separated'];
+                        $isCivilMatched = false;
+                    @endphp
                     <select name="civil_status" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
                         <option value="">Select Status</option>
-                        <option value="Single" {{ old('civil_status', $beneficiary->civil_status) == 'Single' ? 'selected' : '' }}>Single</option>
-                        <option value="Married" {{ old('civil_status', $beneficiary->civil_status) == 'Married' ? 'selected' : '' }}>Married</option>
-                        <option value="Widowed" {{ old('civil_status', $beneficiary->civil_status) == 'Widowed' ? 'selected' : '' }}>Widowed</option>
-                        <option value="Separated" {{ old('civil_status', $beneficiary->civil_status) == 'Separated' ? 'selected' : '' }}>Separated</option>
+                        @foreach($standardCivilStatuses as $st)
+                            @php
+                                $selected = strcasecmp($civilStatusVal, $st) === 0 || ($st === 'Widowed' && strcasecmp($civilStatusVal, 'Widow') === 0);
+                                if ($selected) { $isCivilMatched = true; }
+                            @endphp
+                            <option value="{{ $st }}" {{ $selected ? 'selected' : '' }}>{{ $st }}</option>
+                        @endforeach
+                        @if(!empty($civilStatusVal) && !$isCivilMatched)
+                            <option value="{{ $civilStatusVal }}" selected>{{ $civilStatusVal }}</option>
+                        @endif
                     </select>
                 </div>
             </div>
@@ -92,6 +103,12 @@
             </div>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold text-slate-800">Province</label>
+                    <input type="text" name="province" x-model="province" placeholder="Bukidnon"
+                           class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
+                </div>
+
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-800">Municipality (Bukidnon) *</label>
                     <select name="municipality" x-model="municipality" @change="onMunicipalityChange" required
@@ -121,6 +138,24 @@
                     </div>
                 </div>
 
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold text-slate-800">District</label>
+                    <select name="district" x-model="district"
+                            class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
+                        <option value="">Select District</option>
+                        <option value="District 1">District 1 (I)</option>
+                        <option value="District 2">District 2 (II)</option>
+                        <option value="District 3">District 3 (III)</option>
+                        <option value="District 4">District 4 (IV)</option>
+                        <option value="I">District I</option>
+                        <option value="II">District II</option>
+                        <option value="III">District III</option>
+                        <option value="IV">District IV</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-800">Purok / Sitio / Address</label>
                     <select x-model="selectedPurok" @change="onPurokSelect"
@@ -172,30 +207,45 @@
             <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-800">Government ID Type</label>
+                    @php
+                        $gid = old('government_id_type', $beneficiary->government_id_type ?? '');
+                        $standardIdTypes = [
+                            'PhilSys ID' => 'Philippine National ID (PhilSys)',
+                            'UMID' => 'Unified Multi-Purpose ID (UMID)',
+                            'SSS ID' => 'Social Security System (SSS) ID',
+                            'GSIS ID' => 'GSIS eCard / ID',
+                            'TIN Card' => 'Tax Identification Number (TIN) Card',
+                            'Pag-IBIG ID' => 'Pag-IBIG (HDMF) ID / Loyalty Card',
+                            'PhilHealth ID' => 'PhilHealth Healthpass / ID',
+                            "Voter's ID" => "Voter's ID / Voter Certification",
+                            "Driver's License" => "Driver's License (LTO)",
+                            'Passport' => 'Philippine Passport (DFA)',
+                            'Senior Citizen ID' => 'Senior Citizen ID',
+                            'PWD ID' => 'Person with Disability (PWD) ID',
+                            'Postal ID' => 'Postal ID',
+                            'Barangay ID' => 'Barangay ID / Barangay Clearance',
+                            'PRC ID' => 'Professional Regulation Commission (PRC) ID',
+                            'OWWA ID' => 'OWWA / E-Card ID',
+                            'Solo Parent ID' => 'Solo Parent ID',
+                            'NBI Clearance' => 'NBI Clearance',
+                            'Police Clearance' => 'Police Clearance',
+                            'Student ID' => 'Student / School ID',
+                            'Other ID' => 'Other Government Valid ID',
+                        ];
+                        $isGidMatched = false;
+                    @endphp
                     <select name="government_id_type" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
                         <option value="">Select Government ID Type</option>
-                        @php $gid = old('government_id_type', $beneficiary->government_id_type); @endphp
-                        <option value="PhilSys ID" {{ $gid == 'PhilSys ID' ? 'selected' : '' }}>Philippine National ID (PhilSys)</option>
-                        <option value="UMID" {{ $gid == 'UMID' ? 'selected' : '' }}>Unified Multi-Purpose ID (UMID)</option>
-                        <option value="SSS ID" {{ $gid == 'SSS ID' ? 'selected' : '' }}>Social Security System (SSS) ID</option>
-                        <option value="GSIS ID" {{ $gid == 'GSIS ID' ? 'selected' : '' }}>GSIS eCard / ID</option>
-                        <option value="TIN Card" {{ $gid == 'TIN Card' ? 'selected' : '' }}>Tax Identification Number (TIN) Card</option>
-                        <option value="Pag-IBIG ID" {{ $gid == 'Pag-IBIG ID' ? 'selected' : '' }}>Pag-IBIG (HDMF) ID / Loyalty Card</option>
-                        <option value="PhilHealth ID" {{ $gid == 'PhilHealth ID' ? 'selected' : '' }}>PhilHealth Healthpass / ID</option>
-                        <option value="Voter's ID" {{ $gid == "Voter's ID" ? 'selected' : '' }}>Voter's ID / Voter Certification</option>
-                        <option value="Driver's License" {{ $gid == "Driver's License" ? 'selected' : '' }}>Driver's License (LTO)</option>
-                        <option value="Passport" {{ $gid == 'Passport' ? 'selected' : '' }}>Philippine Passport (DFA)</option>
-                        <option value="Senior Citizen ID" {{ $gid == 'Senior Citizen ID' ? 'selected' : '' }}>Senior Citizen ID</option>
-                        <option value="PWD ID" {{ $gid == 'PWD ID' ? 'selected' : '' }}>Person with Disability (PWD) ID</option>
-                        <option value="Postal ID" {{ $gid == 'Postal ID' ? 'selected' : '' }}>Postal ID</option>
-                        <option value="Barangay ID" {{ $gid == 'Barangay ID' ? 'selected' : '' }}>Barangay ID / Barangay Clearance</option>
-                        <option value="PRC ID" {{ $gid == 'PRC ID' ? 'selected' : '' }}>Professional Regulation Commission (PRC) ID</option>
-                        <option value="OWWA ID" {{ $gid == 'OWWA ID' ? 'selected' : '' }}>OWWA / E-Card ID</option>
-                        <option value="Solo Parent ID" {{ $gid == 'Solo Parent ID' ? 'selected' : '' }}>Solo Parent ID</option>
-                        <option value="NBI Clearance" {{ $gid == 'NBI Clearance' ? 'selected' : '' }}>NBI Clearance</option>
-                        <option value="Police Clearance" {{ $gid == 'Police Clearance' ? 'selected' : '' }}>Police Clearance</option>
-                        <option value="Student ID" {{ $gid == 'Student ID' ? 'selected' : '' }}>Student / School ID</option>
-                        <option value="Other ID" {{ $gid == 'Other ID' ? 'selected' : '' }}>Other Government Valid ID</option>
+                        @foreach($standardIdTypes as $idKey => $idLabel)
+                            @php
+                                $selected = strcasecmp($gid, $idKey) === 0 || strcasecmp($gid, $idLabel) === 0 || ($idKey === 'SSS ID' && strcasecmp($gid, 'SSS') === 0);
+                                if ($selected) { $isGidMatched = true; }
+                            @endphp
+                            <option value="{{ $idKey }}" {{ $selected ? 'selected' : '' }}>{{ $idLabel }}</option>
+                        @endforeach
+                        @if(!empty($gid) && !$isGidMatched)
+                            <option value="{{ $gid }}" selected>{{ $gid }}</option>
+                        @endif
                     </select>
                 </div>
 
@@ -226,6 +276,148 @@
             </div>
         </div>
 
+        {{-- SECTION 3: ADDITIONAL DETAILS --}}
+        @php
+            $tupadProfile = $beneficiary->beneficiaryPrograms
+                ->sortByDesc('id')
+                ->first(fn ($bp) => $bp->tupadProfile !== null)
+                ?->tupadProfile;
+        @endphp
+        <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+            <div class="mb-5 flex items-center justify-between border-b border-slate-200 pb-3">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-700 font-extrabold text-white text-base shadow-md">
+                        3
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Additional Details</h3>
+                        <p class="text-xs font-medium text-slate-600">Sector classification, income, occupation, and dependent information</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold text-slate-800">Beneficiary Sector Type</label>
+                    @php
+                        $benType = old('type_of_beneficiary', $tupadProfile?->beneficiary_type ?? '');
+                        $standardSectors = [
+                            'Underemployed' => 'Underemployed Worker',
+                            'Displaced Worker' => 'Displaced Worker',
+                            'Self-Employed' => 'Self-Employed / Informal Sector Worker',
+                            'Seasonal Worker' => 'Seasonal Worker',
+                            'Indigenous People' => 'Indigenous People (IP)',
+                            'Solo Parent' => 'Solo Parent',
+                            'PWD' => 'Person with Disability (PWD)',
+                            'Senior Citizen' => 'Senior Citizen (60+)',
+                            'Youth / Student' => 'Youth / Student',
+                            'Farmer / Fisherfolk' => 'Farmer / Fisherfolk',
+                            'Returning OFW' => 'OFW Returnee',
+                            'Other' => 'Other Sector',
+                        ];
+                        $isSectorMatched = false;
+                    @endphp
+                    <select name="type_of_beneficiary"
+                            class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none">
+                        <option value="">Select Sector Type</option>
+                        @foreach($standardSectors as $secKey => $secLabel)
+                            @php
+                                $selected = strcasecmp($benType, $secKey) === 0 
+                                    || strcasecmp($benType, $secLabel) === 0 
+                                    || ($secKey === 'Indigenous People' && (strcasecmp($benType, 'IP') === 0 || str_contains(strtolower($benType), 'indigenous')))
+                                    || ($secKey === 'Self-Employed' && str_contains(strtolower($benType), 'self-employed'))
+                                    || ($secKey === 'Underemployed' && str_contains(strtolower($benType), 'underemployed'))
+                                    || ($secKey === 'Displaced Worker' && (str_contains(strtolower($benType), 'displaced') || str_contains(strtolower($benType), 'unemployed')))
+                                    || ($secKey === 'PWD' && str_contains(strtolower($benType), 'disability'))
+                                    || ($secKey === 'Returning OFW' && (str_contains(strtolower($benType), 'ofw') || str_contains(strtolower($benType), 'returning')));
+                                if ($selected) { $isSectorMatched = true; }
+                            @endphp
+                            <option value="{{ $secKey }}" {{ $selected ? 'selected' : '' }}>{{ $secLabel }}</option>
+                        @endforeach
+                        @if(!empty($benType) && !$isSectorMatched)
+                            <option value="{{ $benType }}" selected>{{ $benType }}</option>
+                        @endif
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold text-slate-800">Average Monthly Income</label>
+                    @php
+                        $income = old('monthly_income', $tupadProfile?->average_monthly_income ?? '');
+                        $standardIncomes = [
+                            'Below 5,000' => 'Below ₱5,000',
+                            '5000-10000' => '₱5,000 - ₱10,000',
+                            '10001-15000' => '₱10,001 - ₱15,000',
+                            '15001-20000' => '₱15,001 - ₱20,000',
+                            'Above 20000' => 'Above ₱20,000',
+                        ];
+                        $isIncomeMatched = false;
+                    @endphp
+                    <select name="monthly_income"
+                            class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none">
+                        <option value="">Select Income Range</option>
+                        @foreach($standardIncomes as $incKey => $incLabel)
+                            @php
+                                $selected = strcasecmp($income, $incKey) === 0 
+                                    || strcasecmp($income, $incLabel) === 0
+                                    || ($incKey === '5000-10000' && ($income === '5,000 - 10,000' || $income === '₱5,000 - ₱10,000'))
+                                    || ($incKey === 'Below 5,000' && ($income === 'Below ₱5,000' || $income === 'Below 5000'))
+                                    || ($incKey === '10001-15000' && ($income === '10,001 - 15,000' || $income === '₱10,001 - ₱15,000'))
+                                    || ($incKey === '15001-20000' && ($income === '15,001 - 20,000' || $income === '₱15,001 - ₱20,000'))
+                                    || ($incKey === 'Above 20000' && ($income === 'Above ₱20,000' || $income === 'Above 20,000'));
+                                if ($selected) { $isIncomeMatched = true; }
+                            @endphp
+                            <option value="{{ $incKey }}" {{ $selected ? 'selected' : '' }}>{{ $incLabel }}</option>
+                        @endforeach
+                        @if(!empty($income) && !$isIncomeMatched)
+                            <option value="{{ $income }}" selected>{{ $income }}</option>
+                        @endif
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold text-slate-800">Occupation</label>
+                    <input type="text" name="occupation"
+                           value="{{ old('occupation', $tupadProfile?->occupation) }}"
+                           placeholder="e.g. Laborer, Crop Grower, Homebased..."
+                           class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold text-slate-800">Dependent (Name)</label>
+                    <input type="text" name="dependent"
+                           value="{{ old('dependent', $tupadProfile?->dependent_name) }}"
+                           placeholder="Full name of dependent..."
+                           class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold text-slate-800">Relationship to Dependent</label>
+                    @php
+                        $rel = old('relationship_dependent', $tupadProfile?->dependent_relationship ?? '');
+                        $standardRelationships = ['Spouse', 'Husband', 'Wife', 'Son', 'Daughter', 'Child', 'Mother', 'Father', 'Parent', 'Sibling', 'Brother', 'Sister', 'Live-in Partner', 'Grandchild', 'Other'];
+                        $isRelMatched = false;
+                    @endphp
+                    <select name="relationship_dependent"
+                            class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none">
+                        <option value="">Select Relationship</option>
+                        @foreach($standardRelationships as $relOpt)
+                            @php
+                                $selected = strcasecmp($rel, $relOpt) === 0;
+                                if ($selected) { $isRelMatched = true; }
+                            @endphp
+                            <option value="{{ $relOpt }}" {{ $selected ? 'selected' : '' }}>{{ $relOpt }}</option>
+                        @endforeach
+                        @if(!empty($rel) && !$isRelMatched)
+                            <option value="{{ $rel }}" selected>{{ $rel }}</option>
+                        @endif
+                    </select>
+                </div>
+            </div>
+        </div>
+
         {{-- Form Buttons --}}
         <div class="flex justify-end gap-3 pt-2">
             <a href="{{ route('beneficiaries.show', $beneficiary) }}" class="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-100 transition">
@@ -237,12 +429,12 @@
         </div>
     </form>
 
-    {{-- SECTION 3: PROGRAM AVAILMENT HISTORY --}}
+    {{-- SECTION 4: PROGRAM AVAILMENT HISTORY --}}
     <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs mt-8">
         <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-4 gap-3">
             <div class="flex items-center gap-3">
                 <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-700 font-extrabold text-white text-base shadow-md">
-                    3
+                    4
                 </div>
                 <div>
                     <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Program Availment History</h3>
@@ -530,6 +722,8 @@
 
 <script>
     function editBeneficiaryForm() {
+        const initialProvince = @json(old('province', $beneficiary->province ?? 'Bukidnon'));
+        const initialDistrict = @json(old('district', $beneficiary->district ?? ''));
         const initialMuni = @json(old('municipality', $beneficiary->municipality ?? ''));
         const initialBrgy = @json(old('barangay', $beneficiary->barangay ?? ''));
         const initialAddr = @json(old('address', $beneficiary->address ?? ''));
@@ -554,6 +748,8 @@
         }
 
         return {
+            province: initialProvince,
+            district: initialDistrict,
             municipality: initialMuni,
             selectedBarangay: initialBrgy,
             customBarangayInput: '',
@@ -594,6 +790,30 @@
                 this.editAvailmentModal = true;
             },
 
+            districtByMunicipality: {
+                'Baungon': 'District 1',
+                'Libona': 'District 1',
+                'Malitbog': 'District 1',
+                'Manolo Fortich': 'District 1',
+                'Sumilao': 'District 1',
+                'Talakag': 'District 1',
+                'Cabanglasan': 'District 2',
+                'Impasugong': 'District 2',
+                'Malaybalay City': 'District 2',
+                'San Fernando': 'District 2',
+                'Damulog': 'District 3',
+                'Dangcagan': 'District 3',
+                'Don Carlos': 'District 3',
+                'Kadingilan': 'District 3',
+                'Kibawe': 'District 3',
+                'Kitaotao': 'District 3',
+                'Maramag': 'District 3',
+                'Quezon': 'District 3',
+                'Kalilangan': 'District 4',
+                'Pangantucan': 'District 4',
+                'Valencia City': 'District 4'
+            },
+
             barangaysByMunicipality: {
                 'Malaybalay City': ['Aglayan', 'Bangcud', 'Cabangahan', 'Can-ayan', 'Casisang', 'Dalwangan', 'Imbatug', 'Indalasa', 'Kalasungay', 'Laguitas', 'Linabo', 'Mabalaw', 'Mailag', 'Managok', 'Mapayag', 'Poblacion 1', 'Poblacion 2', 'Poblacion 3', 'Poblacion 4', 'Poblacion 5', 'Poblacion 6', 'Poblacion 7', 'Poblacion 8', 'Poblacion 9', 'Poblacion 10', 'Poblacion 11', 'Saint Peter', 'San Jose', 'San Martin', 'Santo Niño', 'Simaya', 'Sinanglanan', 'Sumpong', 'Zamboanguita'],
                 'Valencia City': ['Bagontaas', 'Batangan', 'Catumbalon', 'Colonia', 'Concepcion', 'Dagat-Kidapawan', 'Guinoyoran', 'Kahaponan', 'Laligan', 'Lilingayon', 'Lourma', 'Lumbo', 'Lurugan', 'Maapag', 'Mabuhay', 'Macapari', 'Mailag', 'Maligaya', 'Mt. Nebo', 'Pinatilan', 'Poblacion', 'San Carlos', 'San Isidro', 'Sugod', 'Tongantongan', 'Tugaya', 'Vintar'],
@@ -604,7 +824,7 @@
                 'Lantapan': ['Alanib', 'Baccsay', 'Balila', 'Bantuanon', 'Basak', 'Capitan Juan', 'Cawayan', 'Ka-atan', 'Kibangay', 'Kulasihan', 'Poblacion', 'Songco', 'Victory'],
                 'Impasugong': ['Capitan Bayong', 'Cawayan', 'Dumalaguing', 'Guihean', 'Hagpa', 'Kalabugao', 'Kibenton', 'La Fortuna', 'Poblacion', 'Sayawan'],
                 'Sumilao': ['Kisolon', 'Poblacion', 'Puntian', 'Sanico', 'Vista Villa'],
-                'Pangantucan': ['Adtuyon', 'Bacusanon', 'Bangahan', 'Barandias', 'Concepcion', 'Ganduz', 'Kimini', 'Langait', 'Mabuhay', 'New Eden', 'Payaket', 'Pigtauranan', 'Poblacion', 'Portulin', 'San Isidro', 'San Jose', 'San Vicente'],
+                'Pangantucan': ['Adtuyon', 'Bacusanon', 'Bangahan', 'Barandias', 'Concepcion', 'Ganduz', 'Kimini', 'Langait', 'Mabuhay', 'Mendis', 'New Eden', 'Payaket', 'Pigtauranan', 'Poblacion', 'Portulin', 'San Isidro', 'San Jose', 'San Vicente'],
                 'Kibawe': ['Balintawak', 'Cagawasan', 'East Kibawe', 'Gutapol', 'Labuagon', 'Magsaysay', 'Marapangi', 'Masimu', 'Natulungan', 'New Kidapawan', 'Old Kibawe', 'Palma', 'Pinamula', 'Poblacion', 'Romagook', 'Sampaguita', 'San Pedro', 'Talahiron', 'West Kibawe'],
                 'Dangcagan': ['Barongcot', 'Bugwak', 'Dolorosa', 'Kapalaran', 'Kianggat', 'Lourdes', 'Macrtan', 'Miaray', 'Osmeña', 'Poblacion', 'Sagbayan', 'San Vicente', 'Santo Niño'],
                 'Kitaotao': ['Balangvie', 'Bobong', 'Bolochoc', 'Cabalantian', 'Calapatagan', 'Digongan', 'Kiis', 'Kitaiho', 'Kitobo', 'Magsaysay', 'Malobalo', 'Metocad', 'Panganan', 'Poblacion', 'San Isidro', 'San Lorenzo', 'San Luis', 'Sinuda', 'White Kulaman'],
@@ -618,19 +838,52 @@
             },
 
             init() {
+                if (this.municipality) {
+                    const found = Object.keys(this.barangaysByMunicipality).find(
+                        m => m.toLowerCase() === this.municipality.trim().toLowerCase()
+                    );
+                    if (found) {
+                        this.municipality = found;
+                    }
+                }
                 if (this.municipality && this.barangaysByMunicipality[this.municipality]) {
                     this.availableBarangays = this.barangaysByMunicipality[this.municipality];
-                    if (initialBrgy && !this.availableBarangays.includes(initialBrgy)) {
-                        this.selectedBarangay = '__OTHER__';
-                        this.customBarangayInput = initialBrgy;
-                        this.customBarangayMode = true;
+                    if (!this.district && this.districtByMunicipality[this.municipality]) {
+                        this.district = this.districtByMunicipality[this.municipality];
                     }
+                    if (initialBrgy) {
+                        const foundBrgy = this.availableBarangays.find(
+                            b => b.toLowerCase() === initialBrgy.trim().toLowerCase()
+                        );
+                        if (foundBrgy) {
+                            this.selectedBarangay = foundBrgy;
+                        } else {
+                            this.selectedBarangay = '__OTHER__';
+                            this.customBarangayInput = initialBrgy;
+                            this.customBarangayMode = true;
+                        }
+                    }
+                } else if (initialBrgy) {
+                    this.selectedBarangay = '__OTHER__';
+                    this.customBarangayInput = initialBrgy;
+                    this.customBarangayMode = true;
                 }
             },
 
             onMunicipalityChange() {
+                if (this.municipality) {
+                    const found = Object.keys(this.barangaysByMunicipality).find(
+                        m => m.toLowerCase() === this.municipality.trim().toLowerCase()
+                    );
+                    if (found) {
+                        this.municipality = found;
+                    }
+                }
                 if (this.municipality && this.barangaysByMunicipality[this.municipality]) {
                     this.availableBarangays = this.barangaysByMunicipality[this.municipality];
+                    if (!this.district && this.districtByMunicipality[this.municipality]) {
+                        this.district = this.districtByMunicipality[this.municipality];
+                    }
                 } else {
                     this.availableBarangays = [];
                 }

@@ -65,6 +65,7 @@ Route::middleware(['auth', 'track.activity', 'check.password.reset'])->group(fun
     // Import Data (Admin, Encoder)
     Route::middleware('role:Admin|Encoder')->group(function () {
         Route::get('import', [ImportController::class, 'index'])->name('import.index');
+        Route::post('import/preview-rows', [ImportController::class, 'previewRows'])->name('import.preview-rows');
         Route::post('import', [ImportController::class, 'store'])->name('import.store');
         Route::get('import/{importLog}', [ImportController::class, 'show'])->name('import.show');
         Route::delete('import/{importLog}', [ImportController::class, 'destroy'])->name('import.destroy');

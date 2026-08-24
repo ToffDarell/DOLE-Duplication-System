@@ -6,8 +6,8 @@
     <title>Sign In — DOLE Bukidnon Duplicate Detection System</title>
     
     {{-- Official DOLE Favicon / Web Icon --}}
-    <link rel="icon" type="image/png" href="{{ asset('dole-logo.png') }}">
-    <link rel="shortcut icon" type="image/png" href="{{ asset('dole-logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('logo dole.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('logo dole.png') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -23,7 +23,7 @@
         {{-- Official DOLE Logo Header --}}
         <div class="text-center">
             <div class="inline-block rounded-2xl bg-white p-2.5 shadow-lg border border-slate-200/80 transition-transform duration-300 hover:scale-105">
-                <img src="{{ asset('dole-logo.png') }}" alt="DOLE Official Logo" class="h-20 w-20 object-contain rounded-xl bg-white">
+                <img src="{{ asset('logo dole.png') }}" alt="DOLE Official Logo" class="h-20 w-20 object-contain rounded-xl bg-white">
             </div>
             <h2 class="mt-4 text-2xl font-black tracking-tight text-slate-900">DOLE Bukidnon</h2>
             <p class="mt-1 text-xs font-bold uppercase tracking-wider text-blue-700">Duplicate Detection System</p>

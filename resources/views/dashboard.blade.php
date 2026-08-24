@@ -9,7 +9,7 @@
     <div class="absolute -right-10 -bottom-10 h-44 w-44 rounded-full bg-blue-500/10 blur-3xl pointer-events-none"></div>
     <div class="flex items-center gap-4 relative z-10">
         <div class="rounded-2xl bg-white p-2 shadow-md border border-white/20 shrink-0">
-            <img src="{{ asset('dole-logo.png') }}" alt="DOLE Official Logo" class="h-12 w-12 object-contain bg-white">
+            <img src="{{ asset('logo dole.png') }}" alt="DOLE Official Logo" class="h-12 w-12 object-contain bg-white">
         </div>
         <div>
             <div class="flex items-center gap-2">

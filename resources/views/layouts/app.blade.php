@@ -7,9 +7,9 @@
 
     <title>@yield('title', 'Dashboard') - DOLE Bukidnon Duplicate Detection System</title>
 
-    {{-- Official DOLE Favicon --}}
-    <link rel="icon" type="image/png" href="{{ asset('dole-logo.png') }}">
-    <link rel="shortcut icon" type="image/png" href="{{ asset('dole-logo.png') }}">
+    {{-- Official DOLE Favicon / Web Icon --}}
+    <link rel="icon" type="image/png" href="{{ asset('logo dole.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('logo dole.png') }}">
 
     {{-- Fonts --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">

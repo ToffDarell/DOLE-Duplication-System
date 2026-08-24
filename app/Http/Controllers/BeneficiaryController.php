@@ -322,6 +322,8 @@ class BeneficiaryController extends Controller
                     'address' => $data['address'] ?? $beneficiary->address,
                     'barangay' => $data['barangay'] ?? $beneficiary->barangay,
                     'municipality' => $data['municipality'] ?? $beneficiary->municipality,
+                    'province' => $data['province'] ?? ($beneficiary->province ?? 'Bukidnon'),
+                    'district' => $data['district'] ?? $beneficiary->district,
                     'civil_status' => $data['civil_status'] ?? $beneficiary->civil_status,
                     'is_senior_citizen' => filter_var($data['is_senior_citizen'] ?? $beneficiary->is_senior_citizen, FILTER_VALIDATE_BOOLEAN),
                     'is_pwd' => filter_var($data['is_pwd'] ?? $beneficiary->is_pwd, FILTER_VALIDATE_BOOLEAN),
@@ -351,14 +353,14 @@ class BeneficiaryController extends Controller
                         'beneficiary_program_id' => $beneficiaryProgram->id,
                         'project_location_barangay' => $data['project_location_barangay'] ?? $data['barangay'],
                         'project_location_municipality' => $data['project_location_municipality'] ?? $data['municipality'],
-                        'project_location_province' => $data['project_location_province'] ?? 'Bukidnon',
-                        'project_location_district' => $data['project_location_district'] ?? null,
+                        'project_location_province' => $data['project_location_province'] ?? ($data['province'] ?? 'Bukidnon'),
+                        'project_location_district' => $data['project_location_district'] ?? ($data['district'] ?? null),
                         'epayment_account_no' => $data['epayment_account_no'] ?? null,
                         'beneficiary_type' => $data['beneficiary_type'] ?? null,
                         'occupation' => $data['occupation'] ?? null,
                         'average_monthly_income' => $data['average_monthly_income'] ?? null,
-                        'dependent_name' => $data['dependent_name'] ?? null,
-                        'dependent_relationship' => $data['dependent_relationship'] ?? null,
+                        'dependent_name' => $data['dependent_name'] ?? $data['dependent'] ?? null,
+                        'dependent_relationship' => $data['dependent_relationship'] ?? $data['relationship_dependent'] ?? null,
                         'interested_in_employment' => filter_var($data['interested_in_employment'] ?? false, FILTER_VALIDATE_BOOLEAN),
                         'employment_interest_detail' => $data['employment_interest_detail'] ?? null,
                         'skills_training_needed' => $data['skills_training_needed'] ?? null,
@@ -517,6 +519,8 @@ class BeneficiaryController extends Controller
                 'address' => $data['address'] ?? null,
                 'barangay' => $data['barangay'],
                 'municipality' => $data['municipality'],
+                'province' => $data['province'] ?? 'Bukidnon',
+                'district' => $data['district'] ?? null,
                 'is_senior_citizen' => $isSenior,
                 'is_pwd' => filter_var($data['is_pwd'] ?? false, FILTER_VALIDATE_BOOLEAN),
                 'is_student' => filter_var($data['is_student'] ?? ($data['is_enrolled'] ?? ($data['is_graduating_student'] ?? false)), FILTER_VALIDATE_BOOLEAN),
@@ -547,14 +551,14 @@ class BeneficiaryController extends Controller
                     'beneficiary_program_id' => $beneficiaryProgram->id,
                     'project_location_barangay' => $data['project_location_barangay'] ?? $data['barangay'],
                     'project_location_municipality' => $data['project_location_municipality'] ?? $data['municipality'],
-                    'project_location_province' => $data['project_location_province'] ?? 'Bukidnon',
-                    'project_location_district' => $data['project_location_district'] ?? null,
+                    'project_location_province' => $data['project_location_province'] ?? ($data['province'] ?? 'Bukidnon'),
+                    'project_location_district' => $data['project_location_district'] ?? ($data['district'] ?? null),
                     'epayment_account_no' => $data['epayment_account_no'] ?? null,
                     'beneficiary_type' => $data['beneficiary_type'] ?? null,
                     'occupation' => $data['occupation'] ?? null,
                     'average_monthly_income' => $data['average_monthly_income'] ?? null,
-                    'dependent_name' => $data['dependent_name'] ?? null,
-                    'dependent_relationship' => $data['dependent_relationship'] ?? null,
+                    'dependent_name' => $data['dependent_name'] ?? $data['dependent'] ?? null,
+                    'dependent_relationship' => $data['dependent_relationship'] ?? $data['relationship_dependent'] ?? null,
                     'interested_in_employment' => filter_var($data['interested_in_employment'] ?? false, FILTER_VALIDATE_BOOLEAN),
                     'employment_interest_detail' => $data['employment_interest_detail'] ?? null,
                     'skills_training_needed' => $data['skills_training_needed'] ?? null,
@@ -664,11 +668,19 @@ class BeneficiaryController extends Controller
             'address' => ['nullable', 'string'],
             'barangay' => ['required', 'string', 'max:100'],
             'municipality' => ['required', 'string', 'max:100'],
+            'province' => ['nullable', 'string', 'max:100'],
+            'district' => ['nullable', 'string', 'max:50'],
             'is_senior_citizen' => ['nullable', 'boolean'],
             'is_pwd' => ['nullable', 'boolean'],
             'is_student' => ['nullable', 'boolean'],
             'is_government_employee' => ['nullable', 'boolean'],
             'is_graduating_college' => ['nullable', 'boolean'],
+            // TUPAD / Additional Details fields
+            'type_of_beneficiary' => ['nullable', 'string', 'max:100'],
+            'monthly_income' => ['nullable', 'string', 'max:100'],
+            'occupation' => ['nullable', 'string', 'max:150'],
+            'dependent' => ['nullable', 'string', 'max:150'],
+            'relationship_dependent' => ['nullable', 'string', 'max:100'],
         ]);
 
         $fullName = Beneficiary::buildFullName(
@@ -693,12 +705,44 @@ class BeneficiaryController extends Controller
             'address' => $data['address'] ?? null,
             'barangay' => $data['barangay'],
             'municipality' => $data['municipality'],
+            'province' => $data['province'] ?? 'Bukidnon',
+            'district' => $data['district'] ?? null,
             'is_senior_citizen' => filter_var($data['is_senior_citizen'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'is_pwd' => filter_var($data['is_pwd'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'is_student' => filter_var($data['is_student'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'is_government_employee' => filter_var($data['is_government_employee'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'is_graduating_college' => filter_var($data['is_graduating_college'] ?? false, FILTER_VALIDATE_BOOLEAN),
         ]);
+
+        // Update TUPAD profile fields if any are submitted
+        $tupadFields = array_filter([
+            'project_location_barangay' => $data['barangay'] ?? null,
+            'project_location_municipality' => $data['municipality'] ?? null,
+            'project_location_province' => $data['province'] ?? 'Bukidnon',
+            'project_location_district' => $data['district'] ?? null,
+            'beneficiary_type' => $data['type_of_beneficiary'] ?? null,
+            'average_monthly_income' => $data['monthly_income'] ?? null,
+            'occupation' => $data['occupation'] ?? null,
+            'dependent_name' => $data['dependent'] ?? null,
+            'dependent_relationship' => $data['relationship_dependent'] ?? null,
+        ], fn ($v) => $v !== null);
+
+        if (! empty($tupadFields)) {
+            // Find the most recent TupadProfile for this beneficiary across all availments
+            $latestTupadProfile = TupadProfile::whereHas('beneficiaryProgram', function ($q) use ($beneficiary) {
+                $q->where('beneficiary_id', $beneficiary->id);
+            })->latest()->first();
+
+            if ($latestTupadProfile) {
+                $latestTupadProfile->update($tupadFields);
+            } else {
+                $bp = $beneficiary->beneficiaryPrograms()->latest()->first();
+                if ($bp) {
+                    $tupadFields['beneficiary_program_id'] = $bp->id;
+                    TupadProfile::create($tupadFields);
+                }
+            }
+        }
 
         // Synchronize pending duplicate flags address detail if modified
         $pendingFlags = DuplicateFlag::where(function ($q) use ($beneficiary) {

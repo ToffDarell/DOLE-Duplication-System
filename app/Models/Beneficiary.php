@@ -26,6 +26,8 @@ class Beneficiary extends Model
         'address',
         'barangay',
         'municipality',
+        'province',
+        'district',
         'is_senior_citizen',
         'is_pwd',
         'is_student',

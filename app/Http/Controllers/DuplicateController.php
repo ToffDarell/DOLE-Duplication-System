@@ -13,25 +13,118 @@ class DuplicateController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = DuplicateFlag::with(['beneficiary', 'matchedBeneficiary', 'reviewer']);
+        $programUpper = $request->filled('program') ? strtoupper(trim($request->input('program'))) : null;
+        if ($programUpper === 'ALL') {
+            $programUpper = null;
+        }
 
-        if ($status = $request->input('status')) {
+        // Base query for counts with program scope applied
+        $baseCountQuery = DuplicateFlag::query();
+        if ($programUpper) {
+            $baseCountQuery->where(function ($sub) use ($programUpper) {
+                $sub->whereHas('beneficiary.beneficiaryPrograms.program', function ($pq) use ($programUpper) {
+                    $pq->where('code', $programUpper);
+                })->orWhereHas('matchedBeneficiary.beneficiaryPrograms.program', function ($mq) use ($programUpper) {
+                    $mq->where('code', $programUpper);
+                });
+            });
+        }
+
+        // Distinct flag counts dynamically updated by program
+        $counts = [
+            'all' => (clone $baseCountQuery)->count(),
+            'first_name' => (clone $baseCountQuery)->where(function ($q) {
+                $q->where('match_type', 'first_name')
+                    ->orWhere('matched_fields', 'like', '%first_name%')
+                    ->orWhere('matched_fields', 'like', '%First Name%');
+            })->count(),
+            'surname' => (clone $baseCountQuery)->where(function ($q) {
+                $q->whereIn('match_type', ['surname', 'last_name'])
+                    ->orWhere('matched_fields', 'like', '%last_name%')
+                    ->orWhere('matched_fields', 'like', '%surname%')
+                    ->orWhere('matched_fields', 'like', '%Surname%')
+                    ->orWhere('matched_fields', 'like', '%Last Name%');
+            })->count(),
+            'address' => (clone $baseCountQuery)->where(function ($q) {
+                $q->where('household_match_flag', true)
+                    ->orWhereIn('match_type', ['address', 'household'])
+                    ->orWhere('matched_fields', 'like', '%address%')
+                    ->orWhere('matched_fields', 'like', '%purok%')
+                    ->orWhere('matched_fields', 'like', '%household%');
+            })->count(),
+            'resolved' => (clone $baseCountQuery)->whereIn('status', ['resolved', 'resolved_not_duplicate', 'overridden'])->count(),
+            'removed' => (clone $baseCountQuery)->where('status', 'resolved_duplicate')->count(),
+        ];
+
+        $query = DuplicateFlag::with(['beneficiary.beneficiaryPrograms.program', 'matchedBeneficiary.beneficiaryPrograms.program', 'reviewer']);
+
+        if ($programUpper) {
+            $query->where(function ($q) use ($programUpper) {
+                $q->whereHas('beneficiary.beneficiaryPrograms.program', function ($pq) use ($programUpper) {
+                    $pq->where('code', $programUpper);
+                })->orWhereHas('matchedBeneficiary.beneficiaryPrograms.program', function ($mq) use ($programUpper) {
+                    $mq->where('code', $programUpper);
+                });
+            });
+        }
+
+        // Determine current active filter tab
+        $filter = $request->input('filter');
+        if (! $filter) {
+            if ($request->input('status') === 'resolved_duplicate') {
+                $filter = 'removed';
+            } elseif ($request->input('status') === 'resolved' || $request->input('status') === 'overridden') {
+                $filter = 'resolved';
+            } elseif ($request->boolean('household')) {
+                $filter = 'address';
+            } elseif ($request->filled('match_type')) {
+                $filter = $request->input('match_type');
+            } else {
+                $filter = 'all';
+            }
+        }
+
+        if ($filter === 'first_name') {
+            $query->where(function ($q) {
+                $q->where('match_type', 'first_name')
+                    ->orWhere('matched_fields', 'like', '%first_name%')
+                    ->orWhere('matched_fields', 'like', '%First Name%');
+            });
+        } elseif ($filter === 'surname') {
+            $query->where(function ($q) {
+                $q->whereIn('match_type', ['surname', 'last_name'])
+                    ->orWhere('matched_fields', 'like', '%last_name%')
+                    ->orWhere('matched_fields', 'like', '%surname%')
+                    ->orWhere('matched_fields', 'like', '%Surname%')
+                    ->orWhere('matched_fields', 'like', '%Last Name%');
+            });
+        } elseif ($filter === 'address') {
+            $query->where(function ($q) {
+                $q->where('household_match_flag', true)
+                    ->orWhereIn('match_type', ['address', 'household'])
+                    ->orWhere('matched_fields', 'like', '%address%')
+                    ->orWhere('matched_fields', 'like', '%purok%')
+                    ->orWhere('matched_fields', 'like', '%household%');
+            });
+        } elseif ($filter === 'resolved') {
+            $query->whereIn('status', ['resolved', 'resolved_not_duplicate', 'overridden']);
+        } elseif ($filter === 'removed') {
+            $query->where('status', 'resolved_duplicate');
+        } elseif ($status = $request->input('status')) {
             if (in_array($status, ['overridden', 'resolved'])) {
                 $query->whereIn('status', ['overridden', 'resolved_not_duplicate', 'resolved_duplicate']);
             } else {
                 $query->where('status', $status);
             }
         } else {
-            // Default to showing pending flags first
+            // Default: show pending flags first
             $query->orderByRaw("CASE WHEN status = 'pending' THEN 1 ELSE 2 END");
         }
 
-        if ($request->boolean('household')) {
-            $query->where('household_match_flag', true);
-        }
-
         if ($matchType = $request->input('match_type')) {
-            $query->where('match_type', $matchType);
+            if (! in_array($filter, ['first_name', 'surname', 'address'])) {
+                $query->where('match_type', $matchType);
+            }
         }
 
         if ($search = $request->input('search')) {
@@ -46,7 +139,7 @@ class DuplicateController extends Controller
 
         $flags = $query->latest()->paginate(15)->withQueryString();
 
-        return view('duplicates.index', compact('flags'));
+        return view('duplicates.index', compact('flags', 'counts', 'filter'));
     }
 
     public function resolve(Request $request, DuplicateFlag $flag): RedirectResponse
