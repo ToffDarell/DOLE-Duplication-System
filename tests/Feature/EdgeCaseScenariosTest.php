@@ -119,7 +119,7 @@ test('enforces TUPAD household limit of one worker per household per cycle', fun
     $errors = $this->eligibilityService->validateEligibility($payload);
 
     expect($errors)->toHaveKey('household_limit');
-    expect($errors['household_limit'])->toContain('Household Limit Warning: A relative in this house is already enrolled in this TUPAD cycle.');
+    expect($errors['household_limit'])->toContain('House Number Limit Warning');
 });
 
 test('blocks simultaneous active enrollment across TUPAD and DILP within the same year', function () {

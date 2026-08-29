@@ -60,7 +60,7 @@ test('duplicate flags console loads successfully and displays flags', function (
         ->assertSee('Duplicate Resolution Console')
         ->assertSee('JOHN DARELL')
         ->assertSee('TOPE')
-        ->assertSee('Household Verification')
+        ->assertSee('House Number Verification')
         ->assertSee('50%');
 });
 

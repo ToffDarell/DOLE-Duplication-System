@@ -13,9 +13,11 @@ use App\Models\TupadProfile;
 use App\Services\DuplicateDetectionService;
 use App\Services\EligibilityService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -294,6 +296,12 @@ class BeneficiaryController extends Controller
     {
         $data = $request->validated();
         $existingBeneficiaryId = $request->input('existing_beneficiary_id');
+
+        // Standardise municipality casing so the dashboard GROUP BY charts don't
+        // split "VALENCIA CITY" and "Valencia City" into separate bars.
+        if (! empty($data['municipality'])) {
+            $data['municipality'] = Beneficiary::canonicalMunicipality($data['municipality']);
+        }
 
         // Handle Linking to Existing Master Profile
         if (! empty($existingBeneficiaryId)) {
@@ -683,6 +691,11 @@ class BeneficiaryController extends Controller
             'relationship_dependent' => ['nullable', 'string', 'max:100'],
         ]);
 
+        // Standardise municipality casing (see store()).
+        if (! empty($data['municipality'])) {
+            $data['municipality'] = Beneficiary::canonicalMunicipality($data['municipality']);
+        }
+
         $fullName = Beneficiary::buildFullName(
             $data['first_name'],
             $data['middle_name'] ?? null,
@@ -776,13 +789,13 @@ class BeneficiaryController extends Controller
         $beneficiary->delete();
 
         AuditLog::log([
-            'action' => 'delete',
+            'action' => 'archive',
             'model_type' => Beneficiary::class,
             'model_id' => $id,
-            'description' => "Permanently deleted beneficiary {$name}",
+            'description' => "Archived beneficiary {$name} (Soft Deleted)",
         ]);
 
-        return redirect()->route('beneficiaries.index')->with('success', "Beneficiary {$name} permanently deleted.");
+        return redirect()->route('beneficiaries.index')->with('success', "Beneficiary {$name} has been archived. You can view or restore it in the Archives page.");
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -814,13 +827,13 @@ class BeneficiaryController extends Controller
             $query->delete();
 
             AuditLog::log([
-                'action' => 'bulk_delete_all',
+                'action' => 'bulk_archive_all',
                 'model_type' => Beneficiary::class,
                 'model_id' => null,
-                'description' => "Permanently deleted all {$count} matching beneficiaries from database",
+                'description' => "Archived all {$count} matching beneficiaries from database",
             ]);
 
-            return redirect()->route('beneficiaries.index')->with('success', "Successfully deleted all {$count} matching beneficiaries from database.");
+            return redirect()->route('beneficiaries.index')->with('success', "Successfully archived all {$count} matching beneficiaries.");
         }
 
         $request->validate([
@@ -834,23 +847,223 @@ class BeneficiaryController extends Controller
         Beneficiary::whereIn('id', $ids)->delete();
 
         AuditLog::log([
-            'action' => 'bulk_delete',
+            'action' => 'bulk_archive',
             'model_type' => Beneficiary::class,
             'model_id' => null,
-            'description' => "Permanently deleted {$count} beneficiaries from database",
+            'description' => "Archived {$count} beneficiaries from database",
         ]);
 
-        return redirect()->route('beneficiaries.index')->with('success', "Successfully deleted {$count} selected beneficiaries from database.");
+        return redirect()->route('beneficiaries.index')->with('success', "Successfully archived {$count} selected beneficiaries.");
+    }
+
+    /**
+     * Dedicated Archives / Trash Page for soft-deleted beneficiaries.
+     */
+    public function archived(Request $request): View
+    {
+        $query = Beneficiary::onlyTrashed()
+            ->with(['beneficiaryPrograms.program', 'creator']);
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('government_id_number', 'like', "%{$search}%")
+                    ->orWhere('contact_number', 'like', "%{$search}%");
+            });
+        }
+
+        if ($programCode = $request->input('program')) {
+            $query->whereHas('beneficiaryPrograms.program', function ($q) use ($programCode) {
+                $q->where('code', $programCode);
+            });
+        }
+
+        if ($municipality = $request->input('municipality')) {
+            $query->where('municipality', $municipality);
+        }
+
+        $beneficiaries = $query->latest('deleted_at')->paginate(15)->withQueryString();
+        $programs = Program::all();
+        $municipalities = Beneficiary::withTrashed()->distinct()->whereNotNull('municipality')->pluck('municipality')->sort();
+
+        return view('beneficiaries.archived', compact('beneficiaries', 'programs', 'municipalities'));
+    }
+
+    /**
+     * Restore an archived (soft-deleted) beneficiary.
+     */
+    public function restore(int|string $id): RedirectResponse
+    {
+        $beneficiary = Beneficiary::onlyTrashed()->findOrFail($id);
+        $name = $beneficiary->full_name;
+
+        $beneficiary->restore();
+
+        AuditLog::log([
+            'action' => 'restore',
+            'model_type' => Beneficiary::class,
+            'model_id' => $beneficiary->id,
+            'description' => "Restored archived beneficiary {$name}",
+        ]);
+
+        return redirect()->route('beneficiaries.archived')->with('success', "Beneficiary {$name} restored successfully to active registry.");
+    }
+
+    /**
+     * Bulk restore archived beneficiaries — either the explicitly selected IDs,
+     * or every archived record matching the current Archives filters when
+     * "Select overall" was used.
+     */
+    public function bulkRestore(Request $request): RedirectResponse
+    {
+        if ($request->boolean('restore_all_matching')) {
+            $count = $this->archivedFilterQuery($request)->restore();
+
+            AuditLog::log([
+                'action' => 'bulk_restore_all',
+                'model_type' => Beneficiary::class,
+                'model_id' => null,
+                'description' => "Restored all {$count} matching archived beneficiaries to active registry",
+            ]);
+
+            return redirect()->route('beneficiaries.archived')->with('success', "Successfully restored all {$count} matching archived beneficiaries to active registry.");
+        }
+
+        $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $count = Beneficiary::onlyTrashed()->whereIn('id', $request->input('ids'))->restore();
+
+        AuditLog::log([
+            'action' => 'bulk_restore',
+            'model_type' => Beneficiary::class,
+            'model_id' => null,
+            'description' => "Restored {$count} archived beneficiaries to active registry",
+        ]);
+
+        return redirect()->route('beneficiaries.archived')->with('success', "Successfully restored {$count} beneficiaries to active registry.");
+    }
+
+    /**
+     * Permanently delete (force delete) a single archived beneficiary.
+     */
+    public function forceDelete(int|string $id): RedirectResponse
+    {
+        $beneficiary = Beneficiary::onlyTrashed()->findOrFail($id);
+        $name = $beneficiary->full_name;
+
+        // Delete dependent records first to maintain relational integrity
+        $beneficiary->beneficiaryPrograms()->delete();
+        $beneficiary->duplicateFlags()->delete();
+        $beneficiary->matchedDuplicateFlags()->delete();
+
+        $beneficiary->forceDelete();
+
+        AuditLog::log([
+            'action' => 'permanent_delete',
+            'model_type' => Beneficiary::class,
+            'model_id' => (int) $id,
+            'description' => "Permanently deleted beneficiary {$name} from database",
+        ]);
+
+        return redirect()->route('beneficiaries.archived')->with('success', "Beneficiary {$name} has been permanently deleted from the database.");
+    }
+
+    /**
+     * Bulk permanently delete (force delete) archived beneficiaries — either the
+     * explicitly selected IDs, or every archived record matching the current
+     * Archives filters when "Select overall" was used.
+     */
+    public function bulkForceDelete(Request $request): RedirectResponse
+    {
+        if ($request->boolean('delete_all_matching')) {
+            $beneficiaries = $this->archivedFilterQuery($request)->get();
+            $count = $this->purgeArchivedBeneficiaries($beneficiaries);
+
+            AuditLog::log([
+                'action' => 'bulk_permanent_delete_all',
+                'model_type' => Beneficiary::class,
+                'model_id' => null,
+                'description' => "Permanently deleted all {$count} matching archived beneficiaries from database",
+            ]);
+
+            return redirect()->route('beneficiaries.archived')->with('success', "Successfully permanently deleted all {$count} matching archived beneficiaries from the database.");
+        }
+
+        $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $beneficiaries = Beneficiary::onlyTrashed()->whereIn('id', $request->input('ids'))->get();
+        $count = $this->purgeArchivedBeneficiaries($beneficiaries);
+
+        AuditLog::log([
+            'action' => 'bulk_permanent_delete',
+            'model_type' => Beneficiary::class,
+            'model_id' => null,
+            'description' => "Permanently deleted {$count} archived beneficiaries from database",
+        ]);
+
+        return redirect()->route('beneficiaries.archived')->with('success', "Successfully permanently deleted {$count} beneficiaries from the database.");
+    }
+
+    /**
+     * Archived (soft-deleted) beneficiaries scoped to the Archives page filters
+     * (search / program / municipality). Shared by the "Select overall" bulk
+     * restore and permanent-delete actions.
+     */
+    private function archivedFilterQuery(Request $request): Builder
+    {
+        $query = Beneficiary::onlyTrashed();
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('government_id_number', 'like', "%{$search}%")
+                    ->orWhere('contact_number', 'like', "%{$search}%");
+            });
+        }
+
+        if ($programCode = $request->input('program')) {
+            $query->whereHas('beneficiaryPrograms.program', function ($q) use ($programCode) {
+                $q->where('code', $programCode);
+            });
+        }
+
+        if ($municipality = $request->input('municipality')) {
+            $query->where('municipality', $municipality);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Force-delete a set of archived beneficiaries and their dependent records.
+     *
+     * @param  Collection<int, Beneficiary>  $beneficiaries
+     * @return int Number of records purged
+     */
+    private function purgeArchivedBeneficiaries($beneficiaries): int
+    {
+        foreach ($beneficiaries as $beneficiary) {
+            $beneficiary->beneficiaryPrograms()->delete();
+            $beneficiary->duplicateFlags()->delete();
+            $beneficiary->matchedDuplicateFlags()->delete();
+            $beneficiary->forceDelete();
+        }
+
+        return $beneficiaries->count();
     }
 
     private function getBukidnonMunicipalities(): array
     {
-        return [
-            'Baungon', 'Cabanglasan', 'Damulog', 'Dangcagan', 'Don Carlos',
-            'Impasugong', 'Kadingilan', 'Kibawe', 'Kitaotao', 'Lantapan',
-            'Libona', 'Malaybalay City', 'Maramag', 'Manolo Fortich',
-            'Pangantucan', 'Quezon', 'San Fernando', 'Sumilao',
-            'Talakag', 'Valencia City',
-        ];
+        return Beneficiary::BUKIDNON_MUNICIPALITIES;
     }
 }

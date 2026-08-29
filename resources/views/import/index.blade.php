@@ -77,6 +77,16 @@
                     </div>
                 </div>
                 <p class="text-[10px] text-emerald-800 font-medium italic">You can double-check or adjust these row boundaries before starting the import.</p>
+
+                @if($bulkThreshold > 0)
+                <div x-show="(previewData?.total_rows_found || 0) >= {{ $bulkThreshold }}"
+                     class="rounded-xl border border-amber-300 bg-amber-50 p-2.5 text-[11px] font-semibold text-amber-900 flex items-start gap-2">
+                    <svg class="h-4 w-4 shrink-0 text-amber-600 mt-px" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    <span>Large file (≥ {{ number_format($bulkThreshold) }} rows): <span class="font-extrabold">fast bulk mode</span> inserts all rows in one batch, then runs the duplicate engine once at the end. Flagged rows still go to the Duplicate Resolution Console.</span>
+                </div>
+                @endif
             </div>
 
             {{-- Initial Info Box (when no file loaded yet) --}}
@@ -101,7 +111,7 @@
                     <li>Normalizes literal "N/A" strings to null</li>
                     <li>Trims all whitespace automatically</li>
                     <li>Computes age dynamically from DOB</li>
-                    <li>Runs instant duplicate engine on every row</li>
+                    <li>Runs the duplicate engine on every row (batched after insert for large files)</li>
                 </ul>
             </div>
 

@@ -667,13 +667,13 @@
                         </template>
                     </div>
                     <div>
-                        <h3 class="text-base font-extrabold text-slate-900" x-text="isReturningBeneficiary ? 'Existing Master Profile Found' : (isHouseholdLimit ? 'Household Limit Warning' : (isSameYearConflict ? 'Annual Limit / Duplicate Availment Detected' : (isEligibilityConflict ? 'Eligibility Restriction Detected' : 'Potential Duplicate Detected!')))"></h3>
+                        <h3 class="text-base font-extrabold text-slate-900" x-text="isReturningBeneficiary ? 'Existing Master Profile Found' : (isHouseholdLimit ? 'House Number / Address Match Warning' : (isSameYearConflict ? 'Annual Limit / Duplicate Availment Detected' : (isEligibilityConflict ? 'Eligibility Restriction Detected' : 'Potential Duplicate Detected!')))"></h3>
                         <p class="text-xs font-semibold text-slate-600 line-clamp-1">
                             <template x-if="isReturningBeneficiary">
                                 <span>Beneficiary record already exists. You can link this new availment.</span>
                             </template>
                             <template x-if="!isReturningBeneficiary && isHouseholdLimit">
-                                <span>Another resident at this exact address and barangay has already availed.</span>
+                                <span>Another resident at this exact House Number / address and barangay has already availed.</span>
                             </template>
                             <template x-if="!isReturningBeneficiary && isSameYearConflict && !isHouseholdLimit">
                                 <span>Beneficiary has already availed of this program for the selected calendar year.</span>
@@ -718,14 +718,14 @@
                     <div class="rounded-xl border border-rose-300 bg-rose-50 p-4 shadow-2xs">
                         <div class="flex items-start gap-3">
                             <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white font-extrabold text-base shadow-sm">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                             </div>
                             <div>
                                 <h4 class="text-xs font-black text-rose-950 uppercase tracking-wide">
-                                    Household Limit Warning
+                                    House Number / Address Limit Warning
                                 </h4>
                                 <p class="mt-1 text-xs font-semibold text-rose-900 leading-relaxed">
-                                    A relative or resident with the same physical address in this Barangay is already enrolled in this TUPAD cycle. Under DOLE guidelines, TUPAD assistance is limited to 1 worker per household per cycle.
+                                    A relative or resident with the same physical House Number / Address in this Barangay is already enrolled in this TUPAD cycle. Under DOLE guidelines, TUPAD assistance is limited to 1 worker per house number / family unit per cycle.
                                 </p>
                                 <p class="mt-1 text-xs font-medium text-rose-800">
                                     If this applicant represents a separate, independent family unit living in the same compound, an Admin or Validator may verify and approve with remarks below.
@@ -740,25 +740,18 @@
                     <div class="rounded-xl border border-rose-300 bg-rose-50 p-4 shadow-2xs">
                         <div class="flex items-start gap-3">
                             <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white font-extrabold text-base shadow-sm">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </div>
                             <div>
                                 <h4 class="text-xs font-black text-rose-950 uppercase tracking-wide">
-                                    Annual Limit: Already Availed for <span x-text="targetAvailmentYear"></span>
+                                    Annual Program Limit Detected
                                 </h4>
                                 <p class="mt-1 text-xs font-semibold text-rose-900 leading-relaxed">
-                                    This beneficiary has already availed of <span class="font-extrabold" x-text="selectedProgram"></span> for calendar year <span class="font-extrabold" x-text="targetAvailmentYear"></span>. Under standard DOLE guidelines, assistance is limited to once per calendar year unless applying under an active Calamity/Emergency Override.
+                                    This beneficiary already has a recorded availment for <span class="font-extrabold" x-text="targetAvailmentYear"></span> in this program. DOLE circulars limit regular participation to once per calendar year.
                                 </p>
-                                <div class="mt-3 flex items-center gap-2">
-                                    <input type="checkbox" id="modal_calamity_check" x-model="isCalamityOverride" class="h-4 w-4 rounded text-blue-700 focus:ring-blue-500">
-                                    <label for="modal_calamity_check" class="text-xs font-extrabold text-rose-950 cursor-pointer">
-                                        Apply Calamity / Disaster Emergency Override
-                                    </label>
-                                </div>
-                                <div x-show="isCalamityOverride" class="mt-2">
-                                    <input type="text" x-model="calamityRemarks" placeholder="Enter Calamity / Disaster declaration remarks (e.g. Typhoon / Flood relief)..."
-                                           class="w-full rounded-xl border border-rose-300 bg-white p-2.5 text-xs font-bold text-slate-900 focus:outline-none">
-                                </div>
+                                <p class="mt-1 text-xs font-medium text-rose-800">
+                                    In case of emergency calamity response (e.g. Typhoon/Disaster), check "Calamity / Emergency Override" in Availment Details to permit emergency re-enrollment.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -769,41 +762,37 @@
                     <div class="rounded-xl border border-rose-300 bg-rose-50 p-4 shadow-2xs">
                         <div class="flex items-start gap-3">
                             <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white font-extrabold text-base shadow-sm">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
                             </div>
                             <div>
                                 <h4 class="text-xs font-black text-rose-950 uppercase tracking-wide">
                                     Program Eligibility Restriction
                                 </h4>
-                                <p class="mt-1 text-xs font-semibold text-rose-900 leading-relaxed">
-                                    This registration does not meet DOLE program statutory guidelines:
+                                <p class="mt-1 text-xs font-semibold text-rose-900 leading-relaxed" x-text="eligibilityErrorMessage || 'The applicant does not meet standard eligibility requirements for this program.'"></p>
+                                <p class="mt-1 text-xs font-medium text-rose-800">
+                                    Please review program qualification rules (e.g. age limits, government employee exclusions, student enrollment rules).
                                 </p>
-                                <ul class="mt-2 space-y-1 text-xs font-bold text-rose-800">
-                                    <template x-for="(err, idx) in eligibilityErrorsList" :key="idx">
-                                        <li class="flex items-center gap-2">
-                                            <span class="inline-block h-1.5 w-1.5 rounded-full bg-rose-600 shrink-0"></span>
-                                            <span x-text="err"></span>
-                                        </li>
-                                    </template>
-                                </ul>
                             </div>
                         </div>
                     </div>
                 </template>
 
                 {{-- Same Name Record Detected Banner --}}
-                <template x-if="isSameNameDiffIdentity && !isReturningBeneficiary && !isSameYearConflict && !isHouseholdLimit">
+                <template x-if="isSameNameDiffIdentity && !isReturningBeneficiary && !isHouseholdLimit && !isSameYearConflict">
                     <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-2xs">
                         <div class="flex items-start gap-3">
-                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-600 text-white font-extrabold text-base shadow-sm">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white font-extrabold text-base shadow-sm">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
                             </div>
                             <div>
                                 <h4 class="text-xs font-black text-amber-950 uppercase tracking-wide">
-                                    Same Name Record Detected
+                                    Name Similarity / Sibling Warning (<span x-text="matchedScoreText"></span>)
                                 </h4>
                                 <p class="mt-1 text-xs font-semibold text-amber-900 leading-relaxed">
-                                    An existing beneficiary named "<strong class="font-black text-amber-950" x-text="existingBeneficiaryName || (duplicateMatches[0] ? duplicateMatches[0].matched_beneficiary_name : '')"></strong>" already exists in the system (DOB: <span class="font-mono font-bold text-amber-950" x-text="(existingDob || (duplicateMatches[0] ? duplicateMatches[0].existing_dob : 'N/A')).split('T')[0]"></span> vs Entered: <span class="font-mono font-bold text-amber-950" x-text="(inputDob || dob || 'N/A').split('T')[0]"></span>). Please verify if this is an encoding typo or two distinct individuals.
+                                    This applicant shares an identical or near-identical name with an existing registered beneficiary, but has a <strong>different Date of Birth or Address</strong>.
+                                </p>
+                                <p class="mt-1 text-xs font-medium text-amber-800">
+                                    If this is a sibling or distinct person with a coincidentally similar name, verify their valid government ID and approve below.
                                 </p>
                             </div>
                         </div>
@@ -811,27 +800,20 @@
                 </template>
 
                 <div class="space-y-3">
-                    <template x-for="match in duplicateMatches" :key="match.matched_beneficiary_id">
+                    <template x-for="match in duplicateMatches" :key="match.matched_beneficiary_id || match.id">
                         <div class="rounded-xl border p-4 shadow-2xs"
                              :class="match.is_returning_beneficiary ? 'border-blue-200 bg-blue-50/70' : ((isSameYearConflict || isHouseholdLimit) ? 'border-rose-200 bg-rose-50' : 'border-amber-200 bg-amber-50')">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <h4 class="font-extrabold text-slate-900 text-sm" x-text="match.matched_beneficiary ? match.matched_beneficiary.full_name : (match.matched_beneficiary_name || 'Matched Beneficiary')"></h4>
-                                    <p class="mt-0.5 text-xs font-semibold text-slate-700">
-                                        DOB: <span x-text="(match.matched_beneficiary ? (match.matched_beneficiary.date_of_birth || match.matched_beneficiary.dob) : (match.existing_dob || 'N/A')).split('T')[0]"></span> |
-                                        Brgy. <span x-text="match.matched_beneficiary ? match.matched_beneficiary.barangay : ''"></span>, <span x-text="match.matched_beneficiary ? match.matched_beneficiary.municipality : ''"></span>
-                                    </p>
-                                    <template x-if="match.last_availment">
-                                        <p class="mt-1 text-[11px] font-bold"
-                                           :class="(isSameYearConflict || isHouseholdLimit) ? 'text-rose-800' : 'text-blue-800'">
-                                            Availment History: <span x-text="match.last_availment"></span>
-                                        </p>
-                                    </template>
-                                </div>
-                                <span class="rounded-full px-3 py-1 text-xs font-extrabold text-white shadow-2xs shrink-0"
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-extrabold uppercase text-slate-800"
+                                      x-text="match.is_returning_beneficiary ? 'Existing Masterlist Record' : 'Potential Match in Database'"></span>
+                                <span class="rounded-full px-2.5 py-0.5 text-xs font-extrabold text-white"
                                       :class="match.is_returning_beneficiary ? 'bg-blue-700' : ((isSameYearConflict || isHouseholdLimit) ? 'bg-rose-600' : 'bg-amber-600')"
-                                      x-text="match.match_score + '% Match'"></span>
+                                      x-text="(match.match_score || 0) + '% Match'"></span>
                             </div>
+                            <p class="mt-2 text-sm font-extrabold text-slate-900" x-text="match.matched_beneficiary_name || match.full_name"></p>
+                            <p class="text-xs text-slate-600">DOB: <span class="font-bold text-slate-800" x-text="match.existing_dob || match.date_of_birth"></span></p>
+                            <p class="text-xs text-slate-600">House Number / Address: <span class="font-bold text-blue-900" x-text="match.existing_address || match.address || 'Not specified'"></span></p>
+                            <p class="text-xs text-slate-600">Barangay: <span class="font-semibold text-slate-800" x-text="(match.existing_barangay || match.barangay || '') + ', ' + (match.existing_municipality || match.municipality || '')"></span></p>
                         </div>
                     </template>
                 </div>
@@ -839,10 +821,10 @@
                 @hasanyrole('Admin|Validator')
                 <div x-show="!isReturningBeneficiary" class="pt-1">
                     <label class="mb-1.5 block text-xs font-bold text-slate-900">
-                        <span x-text="isHouseholdLimit ? 'Validator Household Verification Remarks (Required) *' : (isSameNameDiffIdentity ? 'Validator Verification Remarks (e.g., Verified distinct individual / sibling via ID) *' : (isSameYearConflict ? 'Validator / Calamity Override Remarks *' : 'Validator Remarks (Required to Approve) *'))"></span>
+                        <span x-text="isHouseholdLimit ? 'Validator House Number Verification Remarks (Required) *' : (isSameNameDiffIdentity ? 'Validator Verification Remarks (e.g., Verified distinct individual / sibling via ID) *' : (isSameYearConflict ? 'Validator / Calamity Override Remarks *' : 'Validator Remarks (Required to Approve) *'))"></span>
                     </label>
                     <textarea x-model="overrideRemarks" rows="2"
-                              :placeholder="isHouseholdLimit ? 'e.g., Verified separate family unit residing in separate structure in the same compound...' : (isSameNameDiffIdentity ? 'e.g., Verified distinct individual or sibling living in separate purok/home...' : 'State reason for approving/saving despite duplicate flag...')"
+                              :placeholder="isHouseholdLimit ? 'e.g., Verified separate family unit residing in separate structure / house number in the same compound...' : (isSameNameDiffIdentity ? 'e.g., Verified distinct individual or sibling living in separate purok/home...' : 'State reason for approving/saving despite duplicate flag...')"
                               class="w-full rounded-xl border border-slate-300 p-3 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none"></textarea>
                 </div>
                 @endhasanyrole
@@ -888,7 +870,7 @@
                 @hasanyrole('Admin|Validator')
                 <template x-if="!isReturningBeneficiary">
                     <button @click="forceSave" type="button" class="rounded-xl bg-amber-600 px-4 py-2 text-xs font-extrabold text-white shadow-md hover:bg-amber-700 transition cursor-pointer">
-                        <span x-text="isHouseholdLimit ? 'Verify Separate Household Unit & Approve' : (isSameNameDiffIdentity ? 'Verify as Distinct Person & Save' : 'Override & Proceed Registration')"></span>
+                        <span x-text="isHouseholdLimit ? 'Verify Separate House Number Unit & Approve' : (isSameNameDiffIdentity ? 'Verify as Distinct Person & Save' : 'Override & Proceed Registration')"></span>
                     </button>
                 </template>
                 @endhasanyrole

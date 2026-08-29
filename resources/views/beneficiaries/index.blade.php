@@ -76,22 +76,31 @@
             </a>
             @endhasanyrole
 
-            {{-- Export Buttons --}}
-            <a href="{{ route('export.csv', request()->query()) }}" class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50">
-                <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-                Export CSV
+            {{-- Archives Page Link --}}
+            <a href="{{ route('beneficiaries.archived') }}" class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50">
+                <svg class="h-4 w-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+                </svg>
+                Archives / Trash
+                @php $trashCount = \App\Models\Beneficiary::onlyTrashed()->count(); @endphp
+                @if($trashCount > 0)
+                    <span class="rounded-full bg-amber-100 border border-amber-300 px-2 py-0.2 text-[10px] font-black text-amber-800">{{ $trashCount }}</span>
+                @endif
             </a>
 
-            <a href="{{ route('export.pdf', request()->query()) }}" class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50">
-                <svg class="h-4 w-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
-                Export PDF
+            {{-- Dedicated Reports & Export Center Link (Option 1) --}}
+            <a href="{{ route('reports.index', request()->query()) }}" class="flex items-center gap-2 rounded-xl border border-blue-300 bg-blue-50/90 hover:bg-blue-100 text-blue-900 px-4 py-2.5 text-sm font-extrabold shadow-2xs transition">
+                <svg class="h-4 w-4 text-blue-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+                </svg>
+                <span>Generate Official Report →</span>
             </a>
         </div>
 
-        <p class="text-xs font-semibold text-slate-600">Showing <span class="font-extrabold text-slate-900">{{ $beneficiaries->total() }}</span> records</p>
+        <p class="text-xs font-semibold text-slate-600">Showing <span class="font-extrabold text-slate-900">{{ $beneficiaries->total() }}</span> active records</p>
     </div>
 
-    {{-- Bulk Action Confirmation Bar --}}
+    {{-- Bulk Archive Action Confirmation Bar --}}
     @hasanyrole('Admin|Encoder')
     <form action="{{ route('beneficiaries.bulk-delete') }}" method="POST"
           x-show="selected.length > 0"
@@ -101,13 +110,13 @@
           @submit.prevent="
               const countText = selectOverall ? 'ALL {{ $beneficiaries->total() }} matching' : selected.length;
               window.confirmAction({
-                  title: 'Delete Beneficiary Records',
-                  message: 'Are you sure you want to delete ' + countText + ' beneficiary record(s)? This action CANNOT be undone.',
-                  confirmText: 'Yes, Delete ' + countText + ' Record(s)',
-                  variant: 'danger'
+                  title: 'Archive Beneficiary Records',
+                  message: 'Are you sure you want to archive ' + countText + ' beneficiary record(s)? Archived records can be restored at any time from the Archives page.',
+                  confirmText: 'Yes, Archive ' + countText + ' Record(s)',
+                  variant: 'warning'
               }).then(confirmed => { if (confirmed) $el.submit(); });
           "
-          class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm" style="display: none;">
+          class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm" style="display: none;">
         @csrf
 
         <input type="hidden" name="delete_all_matching" :value="selectOverall ? '1' : '0'">
@@ -115,17 +124,17 @@
         <input type="hidden" name="program" value="{{ request('program') }}">
         <input type="hidden" name="municipality" value="{{ request('municipality') }}">
 
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3 text-xs font-extrabold text-red-900">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 text-xs font-extrabold text-amber-900">
             <div class="flex items-center gap-2">
-                <svg class="h-5 w-5 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2.25 2.25 0 0115.938 21H8.062a2.25 2.25 0 01-2.244-2.058L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                <span x-show="!selectOverall"><span x-text="selected.length" class="text-sm font-black"></span> record(s) on this page selected.</span>
-                <span x-show="selectOverall" class="text-sm font-black text-red-700">All {{ $beneficiaries->total() }} matching beneficiaries in database selected!</span>
+                <svg class="h-5 w-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
+                <span x-show="!selectOverall"><span x-text="selected.length" class="text-sm font-black"></span> record(s) on this page selected for archiving.</span>
+                <span x-show="selectOverall" class="text-sm font-black text-amber-700">All {{ $beneficiaries->total() }} matching beneficiaries in database selected for archiving!</span>
             </div>
 
             @if($beneficiaries->total() > $beneficiaries->count())
             <div class="flex items-center">
                 <button type="button" x-show="selectAll && !selectOverall" @click="selectOverall = true"
-                        class="rounded-lg bg-red-100 hover:bg-red-200 px-3 py-1 text-xs font-extrabold text-red-900 border border-red-300 transition cursor-pointer">
+                        class="rounded-lg bg-amber-100 hover:bg-amber-200 px-3 py-1 text-xs font-extrabold text-amber-900 border border-amber-300 transition cursor-pointer">
                     Select overall (All {{ $beneficiaries->total() }} beneficiaries)
                 </button>
                 <button type="button" x-show="selectOverall" @click="selectOverall = false"
@@ -140,8 +149,8 @@
             <input type="hidden" name="ids[]" :value="id">
         </template>
 
-        <button type="submit" class="rounded-xl bg-red-600 hover:bg-red-700 px-4 py-2 text-xs font-extrabold text-white shadow-sm transition cursor-pointer">
-            Delete Selected Records
+        <button type="submit" class="rounded-xl bg-amber-600 hover:bg-amber-700 px-4 py-2 text-xs font-extrabold text-white shadow-sm transition cursor-pointer">
+            Archive Selected Records
         </button>
     </form>
     @endhasanyrole
@@ -282,11 +291,11 @@
                                     <a href="{{ route('beneficiaries.edit', $b) }}" class="rounded-lg p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900" title="Edit">
                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
                                     </a>
-                                    <form action="{{ route('beneficiaries.destroy', $b) }}" method="POST" data-confirm="Are you sure you want to delete beneficiary {{ addslashes($b->full_name) }}?" data-confirm-title="Delete Beneficiary" data-confirm-btn="Yes, Delete Record" class="inline">
+                                    <form action="{{ route('beneficiaries.destroy', $b) }}" method="POST" data-confirm="Are you sure you want to archive beneficiary {{ addslashes($b->full_name) }}? It will be moved to Archives and can be restored at any time." data-confirm-title="Archive Beneficiary" data-confirm-btn="Yes, Archive Record" class="inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="rounded-lg p-1.5 text-red-600 hover:bg-red-50 hover:text-red-800 transition cursor-pointer" title="Delete Beneficiary">
-                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                                        <button type="submit" class="rounded-lg p-1.5 text-amber-600 hover:bg-amber-50 hover:text-amber-800 transition cursor-pointer" title="Archive Beneficiary">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
                                         </button>
                                     </form>
                                     @endhasanyrole

@@ -93,7 +93,7 @@ class EligibilityService
                             ->exists();
 
                         if ($hasHouseholdAvailment) {
-                            $errors['household_limit'] = 'Household Limit Warning: A relative in this house is already enrolled in this TUPAD cycle.';
+                            $errors['household_limit'] = 'House Number Limit Warning: A relative or resident with this House Number / Address is already enrolled in this TUPAD cycle.';
                         }
                     }
                 }

@@ -111,6 +111,13 @@
                     <input type="number" name="tupad_max_days" value="{{ old('tupad_max_days', $settings['tupad_max_days']) }}" required min="1" max="30"
                            class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-800 focus:outline-none">
                 </div>
+
+                <div class="md:col-span-3">
+                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Fast Bulk Import Threshold (rows) *</label>
+                    <input type="number" name="bulk_import_threshold" value="{{ old('bulk_import_threshold', $settings['bulk_import_threshold']) }}" required min="0" max="100000"
+                           class="w-full max-w-xs rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-800 focus:outline-none">
+                    <p class="mt-1 text-[11px] font-semibold text-slate-500">Imports with at least this many rows insert in one fast batch and run the duplicate engine once at the end instead of per row. Set to <span class="font-bold">0</span> to always use the per-row path.</p>
+                </div>
             </div>
         </div>
 

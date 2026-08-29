@@ -11,11 +11,10 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="flex min-h-full flex-col justify-center bg-gradient-to-br from-slate-100 via-blue-50/50 to-slate-200 font-sans text-slate-900 antialiased selection:bg-blue-700 selection:text-white relative overflow-hidden">
+<body class="flex min-h-full flex-col justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 font-sans text-slate-900 antialiased selection:bg-blue-800 selection:text-white relative overflow-hidden">
     {{-- Soft DOLE Ambient Glow Background Elements --}}
     <div class="pointer-events-none absolute inset-0 overflow-hidden">
         <div class="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-blue-600/10 blur-3xl"></div>
-        <div class="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-amber-500/15 blur-3xl"></div>
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-blue-400/5 blur-3xl"></div>
     </div>
 
@@ -26,7 +25,7 @@
                 <img src="{{ asset('logo dole.png') }}" alt="DOLE Official Logo" class="h-20 w-20 object-contain rounded-xl bg-white">
             </div>
             <h2 class="mt-4 text-2xl font-black tracking-tight text-slate-900">DOLE Bukidnon</h2>
-            <p class="mt-1 text-xs font-bold uppercase tracking-wider text-blue-700">Duplicate Detection System</p>
+            <p class="mt-1 text-xs font-bold uppercase tracking-wider text-blue-800">Duplicate Detection System</p>
         </div>
 
         {{-- Login Card --}}
@@ -51,22 +50,22 @@
                     <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Email Address</label>
                     <input type="email" name="email" value="{{ old('email') }}" required autofocus
                            placeholder="staff@dole-bukidnon.gov.ph"
-                           class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition focus:border-blue-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-700/20">
+                           class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition focus:border-blue-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-800/20">
                 </div>
 
                 <div x-data="{ showPass: false }">
                     <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Password</label>
                     <div class="relative">
                         <input :type="showPass ? 'text' : 'password'" name="password" required placeholder="••••••••"
-                               class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-11 text-sm text-slate-900 placeholder-slate-400 transition focus:border-blue-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-700/20">
-                        <button type="button" @click="showPass = !showPass" class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-blue-700 focus:outline-none transition cursor-pointer" tabindex="-1" aria-label="Toggle password visibility">
+                               class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-11 text-sm text-slate-900 placeholder-slate-400 transition focus:border-blue-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-800/20">
+                        <button type="button" @click="showPass = !showPass" class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-blue-800 focus:outline-none transition cursor-pointer" tabindex="-1" aria-label="Toggle password visibility">
                             {{-- Eye icon (Hidden state) --}}
                             <svg x-show="!showPass" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                             {{-- Eye slash icon (Visible state) --}}
-                            <svg x-show="showPass" x-cloak class="h-5 w-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <svg x-show="showPass" x-cloak class="h-5 w-5 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
                             </svg>
                         </button>
@@ -75,13 +74,13 @@
 
                 <div class="flex items-center justify-between text-xs pt-0.5">
                     <label class="flex items-center gap-2 cursor-pointer text-slate-600 font-semibold select-none">
-                        <input type="checkbox" name="remember" class="rounded border-slate-300 bg-slate-50 text-blue-700 focus:ring-blue-700/20">
+                        <input type="checkbox" name="remember" class="rounded border-slate-300 bg-slate-50 text-blue-800 focus:ring-blue-800/20">
                         Remember me
                     </label>
                 </div>
 
                 <button type="submit"
-                        class="w-full rounded-xl bg-gradient-to-r from-blue-700 via-blue-800 to-blue-900 px-4 py-3 text-sm font-extrabold text-white shadow-lg shadow-blue-700/25 transition-all duration-200 hover:shadow-xl hover:from-blue-800 hover:to-blue-950 hover:scale-[1.01] active:scale-[0.99]">
+                        class="w-full rounded-xl bg-blue-800 hover:bg-blue-900 px-4 py-3 text-sm font-extrabold text-white shadow-lg shadow-blue-800/25 transition-all duration-200 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] cursor-pointer">
                     Sign In to Portal
                 </button>
             </form>

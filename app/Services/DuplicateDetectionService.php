@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Beneficiary;
 use App\Models\DuplicateFlag;
 use App\Models\SystemSetting;
+use Illuminate\Support\Collection;
 
 class DuplicateDetectionService
 {
@@ -27,16 +28,23 @@ class DuplicateDetectionService
      *
      * @param  array  $data  Beneficiary input data (must include 'program_code' and 'availment_year' for cross-program checks)
      * @param  int|null  $excludeId  ID of beneficiary to exclude (for update checks)
+     * @param  Collection<int, Beneficiary>|null  $candidates  Pre-loaded candidate set (with beneficiaryPrograms.program).
+     *                                                         Pass this to avoid re-querying every existing beneficiary on
+     *                                                         each call — e.g. a batched import scan.
      * @return array{has_duplicates: bool, flags: array, is_exact: bool, max_score: int, cross_program_conflicts: array}
      */
-    public function checkDuplicates(array $data, ?int $excludeId = null): array
+    public function checkDuplicates(array $data, ?int $excludeId = null, ?Collection $candidates = null): array
     {
-        $query = Beneficiary::with(['beneficiaryPrograms.program']);
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
-        }
+        if ($candidates === null) {
+            $query = Beneficiary::with(['beneficiaryPrograms.program']);
+            if ($excludeId) {
+                $query->where('id', '!=', $excludeId);
+            }
 
-        $candidates = $query->get();
+            $candidates = $query->get();
+        } elseif ($excludeId) {
+            $candidates = $candidates->where('id', '!=', $excludeId)->values();
+        }
         $matches = [];
         $maxScore = 0;
         $hasExact = false;
@@ -467,9 +475,10 @@ class DuplicateDetectionService
      *
      * @param  array  $data  Beneficiary input data
      * @param  int|null  $excludeId  ID to exclude (for update checks)
+     * @param  Collection<int, Beneficiary>|null  $candidates  Pre-loaded candidate set; filtered in memory instead of re-querying.
      * @return array{has_household_flags: bool, flags: array}
      */
-    public function checkHouseholdDuplicates(array $data, ?int $excludeId = null): array
+    public function checkHouseholdDuplicates(array $data, ?int $excludeId = null, ?Collection $candidates = null): array
     {
         $programCode = strtoupper($data['program_code'] ?? '');
 
@@ -488,20 +497,33 @@ class DuplicateDetectionService
             return ['has_household_flags' => false, 'flags' => []];
         }
 
-        // Query candidates: same surname + same barangay + enrolled in TUPAD same year
-        $query = Beneficiary::with(['beneficiaryPrograms.program'])
-            ->whereRaw('LOWER(TRIM(last_name)) = ?', [$inputLastName])
-            ->whereRaw('LOWER(TRIM(barangay)) = ?', [$inputBrgy]);
+        // Candidates: same surname + same barangay, different first name.
+        if ($candidates === null) {
+            $query = Beneficiary::with(['beneficiaryPrograms.program'])
+                ->whereRaw('LOWER(TRIM(last_name)) = ?', [$inputLastName])
+                ->whereRaw('LOWER(TRIM(barangay)) = ?', [$inputBrgy]);
 
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
+            if ($excludeId) {
+                $query->where('id', '!=', $excludeId);
+            }
+
+            // Exclude records where the first name is identical (those are identity
+            // duplicates handled by checkDuplicates, not household flags)
+            $query->whereRaw('LOWER(TRIM(first_name)) != ?', [$inputFirstName]);
+
+            $candidates = $query->get();
+        } else {
+            $candidates = $candidates->filter(function ($candidate) use ($inputLastName, $inputBrgy, $inputFirstName, $excludeId) {
+                if ($excludeId && (int) $candidate->id === $excludeId) {
+                    return false;
+                }
+
+                return mb_strtolower(trim((string) $candidate->last_name)) === $inputLastName
+                    && mb_strtolower(trim((string) $candidate->barangay)) === $inputBrgy
+                    && mb_strtolower(trim((string) $candidate->first_name)) !== $inputFirstName;
+            })->values();
         }
 
-        // Exclude records where the first name is identical (those are identity
-        // duplicates handled by checkDuplicates, not household flags)
-        $query->whereRaw('LOWER(TRIM(first_name)) != ?', [$inputFirstName]);
-
-        $candidates = $query->get();
         $flags = [];
 
         foreach ($candidates as $candidate) {
@@ -524,10 +546,10 @@ class DuplicateDetectionService
             $matchedFields['household_program'] = "Both enrolled in TUPAD for calendar year {$inputYear}";
 
             if ($addressesMatch) {
-                // Same physical address → likely same household → higher score
+                // Same physical address → likely same house number → higher score
                 $score = 65;
                 $matchType = 'medium';
-                $matchedFields['household_address'] = "SAME ADDRESS: Both records list identical address \"{$candidate->address}\" — likely SAME household.";
+                $matchedFields['household_address'] = "SAME ADDRESS: Both records list identical address \"{$candidate->address}\" — likely SAME house number.";
             } else {
                 // Different address or unspecified → medium score (50%)
                 $score = 50;
@@ -538,14 +560,14 @@ class DuplicateDetectionService
                 } elseif (empty($inputAddress) || empty($candAddress)) {
                     $newAddr = ! empty($inputAddress) ? ($data['address'] ?? '') : '(not specified)';
                     $existAddr = ! empty($candAddress) ? $candidate->address : '(not specified)';
-                    $matchedFields['household_address'] = "Incomplete address details: New=\"{$newAddr}\" vs Existing=\"{$existAddr}\" — Sitio/House No. needed to confirm separate households.";
+                    $matchedFields['household_address'] = "Incomplete address details: New=\"{$newAddr}\" vs Existing=\"{$existAddr}\" — Sitio/House No. needed to confirm separate house numbers.";
                 } else {
                     $rawNew = $data['address'] ?? '';
-                    $matchedFields['household_address'] = "Different addresses detected: New=\"{$rawNew}\" vs Existing=\"{$candidate->address}\" — verify if truly separate households.";
+                    $matchedFields['household_address'] = "Different addresses detected: New=\"{$rawNew}\" vs Existing=\"{$candidate->address}\" — verify if truly separate house numbers.";
                 }
             }
 
-            $matchedFields['household_action'] = 'HOUSEHOLD VERIFICATION NEEDED: Validator must confirm separate residency (e.g., Barangay Certificate, distinct Sitio/House Number).';
+            $matchedFields['household_action'] = 'HOUSE NUMBER VERIFICATION NEEDED: Validator must confirm separate residency (e.g., Barangay Certificate, distinct Sitio/House Number).';
 
             $flags[] = [
                 'matched_beneficiary' => $candidate,

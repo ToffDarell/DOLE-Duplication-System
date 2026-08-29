@@ -12,11 +12,20 @@ class SystemSetting extends Model
         'description',
     ];
 
+    /**
+     * Request-scoped cache of resolved setting values. `false` marks a key that
+     * was looked up and does not exist, so repeated reads (e.g. the duplicate
+     * engine running once per imported row) don't re-hit the database.
+     *
+     * @var array<string, string|null|false>
+     */
+    private static array $cache = [];
+
     public static function get(string $key, mixed $default = null): mixed
     {
-        $setting = static::where('key', $key)->first();
+        $cached = self::$cache[$key] ??= static::query()->where('key', $key)->value('value') ?? false;
 
-        return $setting !== null ? $setting->value : $default;
+        return $cached === false ? $default : $cached;
     }
 
     public static function set(string $key, mixed $value, ?string $description = null): void
@@ -25,5 +34,15 @@ class SystemSetting extends Model
             ['key' => $key],
             ['value' => $value, 'description' => $description]
         );
+
+        unset(self::$cache[$key]);
+    }
+
+    /**
+     * Drop the in-memory cache (used between tests).
+     */
+    public static function flushCache(): void
+    {
+        self::$cache = [];
     }
 }

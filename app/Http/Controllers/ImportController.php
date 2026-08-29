@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Imports\BeneficiariesImport;
 use App\Models\ImportLog;
+use App\Models\SystemSetting;
 use App\Services\BeneficiaryImportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -20,8 +21,9 @@ class ImportController extends Controller
     public function index(): View
     {
         $logs = ImportLog::with('user')->latest()->paginate(10);
+        $bulkThreshold = (int) SystemSetting::get('bulk_import_threshold', 600);
 
-        return view('import.index', compact('logs'));
+        return view('import.index', compact('logs', 'bulkThreshold'));
     }
 
     /**

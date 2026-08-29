@@ -6,6 +6,7 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryProgram;
 use App\Models\ImportLog;
 use App\Models\Program;
+use App\Models\SystemSetting;
 use App\Models\TupadProfile;
 use App\Services\BeneficiaryImportService;
 use App\Services\DuplicateDetectionService;
@@ -104,174 +105,19 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
         $effectiveStartRow = $this->customStartRow ?? $detection['start_row'];
         $effectiveEndRow = ($this->customEndRow !== null && $this->customEndRow <= $highestRow) ? $this->customEndRow : $highestRow;
 
-        $imported = 0;
-        $failed = 0;
-        $consecutiveEmpty = 0;
-        $errors = [];
+        // 2. Choose a processing strategy. Large masterlists use a batched path
+        //    that inserts rows first and runs the duplicate engine once at the
+        //    end — instead of scanning the whole table on every single row.
+        $estimatedRows = max(0, $effectiveEndRow - $effectiveStartRow + 1);
+        $bulkThreshold = (int) SystemSetting::get('bulk_import_threshold', 600);
+        $useBulkMode = $bulkThreshold > 0 && $estimatedRows >= $bulkThreshold;
 
-        // 2. Data loop starting immediately after detected header
-        for ($row = $effectiveStartRow; $row <= $effectiveEndRow; $row++) {
-            // Check footer text or non-beneficiary boundary
-            if ($this->isFooterRow($worksheet, $row)) {
-                break;
-            }
-
-            $lastNameRaw = $this->getCellValue($worksheet, $columnMap, 'last_name', $row, 'B');
-            $firstNameRaw = $this->getCellValue($worksheet, $columnMap, 'first_name', $row, 'C');
-
-            $lastName = $this->cleanString($lastNameRaw);
-            $firstName = $this->cleanString($firstNameRaw);
-
-            // Stop reading on empty rows (graceful handling for 1 to 3 rows or small datasets)
-            if (empty($lastName) && empty($firstName)) {
-                $consecutiveEmpty++;
-                if ($consecutiveEmpty >= 3) {
-                    break;
-                }
-
-                continue;
-            }
-
-            // Skip repeated page header rows
-            if ($this->isHeaderRow($lastName, $firstName)) {
-                continue;
-            }
-
-            $consecutiveEmpty = 0;
-            $importLog->increment('total_rows');
-
-            try {
-                if (empty($lastName) || empty($firstName)) {
-                    throw new Exception('Beneficiary Last Name and First Name are required');
-                }
-
-                $middleName = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'middle_name', $row, 'D'));
-                $suffix = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'suffix', $row, 'E'));
-
-                // Date of Birth & Age Calculation
-                $dobRaw = $this->getCellValue($worksheet, $columnMap, 'date_of_birth', $row, 'F');
-                $dob = $this->parseDate($dobRaw);
-                if (! $dob) {
-                    throw new Exception("Invalid or missing Date of Birth: '".($dobRaw ?? 'blank')."'");
-                }
-
-                $age = $dob->age;
-                $isSenior = $age >= 60;
-
-                // Sex normalization
-                $sexRaw = strtolower((string) $this->getCellValue($worksheet, $columnMap, 'sex', $row, 'Q'));
-                $sex = str_starts_with(trim($sexRaw), 'f') ? 'Female' : 'Male';
-
-                // Normalized fields with "N/A" fallback for empty cells
-                $civilStatus = $this->fallbackNA($this->normalizeCivilStatus($this->cleanString($this->getCellValue($worksheet, $columnMap, 'civil_status', $row, 'R'))));
-                $govIdType = $this->fallbackNA($this->normalizeGovIdType($this->cleanString($this->getCellValue($worksheet, $columnMap, 'government_id_type', $row, 'K'))));
-                $govIdNumber = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'government_id_number', $row, 'L')));
-                $contactNumber = $this->fallbackNA($this->normalizeContact($this->getCellValue($worksheet, $columnMap, 'contact_number', $row, 'M')));
-
-                $barangay = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'barangay', $row, 'G')), 'Central');
-                $municipality = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'municipality', $row, 'H')), 'Pangantucan');
-                $province = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'province', $row, 'I')), 'Bukidnon');
-                $district = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'district', $row, 'J'));
-                $address = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'address', $row, ''));
-
-                // TUPAD Specific Fields
-                $epayment = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'epayment_account_no', $row, 'N')));
-                $benType = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'beneficiary_type', $row, 'O')));
-                $occupation = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'occupation', $row, 'P')));
-                $monthlyIncome = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'average_monthly_income', $row, 'T')));
-                $dependentName = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'dependent_name', $row, 'U')));
-                $dependentRel = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'dependent_relationship', $row, 'V')));
-
-                $payload = [
-                    'first_name' => $firstName,
-                    'middle_name' => $middleName,
-                    'last_name' => $lastName,
-                    'suffix' => $suffix,
-                    'date_of_birth' => $dob->format('Y-m-d'),
-                    'sex' => $sex,
-                    'civil_status' => $civilStatus,
-                    'government_id_type' => $govIdType,
-                    'government_id_number' => $govIdNumber,
-                    'contact_number' => $contactNumber,
-                    'address' => $address,
-                    'barangay' => $barangay,
-                    'municipality' => $municipality,
-                    'province' => $province,
-                    'district' => $district,
-                    'program_code' => $this->programCode,
-                    'availment_year' => (int) date('Y'),
-                ];
-
-                // Check Duplicates & Household match
-                $dupCheck = $this->duplicateService->checkDuplicates($payload);
-                $householdCheck = $this->duplicateService->checkHouseholdDuplicates($payload);
-
-                DB::transaction(function () use ($payload, $firstName, $middleName, $lastName, $suffix, $dob, $isSenior, $program, $province, $district, $epayment, $benType, $occupation, $monthlyIncome, $dependentName, $dependentRel, $dupCheck, $householdCheck) {
-                    $fullName = Beneficiary::buildFullName($firstName, $middleName, $lastName, $suffix);
-
-                    $beneficiary = Beneficiary::create([
-                        'full_name' => $fullName,
-                        'first_name' => $firstName,
-                        'middle_name' => $middleName,
-                        'last_name' => $lastName,
-                        'suffix' => $suffix,
-                        'date_of_birth' => $dob->format('Y-m-d'),
-                        'sex' => $payload['sex'],
-                        'civil_status' => $payload['civil_status'],
-                        'government_id_type' => $payload['government_id_type'],
-                        'government_id_number' => $payload['government_id_number'],
-                        'contact_number' => $payload['contact_number'],
-                        'address' => $payload['address'],
-                        'barangay' => $payload['barangay'],
-                        'municipality' => $payload['municipality'],
-                        'province' => $province,
-                        'district' => $district,
-                        'is_senior_citizen' => $isSenior,
-                        'created_by' => auth()->id(),
-                    ]);
-
-                    $hasFlags = $dupCheck['has_duplicates'] || $householdCheck['has_household_flags'];
-                    $beneficiaryProgram = BeneficiaryProgram::create([
-                        'beneficiary_id' => $beneficiary->id,
-                        'program_id' => $program->id,
-                        'availment_year' => (int) date('Y'),
-                        'status' => $hasFlags ? 'pending' : 'approved',
-                    ]);
-
-                    if ($program->code === 'TUPAD') {
-                        TupadProfile::create([
-                            'beneficiary_program_id' => $beneficiaryProgram->id,
-                            'project_location_barangay' => $payload['barangay'],
-                            'project_location_municipality' => $payload['municipality'],
-                            'project_location_province' => $province,
-                            'project_location_district' => $district,
-                            'epayment_account_no' => $epayment,
-                            'beneficiary_type' => $benType,
-                            'occupation' => $occupation,
-                            'average_monthly_income' => $monthlyIncome,
-                            'dependent_name' => $dependentName,
-                            'dependent_relationship' => $dependentRel,
-                        ]);
-                    }
-
-                    if ($dupCheck['has_duplicates']) {
-                        $this->duplicateService->recordDuplicateFlags($beneficiary, $dupCheck['flags']);
-                    }
-
-                    if ($householdCheck['has_household_flags']) {
-                        $this->duplicateService->recordDuplicateFlags($beneficiary, $householdCheck['flags']);
-                    }
-                });
-
-                $imported++;
-            } catch (\Throwable $e) {
-                $failed++;
-                $errors[] = [
-                    'row' => $row,
-                    'name' => "{$lastName}, {$firstName}",
-                    'error' => $e->getMessage(),
-                ];
-            }
+        $extraLog = [];
+        if ($useBulkMode) {
+            [$imported, $failed, $errors, $note] = $this->processRowsBulk($importLog, $worksheet, $program, $columnMap, $effectiveStartRow, $effectiveEndRow);
+            $extraLog[] = ['info' => $note];
+        } else {
+            [$imported, $failed, $errors] = $this->processRowsStandard($importLog, $worksheet, $program, $columnMap, $effectiveStartRow, $effectiveEndRow);
         }
 
         $spreadsheet->disconnectWorksheets();
@@ -282,10 +128,520 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
             'status' => $status,
             'imported_rows' => $imported,
             'failed_rows' => $failed,
-            'error_log' => $errors,
+            'error_log' => array_merge($extraLog, $errors),
         ]);
 
         return $importLog;
+    }
+
+    /**
+     * Original one-row-at-a-time path: duplicate scan + insert per row.
+     * Used for normal-sized masterlists (below the bulk threshold).
+     *
+     * @return array{0: int, 1: int, 2: array<int, array<string, mixed>>}
+     */
+    private function processRowsStandard(ImportLog $importLog, Worksheet $worksheet, Program $program, array $columnMap, int $startRow, int $endRow): array
+    {
+        $imported = 0;
+        $failed = 0;
+        $consecutiveEmpty = 0;
+        $errors = [];
+
+        for ($row = $startRow; $row <= $endRow; $row++) {
+            $parsed = $this->parseRow($worksheet, $columnMap, $row);
+
+            if ($parsed['status'] === 'footer') {
+                break;
+            }
+
+            if ($parsed['status'] === 'header') {
+                continue;
+            }
+
+            if ($parsed['status'] === 'empty') {
+                if (++$consecutiveEmpty >= 3) {
+                    break;
+                }
+
+                continue;
+            }
+
+            $consecutiveEmpty = 0;
+            $importLog->increment('total_rows');
+
+            if ($parsed['status'] === 'error') {
+                $failed++;
+                $errors[] = ['row' => $row, 'name' => "{$parsed['last_name']}, {$parsed['first_name']}", 'error' => $parsed['error']];
+
+                continue;
+            }
+
+            try {
+                $payload = $parsed['payload'];
+                $dupCheck = $this->duplicateService->checkDuplicates($payload);
+                $householdCheck = $this->duplicateService->checkHouseholdDuplicates($payload);
+
+                DB::transaction(function () use ($parsed, $program, $dupCheck, $householdCheck) {
+                    $this->persistRow($parsed, $program, $dupCheck, $householdCheck);
+                });
+
+                $imported++;
+            } catch (\Throwable $e) {
+                $failed++;
+                $errors[] = ['row' => $row, 'name' => "{$parsed['payload']['last_name']}, {$parsed['payload']['first_name']}", 'error' => $e->getMessage()];
+            }
+        }
+
+        return [$imported, $failed, $errors];
+    }
+
+    /**
+     * Fast path for large masterlists: parse everything, insert row by row
+     * without touching the duplicate engine, then run the engine once over the
+     * whole table and flag/downgrade the affected rows.
+     *
+     * @return array{0: int, 1: int, 2: array<int, array<string, mixed>>, 3: string}
+     */
+    private function processRowsBulk(ImportLog $importLog, Worksheet $worksheet, Program $program, array $columnMap, int $startRow, int $endRow): array
+    {
+        // Phase 1 — parse every row (pure PHP, no DB).
+        $parsedRows = [];
+        $failed = 0;
+        $errors = [];
+        $consecutiveEmpty = 0;
+        $seen = 0;
+
+        for ($row = $startRow; $row <= $endRow; $row++) {
+            $parsed = $this->parseRow($worksheet, $columnMap, $row);
+
+            if ($parsed['status'] === 'footer') {
+                break;
+            }
+
+            if ($parsed['status'] === 'header') {
+                continue;
+            }
+
+            if ($parsed['status'] === 'empty') {
+                if (++$consecutiveEmpty >= 3) {
+                    break;
+                }
+
+                continue;
+            }
+
+            $consecutiveEmpty = 0;
+            $seen++;
+
+            if ($parsed['status'] === 'error') {
+                $failed++;
+                $errors[] = ['row' => $row, 'name' => "{$parsed['last_name']}, {$parsed['first_name']}", 'error' => $parsed['error']];
+
+                continue;
+            }
+
+            $parsed['_row'] = $row;
+            $parsedRows[] = $parsed;
+        }
+
+        $importLog->update(['total_rows' => $seen]);
+
+        if (empty($parsedRows)) {
+            return [0, $failed, $errors, 'Fast bulk import: no valid rows to insert.'];
+        }
+
+        // Phase 2 — bulk insert beneficiaries, then their program (+ TUPAD) rows.
+        // No Eloquent events / mutators are involved on these models, so raw
+        // multi-row inserts are safe as long as timestamps + full_name are set.
+        $timestamp = now()->toDateTimeString();
+        $userId = auth()->id();
+        $currentYear = (int) date('Y');
+        $isTupad = $program->code === 'TUPAD';
+
+        $beneficiaryRows = array_map(function (array $parsed) use ($timestamp, $userId) {
+            $p = $parsed['payload'];
+
+            return [
+                'full_name' => $parsed['full_name'],
+                'first_name' => $p['first_name'],
+                'middle_name' => $p['middle_name'],
+                'last_name' => $p['last_name'],
+                'suffix' => $p['suffix'],
+                'date_of_birth' => $p['date_of_birth'],
+                'sex' => $p['sex'],
+                'civil_status' => $p['civil_status'],
+                'government_id_type' => $p['government_id_type'],
+                'government_id_number' => $p['government_id_number'],
+                'contact_number' => $p['contact_number'],
+                'address' => $p['address'],
+                'barangay' => $p['barangay'],
+                'municipality' => $p['municipality'],
+                'province' => $p['province'],
+                'district' => $p['district'],
+                'is_senior_citizen' => $parsed['is_senior'] ? 1 : 0,
+                'created_by' => $userId,
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ];
+        }, $parsedRows);
+
+        $maxBeneficiaryId = (int) Beneficiary::max('id');
+
+        DB::transaction(function () use ($beneficiaryRows, $parsedRows, $program, $currentYear, $isTupad, $timestamp, $maxBeneficiaryId) {
+            foreach (array_chunk($beneficiaryRows, 500) as $chunk) {
+                Beneficiary::insert($chunk);
+            }
+
+            $newBeneficiaryIds = Beneficiary::where('id', '>', $maxBeneficiaryId)->orderBy('id')->pluck('id')->all();
+
+            $programRows = array_map(fn ($beneficiaryId) => [
+                'beneficiary_id' => $beneficiaryId,
+                'program_id' => $program->id,
+                'availment_year' => $currentYear,
+                'status' => 'approved',
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ], $newBeneficiaryIds);
+
+            $maxProgramId = (int) BeneficiaryProgram::max('id');
+            foreach (array_chunk($programRows, 500) as $chunk) {
+                BeneficiaryProgram::insert($chunk);
+            }
+
+            if ($isTupad) {
+                $newProgramIds = BeneficiaryProgram::where('id', '>', $maxProgramId)->orderBy('id')->pluck('id')->all();
+
+                $tupadRows = [];
+                foreach ($newProgramIds as $i => $programRowId) {
+                    $tupadRows[] = array_merge(
+                        ['beneficiary_program_id' => $programRowId, 'created_at' => $timestamp, 'updated_at' => $timestamp],
+                        $parsedRows[$i]['tupad'],
+                    );
+                }
+
+                foreach (array_chunk($tupadRows, 500) as $chunk) {
+                    TupadProfile::insert($chunk);
+                }
+            }
+        });
+
+        $newBeneficiaryIds = Beneficiary::where('id', '>', $maxBeneficiaryId)->orderBy('id')->pluck('id')->all();
+        $imported = count($newBeneficiaryIds);
+
+        $importedPayloads = [];
+        foreach ($newBeneficiaryIds as $i => $beneficiaryId) {
+            $importedPayloads[$beneficiaryId] = $parsedRows[$i]['payload'];
+        }
+
+        // Phase 3 — run the duplicate engine once for the whole imported set.
+        $note = $this->runDeferredDuplicateScan($importedPayloads);
+
+        return [$imported, $failed, $errors, $note];
+    }
+
+    /**
+     * Read and normalise a single spreadsheet row into a structured result.
+     *
+     * @return array{status: string, last_name?: string, first_name?: string, error?: string,
+     *               payload?: array<string, mixed>, tupad?: array<string, mixed>,
+     *               is_senior?: bool, full_name?: string}
+     */
+    private function parseRow(Worksheet $worksheet, array $columnMap, int $row): array
+    {
+        if ($this->isFooterRow($worksheet, $row)) {
+            return ['status' => 'footer'];
+        }
+
+        $lastName = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'last_name', $row, 'B'));
+        $firstName = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'first_name', $row, 'C'));
+
+        if (empty($lastName) && empty($firstName)) {
+            return ['status' => 'empty'];
+        }
+
+        if ($this->isHeaderRow($lastName, $firstName)) {
+            return ['status' => 'header'];
+        }
+
+        if (empty($lastName) || empty($firstName)) {
+            return [
+                'status' => 'error',
+                'last_name' => $lastName ?? '',
+                'first_name' => $firstName ?? '',
+                'error' => 'Beneficiary Last Name and First Name are required',
+            ];
+        }
+
+        $middleName = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'middle_name', $row, 'D'));
+        $suffix = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'suffix', $row, 'E'));
+
+        $dobRaw = $this->getCellValue($worksheet, $columnMap, 'date_of_birth', $row, 'F');
+        $dob = $this->parseDate($dobRaw);
+        if (! $dob) {
+            return [
+                'status' => 'error',
+                'last_name' => $lastName,
+                'first_name' => $firstName,
+                'error' => "Invalid or missing Date of Birth: '".($dobRaw ?? 'blank')."'",
+            ];
+        }
+
+        $sexRaw = strtolower((string) $this->getCellValue($worksheet, $columnMap, 'sex', $row, 'Q'));
+        $sex = str_starts_with(trim($sexRaw), 'f') ? 'Female' : 'Male';
+
+        $civilStatus = $this->fallbackNA($this->normalizeCivilStatus($this->cleanString($this->getCellValue($worksheet, $columnMap, 'civil_status', $row, 'R'))));
+        $govIdType = $this->fallbackNA($this->normalizeGovIdType($this->cleanString($this->getCellValue($worksheet, $columnMap, 'government_id_type', $row, 'K'))));
+        $govIdNumber = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'government_id_number', $row, 'L')));
+        $contactNumber = $this->fallbackNA($this->normalizeContact($this->getCellValue($worksheet, $columnMap, 'contact_number', $row, 'M')));
+
+        $barangay = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'barangay', $row, 'G')), 'Central');
+        $municipality = Beneficiary::canonicalMunicipality(
+            $this->cleanString($this->getCellValue($worksheet, $columnMap, 'municipality', $row, 'H'))
+        ) ?? 'Pangantucan';
+        $province = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'province', $row, 'I')), 'Bukidnon');
+        $district = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'district', $row, 'J'));
+        $address = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'address', $row, ''));
+
+        $epayment = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'epayment_account_no', $row, 'N')));
+        $benType = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'beneficiary_type', $row, 'O')));
+        $occupation = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'occupation', $row, 'P')));
+        $monthlyIncome = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'average_monthly_income', $row, 'T')));
+        $dependentName = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'dependent_name', $row, 'U')));
+        $dependentRel = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'dependent_relationship', $row, 'V')));
+
+        $payload = [
+            'first_name' => $firstName,
+            'middle_name' => $middleName,
+            'last_name' => $lastName,
+            'suffix' => $suffix,
+            'date_of_birth' => $dob->format('Y-m-d'),
+            'sex' => $sex,
+            'civil_status' => $civilStatus,
+            'government_id_type' => $govIdType,
+            'government_id_number' => $govIdNumber,
+            'contact_number' => $contactNumber,
+            'address' => $address,
+            'barangay' => $barangay,
+            'municipality' => $municipality,
+            'province' => $province,
+            'district' => $district,
+            'program_code' => $this->programCode,
+            'availment_year' => (int) date('Y'),
+        ];
+
+        return [
+            'status' => 'ok',
+            'payload' => $payload,
+            'full_name' => Beneficiary::buildFullName($firstName, $middleName, $lastName, $suffix),
+            'is_senior' => $dob->age >= 60,
+            'tupad' => [
+                'project_location_barangay' => $barangay,
+                'project_location_municipality' => $municipality,
+                'project_location_province' => $province,
+                'project_location_district' => $district,
+                'epayment_account_no' => $epayment,
+                'beneficiary_type' => $benType,
+                'occupation' => $occupation,
+                'average_monthly_income' => $monthlyIncome,
+                'dependent_name' => $dependentName,
+                'dependent_relationship' => $dependentRel,
+            ],
+        ];
+    }
+
+    /**
+     * Persist one parsed row: beneficiary + program (+ TUPAD profile + flags).
+     *
+     * @param  array<string, mixed>  $parsed
+     * @param  array{has_duplicates: bool, flags: array}  $dupCheck
+     * @param  array{has_household_flags: bool, flags: array}  $householdCheck
+     */
+    private function persistRow(array $parsed, Program $program, array $dupCheck, array $householdCheck): Beneficiary
+    {
+        $payload = $parsed['payload'];
+
+        $beneficiary = Beneficiary::create([
+            'full_name' => $parsed['full_name'],
+            'first_name' => $payload['first_name'],
+            'middle_name' => $payload['middle_name'],
+            'last_name' => $payload['last_name'],
+            'suffix' => $payload['suffix'],
+            'date_of_birth' => $payload['date_of_birth'],
+            'sex' => $payload['sex'],
+            'civil_status' => $payload['civil_status'],
+            'government_id_type' => $payload['government_id_type'],
+            'government_id_number' => $payload['government_id_number'],
+            'contact_number' => $payload['contact_number'],
+            'address' => $payload['address'],
+            'barangay' => $payload['barangay'],
+            'municipality' => $payload['municipality'],
+            'province' => $payload['province'],
+            'district' => $payload['district'],
+            'is_senior_citizen' => $parsed['is_senior'],
+            'created_by' => auth()->id(),
+        ]);
+
+        $hasFlags = $dupCheck['has_duplicates'] || $householdCheck['has_household_flags'];
+
+        $beneficiaryProgram = BeneficiaryProgram::create([
+            'beneficiary_id' => $beneficiary->id,
+            'program_id' => $program->id,
+            'availment_year' => (int) date('Y'),
+            'status' => $hasFlags ? 'pending' : 'approved',
+        ]);
+
+        if ($program->code === 'TUPAD') {
+            TupadProfile::create(array_merge(
+                ['beneficiary_program_id' => $beneficiaryProgram->id],
+                $parsed['tupad'],
+            ));
+        }
+
+        if ($dupCheck['has_duplicates']) {
+            $this->duplicateService->recordDuplicateFlags($beneficiary, $dupCheck['flags']);
+        }
+
+        if ($householdCheck['has_household_flags']) {
+            $this->duplicateService->recordDuplicateFlags($beneficiary, $householdCheck['flags']);
+        }
+
+        return $beneficiary;
+    }
+
+    /**
+     * Run the duplicate engine once over the beneficiary table for a set of
+     * freshly imported rows: record flags and downgrade flagged rows to
+     * "pending" — the same end state the per-row path produces.
+     *
+     * To stay fast on large files each imported row is only scored against
+     * candidates that share a name sound (SOUNDEX of the surname / first name /
+     * surname tokens) rather than against every beneficiary.
+     *
+     * @param  array<int, array<string, mixed>>  $importedPayloads  [beneficiaryId => payload]
+     */
+    private function runDeferredDuplicateScan(array $importedPayloads): string
+    {
+        $count = count($importedPayloads);
+        if ($count === 0) {
+            return 'Fast bulk import: no rows available to scan for duplicates.';
+        }
+
+        $candidates = Beneficiary::with(['beneficiaryPrograms.program'])->get();
+        $index = $this->indexCandidatesByNameSound($candidates);
+        $flaggedIds = [];
+
+        foreach ($importedPayloads as $id => $payload) {
+            $beneficiary = $candidates->firstWhere('id', $id);
+            if (! $beneficiary) {
+                continue;
+            }
+
+            $pool = $this->candidatesForPayload($payload, $index);
+
+            $dupCheck = $this->duplicateService->checkDuplicates($payload, (int) $id, $pool);
+            $householdCheck = $this->duplicateService->checkHouseholdDuplicates($payload, (int) $id, $pool);
+
+            if ($dupCheck['has_duplicates']) {
+                $this->duplicateService->recordDuplicateFlags($beneficiary, $dupCheck['flags']);
+                $flaggedIds[$id] = true;
+            }
+
+            if ($householdCheck['has_household_flags']) {
+                $this->duplicateService->recordDuplicateFlags($beneficiary, $householdCheck['flags']);
+                $flaggedIds[$id] = true;
+            }
+        }
+
+        if (! empty($flaggedIds)) {
+            BeneficiaryProgram::whereIn('beneficiary_id', array_keys($flaggedIds))
+                ->where('status', 'approved')
+                ->update(['status' => 'pending']);
+        }
+
+        return sprintf(
+            'Fast bulk import: %d row(s) inserted in batch, duplicate engine run once afterwards — %d flagged for review.',
+            $count,
+            count($flaggedIds),
+        );
+    }
+
+    /**
+     * Bucket every candidate by the SOUNDEX of its surname, first name, and each
+     * surname token, so a payload can pull only the plausibly-similar records.
+     *
+     * @param  Collection<int, Beneficiary>  $candidates
+     * @return array{last: array<string, list<Beneficiary>>, first: array<string, list<Beneficiary>>}
+     */
+    private function indexCandidatesByNameSound(Collection $candidates): array
+    {
+        $byLast = [];
+        $byFirst = [];
+
+        foreach ($candidates as $candidate) {
+            foreach ($this->nameSoundKeys($candidate->last_name) as $key) {
+                $byLast[$key][] = $candidate;
+            }
+            foreach ($this->nameSoundKeys($candidate->first_name) as $key) {
+                $byFirst[$key][] = $candidate;
+            }
+        }
+
+        return ['last' => $byLast, 'first' => $byFirst];
+    }
+
+    /**
+     * SOUNDEX keys for a name: the whole cleaned string plus each token.
+     *
+     * @return list<string>
+     */
+    private function nameSoundKeys(?string $name): array
+    {
+        $lower = mb_strtolower(trim((string) $name));
+        if ($lower === '') {
+            return [];
+        }
+
+        $keys = [];
+
+        $whole = preg_replace('/[^a-z]/', '', $lower);
+        if ($whole !== '') {
+            $keys[soundex($whole)] = true;
+        }
+
+        foreach (preg_split('/[\s\-]+/', $lower, -1, PREG_SPLIT_NO_EMPTY) as $token) {
+            $token = preg_replace('/[^a-z]/', '', $token);
+            if ($token !== '') {
+                $keys[soundex($token)] = true;
+            }
+        }
+
+        return array_keys($keys);
+    }
+
+    /**
+     * Candidates that could plausibly match this payload by name sound.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  array{last: array<string, list<Beneficiary>>, first: array<string, list<Beneficiary>>}  $index
+     * @return Collection<int, Beneficiary>
+     */
+    private function candidatesForPayload(array $payload, array $index): Collection
+    {
+        $pool = [];
+
+        foreach ($this->nameSoundKeys($payload['last_name'] ?? '') as $key) {
+            foreach ($index['last'][$key] ?? [] as $candidate) {
+                $pool[$candidate->id] = $candidate;
+            }
+        }
+
+        foreach ($this->nameSoundKeys($payload['first_name'] ?? '') as $key) {
+            foreach ($index['first'][$key] ?? [] as $candidate) {
+                $pool[$candidate->id] = $candidate;
+            }
+        }
+
+        return new Collection(array_values($pool));
     }
 
     /**

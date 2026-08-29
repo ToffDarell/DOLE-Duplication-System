@@ -6,10 +6,25 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Beneficiary extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
+
+    /**
+     * Canonical Bukidnon municipality spellings, in display (Title Case) form.
+     *
+     * @var list<string>
+     */
+    public const BUKIDNON_MUNICIPALITIES = [
+        'Baungon', 'Cabanglasan', 'Damulog', 'Dangcagan', 'Don Carlos',
+        'Impasugong', 'Kadingilan', 'Kibawe', 'Kitaotao', 'Lantapan',
+        'Libona', 'Malaybalay City', 'Maramag', 'Manolo Fortich',
+        'Pangantucan', 'Quezon', 'San Fernando', 'Sumilao',
+        'Talakag', 'Valencia City',
+    ];
 
     protected $fillable = [
         'full_name',
@@ -115,5 +130,32 @@ class Beneficiary extends Model
         return implode(', ', array_slice($parts, 0, 1))
              .', '
              .implode(' ', array_slice($parts, 1));
+    }
+
+    /**
+     * Standardise a raw municipality string to its canonical Bukidnon spelling
+     * so casing/spacing variants ("VALENCIA CITY", " valencia city ") collapse
+     * to a single value and no longer split GROUP BY aggregations.
+     */
+    public static function canonicalMunicipality(?string $value): ?string
+    {
+        $trimmed = trim((string) ($value ?? ''));
+
+        if ($trimmed === '') {
+            return null;
+        }
+
+        $key = preg_replace('/\s+/', ' ', mb_strtolower($trimmed));
+
+        foreach (self::BUKIDNON_MUNICIPALITIES as $canonical) {
+            $canonicalKey = mb_strtolower($canonical);
+
+            if ($key === $canonicalKey
+                || str_replace(' city', '', $key) === str_replace(' city', '', $canonicalKey)) {
+                return $canonical;
+            }
+        }
+
+        return Str::title($key);
     }
 }

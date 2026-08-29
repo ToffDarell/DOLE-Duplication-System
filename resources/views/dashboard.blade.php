@@ -5,23 +5,75 @@
 
 @section('content')
 {{-- DOLE Official Header Banner --}}
-<div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-2xl border border-blue-900/60 bg-gradient-to-r from-blue-900 via-blue-850 to-slate-900 p-6 text-white shadow-lg relative overflow-hidden">
-    <div class="absolute -right-10 -bottom-10 h-44 w-44 rounded-full bg-blue-500/10 blur-3xl pointer-events-none"></div>
+<div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-2xl border border-blue-700/50 bg-blue-800 p-6 text-white shadow-lg relative overflow-hidden">
+    <div class="absolute -right-10 -bottom-10 h-44 w-44 rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
     <div class="flex items-center gap-4 relative z-10">
         <div class="rounded-2xl bg-white p-2 shadow-md border border-white/20 shrink-0">
             <img src="{{ asset('logo dole.png') }}" alt="DOLE Official Logo" class="h-12 w-12 object-contain bg-white">
         </div>
         <div>
             <div class="flex items-center gap-2">
-                <span class="rounded-full bg-blue-700/80 border border-blue-400/30 px-2.5 py-0.5 text-[10px] font-extrabold text-blue-100 uppercase tracking-wider">DOLE Bukidnon Field Office</span>
-                <span class="rounded-full bg-amber-500/20 border border-amber-400/30 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-300 uppercase tracking-wider">CY {{ date('Y') }} Intelligence</span>
+                <span class="rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-extrabold text-white uppercase tracking-wider">DOLE Bukidnon Field Office</span>
+                <span class="rounded-full bg-amber-400/20 border border-amber-300/30 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-200 uppercase tracking-wider">CY {{ date('Y') }} Intelligence</span>
             </div>
             <h2 class="mt-1 text-xl font-black tracking-tight text-white">Centralized Analytics & Duplicate Engine Report</h2>
         </div>
     </div>
     <div class="mt-4 sm:mt-0 text-left sm:text-right relative z-10">
-        <p class="text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">Last Sync Time</p>
+        <p class="text-[11px] font-extrabold text-blue-200 uppercase tracking-wider">Last Sync Time</p>
         <p class="text-sm font-bold text-white tracking-tight">{{ now()->format('F d, Y - h:i A') }}</p>
+    </div>
+</div>
+
+{{-- Duplication risk level reference --}}
+<div class="mb-8 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
+    <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <div class="flex items-center gap-2">
+            <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-800">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
+                </svg>
+            </div>
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Duplication Risk Level & Indicator Legend</h3>
+        </div>
+        <span class="text-[11px] font-bold text-slate-500">Official Scoring Metric</span>
+    </div>
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs font-medium">
+        {{-- Exact Duplicate (100%) --}}
+        <div class="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50/60 p-3">
+            <span class="inline-flex h-7 w-12 shrink-0 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-2xs">100%</span>
+            <div>
+                <p class="font-extrabold text-red-950">Exact Duplicate</p>
+                <p class="text-[11px] text-red-800 mt-0.5">Identical Full Name, Birthdate, and Government ID match.</p>
+            </div>
+        </div>
+
+        {{-- High Similarity Risk (85% - 99%) --}}
+        <div class="flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50/60 p-3">
+            <span class="inline-flex h-7 w-16 shrink-0 items-center justify-center rounded-lg bg-orange-500 text-xs font-black text-white shadow-2xs">85%–99%</span>
+            <div>
+                <p class="font-extrabold text-orange-950">High Similarity Risk</p>
+                <p class="text-[11px] text-orange-800 mt-0.5">Near-identical name spellings, phonetic match, or birthdates.</p>
+            </div>
+        </div>
+
+        {{-- Moderate Similarity Risk (70% - 84%) --}}
+        <div class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
+            <span class="inline-flex h-7 w-16 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-xs font-black text-white shadow-2xs">70%–84%</span>
+            <div>
+                <p class="font-extrabold text-amber-950">Moderate Risk</p>
+                <p class="text-[11px] text-amber-800 mt-0.5">Partial field match (e.g. same house number / address or sibling name).</p>
+            </div>
+        </div>
+
+        {{-- Low Similarity / Distinct (< 70%) --}}
+        <div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
+            <span class="inline-flex h-7 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white shadow-2xs">&lt;70%</span>
+            <div>
+                <p class="font-extrabold text-emerald-950">Low Similarity / Distinct</p>
+                <p class="text-[11px] text-emerald-800 mt-0.5">Divergent record details with minor overlap; low collision risk.</p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -52,7 +104,8 @@
             <span class="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-extrabold text-amber-900 border border-amber-200">Engine Flagged</span>
         </div>
         <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($totalDuplicates) }}</p>
-        <p class="mt-1 text-xs font-bold text-slate-600">Total Duplicates Flagged</p>
+        <p class="mt-1 text-xs font-bold text-slate-600">Total Duplicate Records Detected</p>
+        <p class="mt-0.5 text-[11px] font-medium text-slate-400">{{ number_format($pendingDuplicates) }} pending &middot; {{ number_format($overriddenCount) }} resolved / overridden</p>
     </div>
 
     {{-- Card 3: Pending Validation Queue Count --}}
@@ -66,7 +119,8 @@
             <span class="rounded-full bg-rose-100 px-3 py-1 text-[11px] font-extrabold text-rose-900 border border-rose-200">Action Required</span>
         </div>
         <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($pendingDuplicates) }}</p>
-        <p class="mt-1 text-xs font-bold text-slate-600">Pending Validation Queue Count</p>
+        <p class="mt-1 text-xs font-bold text-slate-600">Pending Validation Queue</p>
+        <p class="mt-0.5 text-[11px] font-medium text-slate-400">Subset of {{ number_format($totalDuplicates) }} detected &middot; matches the header &amp; sidebar badge</p>
     </div>
 
     {{-- Card 4: Total Overridden / Approved Cases --}}
@@ -81,6 +135,63 @@
         </div>
         <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($overriddenCount) }}</p>
         <p class="mt-1 text-xs font-bold text-slate-600">Total Overridden / Approved Cases</p>
+    </div>
+</div>
+
+{{-- Municipal breakdown & duplicate distribution --}}
+<div class="mb-8 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4 gap-2">
+        <div>
+            <h3 class="text-base font-black text-slate-900">Municipal Breakdown & Duplicate Distribution</h3>
+            <p class="text-xs font-medium text-slate-500">Cross-sectional analysis of registered beneficiaries and duplicate incidences across Bukidnon Municipalities</p>
+        </div>
+        <a href="{{ route('reports.index') }}" class="rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition shadow-2xs self-start sm:self-auto">
+            Generate Municipal Reports →
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {{-- Bar Chart: Total Beneficiaries per Municipality (2 Cols) --}}
+        <div class="lg:col-span-2 flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-5">
+            <div>
+                <div class="mb-3 flex items-center justify-between">
+                    <div>
+                        <h4 class="text-xs font-black uppercase tracking-wider text-slate-800">Total Beneficiaries per Municipality</h4>
+                        <p class="text-[11px] font-medium text-slate-500">Beneficiary volume distribution across Bukidnon</p>
+                    </div>
+                    <span class="rounded-lg bg-blue-700 px-2.5 py-1 text-[10px] font-black text-white">Horizontal Bar</span>
+                </div>
+                <div class="relative h-136 w-full">
+                    <canvas id="chartMunicipalBeneficiaries"></canvas>
+                </div>
+            </div>
+            <div class="mt-3 border-t border-slate-200/80 pt-2.5 text-center">
+                <p class="text-[11px] font-semibold text-slate-500">
+                    Aggregated count of active beneficiaries grouped by local government unit.
+                </p>
+            </div>
+        </div>
+
+        {{-- Pie / Donut Chart: Duplicate Distribution across Municipalities (1 Col) --}}
+        <div class="lg:col-span-1 flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-5">
+            <div>
+                <div class="mb-3 flex items-center justify-between">
+                    <div>
+                        <h4 class="text-xs font-black uppercase tracking-wider text-slate-800">Duplicates by Municipality</h4>
+                        <p class="text-[11px] font-medium text-slate-500">Proportion of flagged duplicate records</p>
+                    </div>
+                    <span class="rounded-lg bg-amber-500 px-2.5 py-1 text-[10px] font-black text-white">Pie Distribution</span>
+                </div>
+                <div class="relative h-80 w-full flex items-center justify-center">
+                    <canvas id="chartMunicipalDuplicates"></canvas>
+                </div>
+            </div>
+            <div class="mt-3 border-t border-slate-200/80 pt-2.5 text-center">
+                <p class="text-[11px] font-semibold text-slate-500">
+                    Pinpoints municipalities with higher rates of duplicate submission warnings.
+                </p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -129,9 +240,9 @@
     </div>
 </div>
 
-{{-- Row 2: Modernized Charts -- Registration & Duplicate Trends + Geographic Distribution --}}
+{{-- Row 2: Registration & Duplicate Trends + Geographic Distribution --}}
 <div class="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-    {{-- Chart 3: Registration & Duplicate Trends (Smooth Spline Area / Bar Combination Chart) --}}
+    {{-- Chart 3: Registration & Duplicate Trends --}}
     <div class="gov-card p-6 flex flex-col justify-between">
         <div>
             <div class="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3.5">
@@ -159,16 +270,16 @@
         </div>
     </div>
 
-    {{-- Chart 4: Geographic Distribution (Horizontal Bar Chart with Pill Ends & Labels) --}}
+    {{-- Chart 4: Top Municipalities Concentration --}}
     <div class="gov-card p-6 flex flex-col justify-between">
         <div>
             <div class="mb-4 flex items-center justify-between border-b border-slate-200 pb-3.5">
                 <div>
-                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-900">Geographic Distribution</h3>
-                    <p class="text-[11px] font-medium text-slate-500">Beneficiary concentration across Bukidnon Municipalities</p>
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-900">Top Density Areas</h3>
+                    <p class="text-[11px] font-medium text-slate-500">High concentration municipalities in Bukidnon</p>
                 </div>
                 <span class="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-medium border border-emerald-200/60 flex items-center gap-1 shrink-0">
-                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Top Density Areas
+                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Density Hubs
                 </span>
             </div>
             <div class="relative h-72 w-full">
@@ -177,7 +288,7 @@
         </div>
         <div class="mt-4 border-t border-slate-100 pt-3 text-center">
             <p class="text-[11px] font-semibold text-slate-500">
-                Visualizes high-density areas requiring closer monitoring for localized duplicate submissions.
+                Visualizes high-density areas requiring closer monitoring for duplicate submissions.
             </p>
         </div>
     </div>
@@ -206,14 +317,18 @@
             @else
                 <div class="space-y-3">
                     @foreach($recentDuplicates as $flag)
+                        @php
+                            $fScore = (int) $flag->match_score;
+                            $fBg = $fScore >= 100 ? 'bg-red-600' : ($fScore >= 85 ? 'bg-orange-500' : ($fScore >= 70 ? 'bg-amber-500' : 'bg-emerald-600'));
+                        @endphp
                         <div class="flex items-center gap-3.5 rounded-xl border {{ $flag->household_match_flag ? 'border-blue-200 bg-blue-50/50' : 'border-amber-200 bg-amber-50/60' }} p-3 transition hover:shadow-2xs">
-                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg {{ $flag->household_match_flag ? 'bg-blue-700' : 'bg-amber-500' }} font-black text-white text-xs shadow-2xs">
+                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg {{ $fBg }} font-black text-white text-xs shadow-2xs">
                                 {{ $flag->match_score }}%
                             </div>
                             <div class="min-w-0 flex-1">
                                 <p class="truncate text-xs font-extrabold text-slate-900">{{ $flag->beneficiary?->full_name }}</p>
                                 <p class="truncate text-[11px] font-semibold text-slate-600">
-                                    {{ $flag->household_match_flag ? 'household with' : 'matches' }} {{ $flag->matchedBeneficiary?->full_name }}
+                                    {{ $flag->household_match_flag ? 'house number with' : 'matches' }} {{ $flag->matchedBeneficiary?->full_name }}
                                 </p>
                             </div>
                             @hasanyrole('Admin|Validator')
@@ -285,7 +400,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     // Global Chart.js Defaults
     Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";
-    Chart.defaults.font.size = 12;
+    Chart.defaults.font.size = 11;
     Chart.defaults.color = '#64748B';
 
     // Floating Tooltip Configuration
@@ -295,236 +410,291 @@ document.addEventListener('DOMContentLoaded', function () {
         titleColor: '#FFFFFF',
         bodyColor: '#F8FAFC',
         titleFont: { size: 12, weight: 'bold' },
-        bodyFont: { size: 12, weight: '500' },
-        padding: 12,
+        bodyFont: { size: 11, weight: '500' },
+        padding: 10,
         cornerRadius: 8,
-        displayColors: true,
-        boxWidth: 8,
-        boxHeight: 8,
-        boxPadding: 4,
-        shadowOffsetX: 0,
-        shadowOffsetY: 4,
-        shadowBlur: 12,
-        shadowColor: 'rgba(15, 23, 42, 0.25)'
+        displayColors: true
     };
 
-    // 1. Duplicate Status Breakdown (Donut Chart)
+    // 1. Municipal Breakdown: Total Beneficiaries — horizontal bar so every
+    //    municipality name reads left-to-right without rotated/colliding labels.
+    const municipalLabels = @json($municipalLabels);
+    const municipalBeneficiaryCounts = @json($municipalBeneficiaryCounts);
+    const ctxMuniBar = document.getElementById('chartMunicipalBeneficiaries');
+    if (ctxMuniBar) {
+        new Chart(ctxMuniBar.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: municipalLabels,
+                datasets: [{
+                    label: 'Registered Beneficiaries',
+                    data: municipalBeneficiaryCounts,
+                    backgroundColor: '#1E40AF',
+                    hoverBackgroundColor: '#1D4ED8',
+                    borderRadius: 5,
+                    borderSkipped: false,
+                    barThickness: 14,
+                    maxBarThickness: 18,
+                    categoryPercentage: 0.85
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 1000, easing: 'easeInOutQuart' },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: modernTooltipConfig
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { precision: 0, color: '#64748B' },
+                        grid: { color: '#F1F5F9', drawBorder: false }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            color: '#475569',
+                            font: { size: 10, weight: '600' },
+                            autoSkip: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Municipal Breakdown: Duplicates by Municipality — the backend already
+    //    ranks LGUs and folds the long tail into an "Others" slice, so the
+    //    legend only ever shows a handful of entries.
+    const municipalDuplicateDistribution = @json($municipalDuplicateDistribution);
+    const ctxMuniPie = document.getElementById('chartMunicipalDuplicates');
+    if (ctxMuniPie) {
+        // Palette of distinct accessible colors for municipalities
+        const municipalColors = [
+            '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16',
+            '#10B981', '#06B6D4', '#0EA5E9', '#3B82F6', '#6366F1',
+            '#8B5CF6', '#A855F7', '#D946EF', '#EC4899', '#F43F5E'
+        ];
+
+        let muniPieLabels = Object.keys(municipalDuplicateDistribution);
+        let muniPieCounts = Object.values(municipalDuplicateDistribution);
+
+        if (muniPieLabels.length === 0) {
+            muniPieLabels = ['No duplicates flagged'];
+            muniPieCounts = [1];
+        }
+
+        const muniPieColors = muniPieLabels.map((label, i) => {
+            if (label === 'Others') return '#94A3B8';
+            if (label === 'No duplicates flagged') return '#E2E8F0';
+            return municipalColors[i % municipalColors.length];
+        });
+
+        new Chart(ctxMuniPie.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: muniPieLabels,
+                datasets: [{
+                    data: muniPieCounts,
+                    backgroundColor: muniPieColors,
+                    borderWidth: 2,
+                    borderColor: '#FFFFFF',
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 1000, easing: 'easeInOutQuart' },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 8,
+                            padding: 8,
+                            font: { size: 10, weight: '600' }
+                        }
+                    },
+                    tooltip: modernTooltipConfig
+                },
+                cutout: '55%'
+            }
+        });
+    }
+
+    // 3. Duplicate Status Breakdown (Donut Chart)
     const duplicateStatusData = @json($duplicateStatusBreakdown);
-    const ctxDuplicate = document.getElementById('chartDuplicateStatus').getContext('2d');
-    new Chart(ctxDuplicate, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(duplicateStatusData),
-            datasets: [{
-                data: Object.values(duplicateStatusData),
-                backgroundColor: [
-                    '#10B981', // Clean: Emerald
-                    '#F43F5E', // High Confidence: Rose
-                    '#F59E0B', // Medium Confidence: Amber
-                    '#4F46E5'  // Resolved: Deep Indigo
-                ],
-                borderWidth: 2,
-                borderColor: '#FFFFFF',
-                hoverOffset: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: { duration: 1000, easing: 'easeInOutQuart' },
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { boxWidth: 10, padding: 14, font: { weight: '600', size: 11 } }
-                },
-                tooltip: modernTooltipConfig
+    const ctxStatus = document.getElementById('chartDuplicateStatus');
+    if (ctxStatus) {
+        new Chart(ctxStatus.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(duplicateStatusData),
+                datasets: [{
+                    data: Object.values(duplicateStatusData),
+                    backgroundColor: ['#10B981', '#E11D48', '#F59E0B', '#64748B'],
+                    borderWidth: 2,
+                    borderColor: '#FFFFFF',
+                    hoverOffset: 6
+                }]
             },
-            cutout: '68%'
-        }
-    });
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 1000, easing: 'easeInOutQuart' },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 10, padding: 12, font: { weight: '600', size: 10 } }
+                    },
+                    tooltip: modernTooltipConfig
+                },
+                cutout: '68%'
+            }
+        });
+    }
 
-    // 2. Program Distribution (Pie / Donut Chart)
+    // 4. Program Distribution (Donut Chart) — colour each slice by program code
+    //    so TUPAD / SPES / DILP / GIP always render as distinct segments
+    //    regardless of key order or how many programs currently have records.
     const programData = @json($programDistribution);
-    const ctxProgram = document.getElementById('chartProgramDistribution').getContext('2d');
-    new Chart(ctxProgram, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(programData),
-            datasets: [{
-                data: Object.values(programData),
-                backgroundColor: [
-                    '#4F46E5', // TUPAD: Deep Indigo
-                    '#10B981', // SPES: Emerald
-                    '#F59E0B', // DILP: Amber
-                    '#8B5CF6'  // GIP: Purple
-                ],
-                borderWidth: 2,
-                borderColor: '#FFFFFF',
-                hoverOffset: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: { duration: 1000, easing: 'easeInOutQuart' },
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { boxWidth: 10, padding: 14, font: { weight: '600', size: 11 } }
-                },
-                tooltip: modernTooltipConfig
-            },
-            cutout: '68%'
-        }
-    });
+    const ctxProg = document.getElementById('chartProgramDistribution');
+    if (ctxProg) {
+        const programLabels = Object.keys(programData);
+        const programPalette = { 'TUPAD': '#4F46E5', 'SPES': '#10B981', 'DILP': '#F59E0B', 'GIP': '#8B5CF6' };
+        const programFallback = ['#4F46E5', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#0EA5E9'];
+        const programColors = programLabels.map((label, i) => programPalette[label] ?? programFallback[i % programFallback.length]);
 
-    // 3. Registration & Duplicate Trends (Smooth Spline Area / Bar Combination Chart)
+        new Chart(ctxProg.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: programLabels,
+                datasets: [{
+                    data: Object.values(programData),
+                    backgroundColor: programColors,
+                    borderWidth: 2,
+                    borderColor: '#FFFFFF',
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 1000, easing: 'easeInOutQuart' },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 10, padding: 12, font: { weight: '600', size: 11 } }
+                    },
+                    tooltip: modernTooltipConfig
+                },
+                cutout: '68%'
+            }
+        });
+    }
+
+    // 5. Registration & Duplicate Trends (Spline / Bar Combination Chart)
     const trendMonths = @json($trendMonths);
     const trendRegistrations = @json($trendRegistrations);
     const trendDuplicates = @json($trendDuplicates);
+    const ctxTrends = document.getElementById('chartRegistrationTrends');
+    if (ctxTrends) {
+        const ctxT = ctxTrends.getContext('2d');
+        const barGradient = ctxT.createLinearGradient(0, 0, 0, 300);
+        barGradient.addColorStop(0, '#4F46E5');
+        barGradient.addColorStop(1, '#818CF8');
 
-    const ctxTrends = document.getElementById('chartRegistrationTrends').getContext('2d');
+        const lineAreaGradient = ctxT.createLinearGradient(0, 0, 0, 300);
+        lineAreaGradient.addColorStop(0, 'rgba(244, 63, 94, 0.25)');
+        lineAreaGradient.addColorStop(1, 'rgba(244, 63, 94, 0.00)');
 
-    // Registrations Gradient (Deep Indigo to Light Indigo)
-    const barGradient = ctxTrends.createLinearGradient(0, 0, 0, 300);
-    barGradient.addColorStop(0, '#4F46E5');
-    barGradient.addColorStop(1, '#818CF8');
-
-    // Duplicates Soft Area Fill Gradient (Rose/Coral to Transparent)
-    const lineAreaGradient = ctxTrends.createLinearGradient(0, 0, 0, 300);
-    lineAreaGradient.addColorStop(0, 'rgba(244, 63, 94, 0.25)');
-    lineAreaGradient.addColorStop(1, 'rgba(244, 63, 94, 0.00)');
-
-    new Chart(ctxTrends, {
-        type: 'bar',
-        data: {
-            labels: trendMonths,
-            datasets: [
-                {
-                    type: 'bar',
-                    label: 'New Registrations',
-                    data: trendRegistrations,
-                    backgroundColor: barGradient,
-                    hoverBackgroundColor: '#4338CA',
-                    borderRadius: { topLeft: 8, topRight: 8 },
-                    borderSkipped: 'bottom',
-                    barPercentage: 0.55
-                },
-                {
-                    type: 'line',
-                    label: 'Duplicates Flagged',
-                    data: trendDuplicates,
-                    borderColor: '#F43F5E',
-                    backgroundColor: lineAreaGradient,
-                    borderWidth: 3,
-                    tension: 0.4, // Smooth curved spline
-                    fill: true,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#F43F5E',
-                    pointHoverBorderColor: '#FFFFFF',
-                    pointHoverBorderWidth: 2
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: { duration: 1000, easing: 'easeInOutQuart' },
-            plugins: {
-                legend: { display: false },
-                tooltip: modernTooltipConfig
-            },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#64748B', font: { size: 12, weight: '500' } }
-                },
-                y: {
-                    beginAtZero: true,
-                    ticks: { precision: 0, color: '#64748B', font: { size: 12, weight: '500' } },
-                    grid: {
-                        color: '#E2E8F0',
-                        borderDash: [5, 5],
-                        drawBorder: false
+        new Chart(ctxT, {
+            type: 'bar',
+            data: {
+                labels: trendMonths,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'New Registrations',
+                        data: trendRegistrations,
+                        backgroundColor: barGradient,
+                        hoverBackgroundColor: '#4338CA',
+                        borderRadius: { topLeft: 6, topRight: 6 },
+                        borderSkipped: 'bottom',
+                        barPercentage: 0.55
+                    },
+                    {
+                        type: 'line',
+                        label: 'Duplicates Flagged',
+                        data: trendDuplicates,
+                        borderColor: '#F43F5E',
+                        backgroundColor: lineAreaGradient,
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#F43F5E'
                     }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 1000, easing: 'easeInOutQuart' },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: modernTooltipConfig
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#64748B', font: { size: 11, weight: '600' } } },
+                    y: { beginAtZero: true, ticks: { precision: 0, color: '#64748B' }, grid: { color: '#E2E8F0', borderDash: [5, 5], drawBorder: false } }
                 }
             }
-        }
-    });
+        });
+    }
 
-    // 4. Geographic Distribution (Horizontal Bar Chart with Pill Ends & Inline Numeric Labels)
+    // 6. Geographic Distribution: Top Density Areas
     const geoStats = @json($geographicStats);
-    const ctxGeo = document.getElementById('chartGeographicDistribution').getContext('2d');
+    const ctxGeo = document.getElementById('chartGeographicDistribution');
+    if (ctxGeo) {
+        const ctxG = ctxGeo.getContext('2d');
+        const geoGradient = ctxG.createLinearGradient(0, 0, 400, 0);
+        geoGradient.addColorStop(0, '#10B981');
+        geoGradient.addColorStop(1, '#14B8A6');
 
-    // Gradient Emerald to Teal (#10B981 to #14B8A6)
-    const geoGradient = ctxGeo.createLinearGradient(0, 0, 400, 0);
-    geoGradient.addColorStop(0, '#10B981');
-    geoGradient.addColorStop(1, '#14B8A6');
-
-    // Inline Numeric Count Label Plugin
-    const floatingValueLabelsPlugin = {
-        id: 'floatingValueLabels',
-        afterDatasetsDraw(chart) {
-            const { ctx } = chart;
-            chart.data.datasets.forEach((dataset, datasetIndex) => {
-                const meta = chart.getDatasetMeta(datasetIndex);
-                meta.data.forEach((bar, index) => {
-                    const val = dataset.data[index];
-                    if (val !== undefined && val !== null) {
-                        ctx.save();
-                        ctx.font = '600 11px Inter, sans-serif';
-                        ctx.fillStyle = '#64748B';
-                        ctx.textAlign = 'left';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(val, bar.x + 8, bar.y);
-                        ctx.restore();
-                    }
-                });
-            });
-        }
-    };
-
-    new Chart(ctxGeo, {
-        type: 'bar',
-        data: {
-            labels: Object.keys(geoStats),
-            datasets: [{
-                label: 'Beneficiaries',
-                data: Object.values(geoStats),
-                backgroundColor: geoGradient,
-                hoverBackgroundColor: '#059669',
-                borderRadius: 20, // Pill-shaped rounded ends
-                barThickness: 16
-            }]
-        },
-        plugins: [floatingValueLabelsPlugin],
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: { duration: 1000, easing: 'easeInOutQuart' },
-            plugins: {
-                legend: { display: false },
-                tooltip: modernTooltipConfig
+        new Chart(ctxG, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(geoStats),
+                datasets: [{
+                    label: 'Beneficiaries',
+                    data: Object.values(geoStats),
+                    backgroundColor: geoGradient,
+                    hoverBackgroundColor: '#059669',
+                    borderRadius: 20,
+                    barThickness: 16
+                }]
             },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: { precision: 0, color: '#64748B', font: { size: 12, weight: '500' } },
-                    grid: {
-                        color: '#E2E8F0',
-                        borderDash: [5, 5],
-                        drawBorder: false
-                    }
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 1000, easing: 'easeInOutQuart' },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: modernTooltipConfig
                 },
-                y: {
-                    grid: { display: false },
-                    ticks: { color: '#64748B', font: { size: 12, weight: '500' } }
+                scales: {
+                    x: { beginAtZero: true, ticks: { precision: 0, color: '#64748B' }, grid: { color: '#E2E8F0', borderDash: [5, 5], drawBorder: false } },
+                    y: { grid: { display: false }, ticks: { color: '#64748B', font: { size: 11, weight: '600' } } }
                 }
             }
-        }
-    });
+        });
+    }
 });
 </script>
 @endpush

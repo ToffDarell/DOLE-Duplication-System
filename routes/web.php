@@ -39,16 +39,24 @@ Route::middleware(['auth', 'track.activity', 'check.password.reset'])->group(fun
     Route::put('availments/{availment}', [AvailmentController::class, 'update'])->name('availments.update');
     Route::delete('availments/{availment}', [AvailmentController::class, 'destroy'])->name('availments.destroy');
 
-    // Beneficiaries CRUD, Merge & Search
+    // Beneficiaries CRUD, Merge, Archives & Search
+    Route::get('beneficiaries/archived', [BeneficiaryController::class, 'archived'])->name('beneficiaries.archived');
+    Route::post('beneficiaries/{id}/restore', [BeneficiaryController::class, 'restore'])->name('beneficiaries.restore');
+    Route::post('beneficiaries/bulk-restore', [BeneficiaryController::class, 'bulkRestore'])->name('beneficiaries.bulk-restore');
+    Route::delete('beneficiaries/{id}/force-delete', [BeneficiaryController::class, 'forceDelete'])->name('beneficiaries.force-delete');
+    Route::post('beneficiaries/bulk-force-delete', [BeneficiaryController::class, 'bulkForceDelete'])->name('beneficiaries.bulk-force-delete');
     Route::post('beneficiaries/merge', [BeneficiaryMergeController::class, 'merge'])->name('beneficiaries.merge');
     Route::get('beneficiaries/search-candidates', [BeneficiaryMergeController::class, 'searchCandidates'])->name('beneficiaries.search-candidates');
     Route::post('beneficiaries/bulk-delete', [BeneficiaryController::class, 'bulkDestroy'])->name('beneficiaries.bulk-delete');
     Route::match(['get', 'post'], 'beneficiaries/check-duplicate', [BeneficiaryController::class, 'checkDuplicate'])->name('beneficiaries.check-duplicate');
     Route::resource('beneficiaries', BeneficiaryController::class);
 
-    // Export Options
+    // Reports & Export Options
+    Route::get('reports', [ExportController::class, 'index'])->name('reports.index');
+    Route::get('export/excel', [ExportController::class, 'exportExcel'])->name('export.excel');
     Route::get('export/csv', [ExportController::class, 'exportCsv'])->name('export.csv');
     Route::get('export/pdf', [ExportController::class, 'exportPdf'])->name('export.pdf');
+    Route::get('api/barangays-by-municipality', [ExportController::class, 'getBarangaysByMunicipality'])->name('api.barangays');
 
     // Duplicates Review (Admin, Validator)
     Route::middleware('role:Admin|Validator')->group(function () {

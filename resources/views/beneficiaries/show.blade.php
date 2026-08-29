@@ -17,11 +17,14 @@
         <a href="{{ route('beneficiaries.edit', $beneficiary) }}" class="rounded-xl bg-blue-800 px-4 py-2 text-sm font-extrabold text-white shadow-2xs hover:bg-blue-900 transition">
             Edit Beneficiary
         </a>
-        <form action="{{ route('beneficiaries.destroy', $beneficiary) }}" method="POST" data-confirm="Are you sure you want to delete beneficiary {{ addslashes($beneficiary->full_name) }}?" data-confirm-title="Delete Beneficiary" data-confirm-btn="Yes, Delete Record">
+        <form action="{{ route('beneficiaries.destroy', $beneficiary) }}" method="POST" data-confirm="Are you sure you want to archive beneficiary {{ addslashes($beneficiary->full_name) }}? It will be moved to Archives and can be restored at any time." data-confirm-title="Archive Beneficiary" data-confirm-btn="Yes, Archive Record">
             @csrf
             @method('DELETE')
-            <button type="submit" class="rounded-xl bg-red-600 px-4 py-2 text-sm font-extrabold text-white shadow-2xs hover:bg-red-700 transition cursor-pointer">
-                Delete Beneficiary
+            <button type="submit" class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-extrabold text-white shadow-2xs hover:bg-amber-700 transition cursor-pointer flex items-center gap-1.5">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+                </svg>
+                Archive Beneficiary
             </button>
         </form>
     </div>

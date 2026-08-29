@@ -10,7 +10,7 @@
             </div>
             <div x-show="sidebarOpen" class="transition-opacity">
                 <h1 class="text-sm font-extrabold leading-tight text-slate-900 tracking-tight">DOLE Bukidnon</h1>
-                <p class="text-[10px] font-extrabold text-blue-700 uppercase tracking-wide">Duplicate Detection</p>
+                <p class="text-[10px] font-extrabold text-blue-800 uppercase tracking-wide">Duplicate Detection</p>
             </div>
         </a>
     </div>
@@ -29,9 +29,20 @@
                 </li>
                 <li>
                     <a href="{{ route('beneficiaries.index') }}"
-                       class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition {{ request()->routeIs('beneficiaries.*') ? 'bg-blue-800 text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
+                       class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition {{ request()->routeIs('beneficiaries.index') || request()->routeIs('beneficiaries.create') || request()->routeIs('beneficiaries.edit') || request()->routeIs('beneficiaries.show') ? 'bg-blue-800 text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
                         <span x-show="sidebarOpen" class="truncate">Beneficiaries</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('beneficiaries.archived') }}"
+                       class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition {{ request()->routeIs('beneficiaries.archived') ? 'bg-blue-800 text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
+                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
+                        <span x-show="sidebarOpen" class="flex-1 truncate">Archives / Trash</span>
+                        @php $trashCount = \App\Models\Beneficiary::onlyTrashed()->count(); @endphp
+                        @if($trashCount > 0)
+                            <span x-show="sidebarOpen" class="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-2xs">{{ $trashCount }}</span>
+                        @endif
                     </a>
                 </li>
                 @hasanyrole('Admin|Validator')
@@ -40,13 +51,25 @@
                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition {{ request()->routeIs('duplicates.*') ? 'bg-blue-800 text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
                         <span x-show="sidebarOpen" class="flex-1 truncate">Duplicate Flags</span>
-                        @php $pCount = \App\Models\DuplicateFlag::where('status', 'pending')->count(); @endphp
-                        @if($pCount > 0)
-                            <span x-show="sidebarOpen" class="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-2xs">{{ $pCount }}</span>
+                        @if(($navDuplicatePending ?? 0) > 0)
+                            <span x-show="sidebarOpen" title="Pending validation queue" class="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-2xs">{{ $navDuplicatePending }}</span>
                         @endif
                     </a>
                 </li>
                 @endhasanyrole
+            </ul>
+        </div>
+
+        <div>
+            <p x-show="sidebarOpen" class="px-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Reports & Intelligence</p>
+            <ul class="space-y-1 font-semibold text-xs">
+                <li>
+                    <a href="{{ route('reports.index') }}"
+                       class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition {{ request()->routeIs('reports.*') ? 'bg-blue-800 text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
+                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                        <span x-show="sidebarOpen" class="truncate">Report Generator</span>
+                    </a>
+                </li>
             </ul>
         </div>
 

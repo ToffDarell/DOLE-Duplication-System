@@ -11,17 +11,17 @@
     </div>
 
     <div class="flex items-center gap-4" x-data="{ profileOpen: false }">
-        {{-- Pending duplicates beacon button --}}
+        {{-- Pending validation queue beacon (same source as sidebar badge + dashboard "Pending Validation Queue" card) --}}
         @hasanyrole('Admin|Validator')
-        @php $pendingCount = \App\Models\DuplicateFlag::where('status', 'pending')->count(); @endphp
-        @if($pendingCount > 0)
+        @if(($navDuplicatePending ?? 0) > 0)
             <a href="{{ route('duplicates.index') }}"
+               title="{{ $navDuplicatePending }} of {{ $navDuplicateTotal ?? $navDuplicatePending }} detected duplicate records awaiting validator action"
                class="relative flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-900 shadow-2xs hover:bg-amber-100 transition">
                 <span class="relative flex h-2 w-2">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-600"></span>
                 </span>
-                <span>{{ $pendingCount }} Flagged Duplicate{{ $pendingCount > 1 ? 's' : '' }}</span>
+                <span>{{ $navDuplicatePending }} Pending Review</span>
             </a>
         @endif
         @endhasanyrole

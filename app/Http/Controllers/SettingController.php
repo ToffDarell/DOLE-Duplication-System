@@ -19,6 +19,7 @@ class SettingController extends Controller
             'enable_exact_dob_check' => SystemSetting::get('enable_exact_dob_check', '1'),
             'enable_gov_id_check' => SystemSetting::get('enable_gov_id_check', '1'),
             'default_import_start_row' => SystemSetting::get('default_import_start_row', '16'),
+            'bulk_import_threshold' => SystemSetting::get('bulk_import_threshold', '600'),
             'current_fiscal_year' => SystemSetting::get('current_fiscal_year', date('Y')),
             'tupad_max_days' => SystemSetting::get('tupad_max_days', '10'),
             'audit_log_retention_days' => SystemSetting::get('audit_log_retention_days', '365'),
@@ -36,6 +37,7 @@ class SettingController extends Controller
             'enable_exact_dob_check' => ['nullable', 'boolean'],
             'enable_gov_id_check' => ['nullable', 'boolean'],
             'default_import_start_row' => ['required', 'integer', 'min:1'],
+            'bulk_import_threshold' => ['required', 'integer', 'min:0', 'max:100000'],
             'current_fiscal_year' => ['required', 'integer', 'min:2020', 'max:2035'],
             'tupad_max_days' => ['required', 'integer', 'min:1', 'max:30'],
             'audit_log_retention_days' => ['required', 'integer', 'min:30', 'max:3650'],
@@ -47,6 +49,7 @@ class SettingController extends Controller
         SystemSetting::set('enable_exact_dob_check', $request->boolean('enable_exact_dob_check') ? '1' : '0', 'Flag identical name + DOB matches');
         SystemSetting::set('enable_gov_id_check', $request->boolean('enable_gov_id_check') ? '1' : '0', 'Flag duplicate government ID numbers');
         SystemSetting::set('default_import_start_row', (string) $data['default_import_start_row'], 'Default row for Excel/CSV import parsing');
+        SystemSetting::set('bulk_import_threshold', (string) $data['bulk_import_threshold'], 'Row count at/above which imports use the fast batched path (0 disables)');
         SystemSetting::set('current_fiscal_year', (string) $data['current_fiscal_year'], 'Active program implementation year');
         SystemSetting::set('tupad_max_days', (string) $data['tupad_max_days'], 'Maximum allowable work days for TUPAD');
         SystemSetting::set('audit_log_retention_days', (string) $data['audit_log_retention_days'], 'Days to retain audit logs');

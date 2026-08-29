@@ -64,7 +64,7 @@ class DuplicateFlag extends Model
         $existAddr = trim($this->matchedBeneficiary?->address ?? '');
 
         if (! empty($newAddr) && ! empty($existAddr) && mb_strtolower($newAddr) === mb_strtolower($existAddr)) {
-            return "SAME ADDRESS: Both records list identical address \"{$newAddr}\" — likely SAME household.";
+            return "SAME ADDRESS: Both records list identical address \"{$newAddr}\" — likely SAME house number / family unit.";
         }
 
         if (empty($newAddr) && empty($existAddr)) {
@@ -75,9 +75,9 @@ class DuplicateFlag extends Model
             $newDisplay = ! empty($newAddr) ? $newAddr : '(not specified)';
             $existDisplay = ! empty($existAddr) ? $existAddr : '(not specified)';
 
-            return "Incomplete address details: New=\"{$newDisplay}\" vs Existing=\"{$existDisplay}\" — Sitio/House No. needed to confirm separate households.";
+            return "Incomplete address details: New=\"{$newDisplay}\" vs Existing=\"{$existDisplay}\" — Sitio/House No. needed to confirm separate house numbers.";
         }
 
-        return "Different addresses detected: New=\"{$newAddr}\" vs Existing=\"{$existAddr}\" — verify if truly separate households.";
+        return "Different addresses detected: New=\"{$newAddr}\" vs Existing=\"{$existAddr}\" — verify if truly separate house numbers.";
     }
 }
