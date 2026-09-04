@@ -372,11 +372,11 @@ test('report generator console renders multi-category filter inputs and live pre
     $response->assertOk()
         ->assertSee('Custom Beneficiary Report', false)
         ->assertSee('Multi-Category Report Parameters', false)
-        ->assertSee('ORDER BY Last Name ASC, First Name ASC', false)
+        ->assertSee('Sorted alphabetically by Last Name, First Name', false)
         ->assertSee('ANA MANALO', false)
         ->assertSee('Valencia City', false)
         ->assertSee('Export Excel (.xlsx)', false)
-        ->assertSee('Export PDF Report', false);
+        ->assertSee('Export PDF', false);
 });
 
 test('api returns distinct barangays for a given municipality', function () {

@@ -153,7 +153,7 @@
             <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center gap-2 mb-1.5">
-                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-emerald-600 text-[11px] font-black text-white shadow-2xs shrink-0">&lt; 70%</span>
+                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-emerald-600 text-[11px] font-black text-white shadow-2xs shrink-0">&lt;70%</span>
                         <h4 class="font-extrabold text-emerald-950 text-xs leading-snug">Low Similarity / Distinct</h4>
                     </div>
                     <p class="text-[11px] text-emerald-800 leading-relaxed">Divergent record details with minor overlap; low collision risk.</p>
