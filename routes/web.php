@@ -56,6 +56,7 @@ Route::middleware(['auth', 'track.activity', 'check.password.reset'])->group(fun
     Route::get('export/excel', [ExportController::class, 'exportExcel'])->name('export.excel');
     Route::get('export/csv', [ExportController::class, 'exportCsv'])->name('export.csv');
     Route::get('export/pdf', [ExportController::class, 'exportPdf'])->name('export.pdf');
+    Route::get('reports/adm-pdf', [ExportController::class, 'exportAdmPdf'])->name('reports.adm-pdf');
     Route::get('api/barangays-by-municipality', [ExportController::class, 'getBarangaysByMunicipality'])->name('api.barangays');
 
     // Duplicates Review (Admin, Validator)

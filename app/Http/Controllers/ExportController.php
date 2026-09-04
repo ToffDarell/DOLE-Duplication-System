@@ -190,6 +190,28 @@ class ExportController extends Controller
     }
 
     /**
+     * Generate Action Taken Matrix (ADM) & Panel Recommendations Compliance PDF.
+     */
+    public function exportAdmPdf(Request $request)
+    {
+        $logoPath = public_path('logo dole.png');
+        if (! file_exists($logoPath)) {
+            $logoPath = public_path('dole-logo.png');
+        }
+        $logoSrc = file_exists($logoPath)
+            ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath))
+            : null;
+
+        $pdf = Pdf::loadView('exports.adm_recommendations_pdf', compact('logoSrc'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'sans-serif');
+
+        return $pdf->stream('DOLE_ADM_Panel_Recommendations_Compliance_Report.pdf');
+    }
+
+    /**
      * Centralized Multi-Category Filter Query Builder (Panelist: Mark Ian Mukara).
      */
     protected function getFilteredQuery(Request $request)
