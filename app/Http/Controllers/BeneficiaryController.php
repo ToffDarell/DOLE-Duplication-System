@@ -60,7 +60,25 @@ class BeneficiaryController extends Controller
             $query->where('barangay', $barangay);
         }
 
-        // 5. Filter by Date range
+        // 5. Filter by Sector
+        if ($sector = $request->input('sector')) {
+            if ($sector === 'senior') {
+                $query->where('is_senior_citizen', true);
+            } elseif ($sector === 'pwd') {
+                $query->where('is_pwd', true);
+            } elseif ($sector === 'student') {
+                $query->where('is_student', true);
+            }
+        }
+
+        // 6. Filter by Duplicate Status
+        if ($request->boolean('has_duplicates')) {
+            $query->where(function ($q) {
+                $q->has('duplicateFlags')->orHas('matchedDuplicateFlags');
+            });
+        }
+
+        // 7. Filter by Date range
         if ($dateFrom = $request->input('date_from')) {
             $query->whereDate('created_at', '>=', $dateFrom);
         }

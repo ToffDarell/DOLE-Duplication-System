@@ -18,19 +18,56 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
+
+    {{-- Bulletproof Synchronized Transitions for Expanded & Collapsed Sidebar --}}
+    <style>
+        @media (min-width: 1024px) {
+            aside.sidebar-expanded {
+                width: 16rem !important; /* 256px */
+            }
+            aside.sidebar-collapsed {
+                width: 5rem !important; /* 80px */
+            }
+            .layout-main.content-expanded {
+                padding-left: 16rem !important; /* 256px */
+            }
+            .layout-main.content-collapsed {
+                padding-left: 5rem !important; /* 80px */
+            }
+        }
+    </style>
 </head>
-<body class="h-full font-sans antialiased text-slate-900 bg-slate-50" x-data="{ sidebarOpen: true }">
+<body class="h-full font-sans antialiased text-slate-900 bg-slate-50"
+      x-data="{
+          sidebarOpen: window.innerWidth >= 1024,
+          mobileMenuOpen: false
+      }"
+      @keydown.escape.window="mobileMenuOpen = false"
+      @resize.window="if (window.innerWidth >= 1024) mobileMenuOpen = false">
     <div class="min-h-screen bg-slate-50">
+        {{-- Mobile Sidebar Backdrop Overlay --}}
+        <div x-show="mobileMenuOpen"
+             @click="mobileMenuOpen = false"
+             x-transition:enter="transition-opacity ease-linear duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-linear duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs lg:hidden"
+             style="display: none;"
+             aria-hidden="true"></div>
+
         {{-- Sidebar --}}
         @include('layouts.partials.sidebar')
 
         {{-- Main Layout Container --}}
-        <div class="transition-all duration-200" :class="sidebarOpen ? 'lg:pl-64' : 'lg:pl-20'">
+        <div class="transition-all duration-200 min-h-screen flex flex-col layout-main content-expanded" :class="sidebarOpen ? 'content-expanded' : 'content-collapsed'">
             {{-- Top Navigation Bar --}}
             @include('layouts.partials.topbar')
 
             {{-- Main Content View --}}
-            <main class="p-6">
+            <main class="flex-1 p-3.5 sm:p-6 lg:p-8">
                 {{-- Flash Notifications --}}
                 @if(session('success'))
                     <div x-data="{ show: true }" x-show="show" class="mb-5 flex items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-xs font-bold text-emerald-900 shadow-2xs">
@@ -85,7 +122,7 @@
     </div>
 
     {{-- Native HTML5 Confirm Modal Dialog --}}
-    <dialog id="html5-confirm-dialog" class="backdrop:bg-slate-900/60 backdrop:backdrop-blur-xs rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl max-w-md w-full m-auto transition-all">
+    <dialog id="html5-confirm-dialog" class="backdrop:bg-slate-900/60 backdrop:backdrop-blur-xs rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl max-w-md w-[calc(100%-2rem)] mx-auto transition-all">
         <div class="p-6">
             <div class="flex items-start gap-4">
                 <div id="html5-confirm-icon-bg" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600 shadow-2xs">

@@ -5,136 +5,161 @@
 
 @section('content')
 {{-- DOLE Official Header Banner --}}
-<div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-2xl border border-blue-700/50 bg-blue-800 p-6 text-white shadow-lg relative overflow-hidden">
+<div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-2xl border border-blue-700/50 bg-blue-800 p-4 sm:p-6 text-white shadow-lg relative overflow-hidden gap-4">
     <div class="absolute -right-10 -bottom-10 h-44 w-44 rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
-    <div class="flex items-center gap-4 relative z-10">
+    <div class="flex items-center gap-3 sm:gap-4 relative z-10 min-w-0">
         <div class="rounded-2xl bg-white p-2 shadow-md border border-white/20 shrink-0">
-            <img src="{{ asset('logo dole.png') }}" alt="DOLE Official Logo" class="h-12 w-12 object-contain bg-white">
+            <img src="{{ asset('logo dole.png') }}" alt="DOLE Official Logo" class="h-10 w-10 sm:h-12 sm:w-12 object-contain bg-white">
         </div>
-        <div>
-            <div class="flex items-center gap-2">
-                <span class="rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-extrabold text-white uppercase tracking-wider">DOLE Bukidnon Field Office</span>
-                <span class="rounded-full bg-amber-400/20 border border-amber-300/30 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-200 uppercase tracking-wider">CY {{ date('Y') }} Intelligence</span>
+        <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span class="rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[9px] sm:text-[10px] font-extrabold text-white uppercase tracking-wider">DOLE Bukidnon Field Office</span>
+                <span class="rounded-full bg-amber-400/20 border border-amber-300/30 px-2.5 py-0.5 text-[9px] sm:text-[10px] font-extrabold text-amber-200 uppercase tracking-wider">CY {{ date('Y') }} Intelligence</span>
             </div>
-            <h2 class="mt-1 text-xl font-black tracking-tight text-white">Centralized Analytics & Duplicate Engine Report</h2>
+            <h2 class="mt-1 text-base sm:text-xl font-black tracking-tight text-white leading-tight">Centralized Analytics & Duplicate Engine Report</h2>
         </div>
     </div>
-    <div class="mt-4 sm:mt-0 text-left sm:text-right relative z-10">
-        <p class="text-[11px] font-extrabold text-blue-200 uppercase tracking-wider">Last Sync Time</p>
-        <p class="text-sm font-bold text-white tracking-tight">{{ now()->format('F d, Y - h:i A') }}</p>
-    </div>
-</div>
-
-{{-- Duplication risk level reference --}}
-<div class="mb-8 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
-    <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-2.5">
-        <div class="flex items-center gap-2">
-            <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-800">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
-                </svg>
-            </div>
-            <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Duplication Risk Level & Indicator Legend</h3>
-        </div>
-        <span class="text-[11px] font-bold text-slate-500">Official Scoring Metric</span>
-    </div>
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs font-medium">
-        {{-- Exact Duplicate (100%) --}}
-        <div class="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50/60 p-3">
-            <span class="inline-flex h-7 w-12 shrink-0 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-2xs">100%</span>
-            <div>
-                <p class="font-extrabold text-red-950">Exact Duplicate</p>
-                <p class="text-[11px] text-red-800 mt-0.5">Identical Full Name, Birthdate, and Government ID match.</p>
-            </div>
-        </div>
-
-        {{-- High Similarity Risk (85% - 99%) --}}
-        <div class="flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50/60 p-3">
-            <span class="inline-flex h-7 w-16 shrink-0 items-center justify-center rounded-lg bg-orange-500 text-xs font-black text-white shadow-2xs">85%–99%</span>
-            <div>
-                <p class="font-extrabold text-orange-950">High Similarity Risk</p>
-                <p class="text-[11px] text-orange-800 mt-0.5">Near-identical name spellings, phonetic match, or birthdates.</p>
-            </div>
-        </div>
-
-        {{-- Moderate Similarity Risk (70% - 84%) --}}
-        <div class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
-            <span class="inline-flex h-7 w-16 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-xs font-black text-white shadow-2xs">70%–84%</span>
-            <div>
-                <p class="font-extrabold text-amber-950">Moderate Risk</p>
-                <p class="text-[11px] text-amber-800 mt-0.5">Partial field match (e.g. same house number / address or sibling name).</p>
-            </div>
-        </div>
-
-        {{-- Low Similarity / Distinct (< 70%) --}}
-        <div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
-            <span class="inline-flex h-7 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white shadow-2xs">&lt;70%</span>
-            <div>
-                <p class="font-extrabold text-emerald-950">Low Similarity / Distinct</p>
-                <p class="text-[11px] text-emerald-800 mt-0.5">Divergent record details with minor overlap; low collision risk.</p>
-            </div>
-        </div>
+    <div class="mt-1 sm:mt-0 text-left sm:text-right relative z-10 shrink-0">
+        <p class="text-[10px] sm:text-[11px] font-extrabold text-blue-200 uppercase tracking-wider">Last Sync Time</p>
+        <p class="text-xs sm:text-sm font-bold text-white tracking-tight">{{ now()->format('M d, Y - h:i A') }}</p>
     </div>
 </div>
 
 {{-- Top Summary Cards (KPI Metrics) --}}
-<div class="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+<div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
     {{-- Card 1: Total Beneficiaries Registered --}}
-    <div class="gov-card gov-card-hover p-5 border-l-4 border-l-blue-700">
-        <div class="mb-3 flex items-center justify-between">
-            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-700 text-white shadow-xs">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
-                </svg>
+    <div class="gov-card gov-card-hover p-5 border-l-4 border-l-blue-700 flex flex-col justify-between h-full">
+        <div>
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <p class="text-sm font-bold text-slate-700 leading-snug">Total Beneficiaries Registered</p>
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-700 text-white shadow-xs">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v-.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
+                    </svg>
+                </div>
             </div>
-            <span class="rounded-full bg-blue-100 px-3 py-1 text-[11px] font-extrabold text-blue-900 border border-blue-200">System Total</span>
+            <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($totalBeneficiaries) }}</p>
         </div>
-        <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($totalBeneficiaries) }}</p>
-        <p class="mt-1 text-xs font-bold text-slate-600">Total Beneficiaries Registered</p>
+        <p class="mt-3 text-xs font-medium text-slate-400">Master profiles across Bukidnon LGUs</p>
     </div>
 
     {{-- Card 2: Total Duplicates Flagged --}}
-    <div class="gov-card gov-card-hover p-5 border-l-4 border-l-amber-500">
-        <div class="mb-3 flex items-center justify-between">
-            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xs">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
-                </svg>
+    <div class="gov-card gov-card-hover p-5 border-l-4 border-l-amber-500 flex flex-col justify-between h-full">
+        <div>
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <p class="text-sm font-bold text-slate-700 leading-snug">Total Duplicates Flagged</p>
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                    </svg>
+                </div>
             </div>
-            <span class="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-extrabold text-amber-900 border border-amber-200">Engine Flagged</span>
+            <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($totalDuplicates) }}</p>
         </div>
-        <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($totalDuplicates) }}</p>
-        <p class="mt-1 text-xs font-bold text-slate-600">Total Duplicate Records Detected</p>
-        <p class="mt-0.5 text-[11px] font-medium text-slate-400">{{ number_format($pendingDuplicates) }} pending &middot; {{ number_format($overriddenCount) }} resolved / overridden</p>
+        <p class="mt-3 text-xs font-medium text-slate-400">{{ number_format($pendingDuplicates) }} pending &middot; {{ number_format($overriddenCount) }} cleared / resolved</p>
     </div>
 
     {{-- Card 3: Pending Validation Queue Count --}}
-    <div class="gov-card gov-card-hover p-5 border-l-4 border-l-rose-600">
-        <div class="mb-3 flex items-center justify-between">
-            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-600 text-white shadow-xs">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
+    <div class="gov-card gov-card-hover p-5 border-l-4 border-l-rose-600 flex flex-col justify-between h-full">
+        <div>
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <p class="text-sm font-bold text-slate-700 leading-snug">Pending Validation Queue</p>
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white shadow-xs">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
             </div>
-            <span class="rounded-full bg-rose-100 px-3 py-1 text-[11px] font-extrabold text-rose-900 border border-rose-200">Action Required</span>
+            <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($pendingDuplicates) }}</p>
         </div>
-        <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($pendingDuplicates) }}</p>
-        <p class="mt-1 text-xs font-bold text-slate-600">Pending Validation Queue</p>
-        <p class="mt-0.5 text-[11px] font-medium text-slate-400">Subset of {{ number_format($totalDuplicates) }} detected &middot; matches the header &amp; sidebar badge</p>
+        <p class="mt-3 text-xs font-medium text-slate-400">Requires validator review &amp; decision</p>
     </div>
 
-    {{-- Card 4: Total Overridden / Approved Cases --}}
-    <div class="gov-card gov-card-hover p-5 border-l-4 border-l-emerald-600">
-        <div class="mb-3 flex items-center justify-between">
-            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-xs">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    {{-- Card 4: Total Program Availments --}}
+    <div class="gov-card gov-card-hover p-5 border-l-4 border-l-emerald-600 flex flex-col justify-between h-full">
+        <div>
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <p class="text-sm font-bold text-slate-700 leading-snug">Total Program Availments</p>
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format(array_sum($programDistribution)) }}</p>
+        </div>
+        <p class="mt-3 text-xs font-medium text-slate-400">TUPAD, SPES, DILP &amp; GIP cross-records</p>
+    </div>
+</div>
+
+{{-- Collapsible Duplication Risk Level Reference --}}
+<div x-data="{ showLegend: false }" class="mb-6 rounded-2xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden transition-all">
+    <div class="flex items-center justify-between p-3.5 sm:px-5 cursor-pointer hover:bg-slate-50/70 select-none" @click="showLegend = !showLegend">
+        <div class="flex items-center gap-2.5">
+            <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-800 shrink-0">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
                 </svg>
             </div>
-            <span class="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-extrabold text-emerald-900 border border-emerald-200">Audit Verified</span>
+            <div>
+                <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Duplication Risk Level &amp; Indicator Legend</h3>
+                <p class="text-[11px] text-slate-500 font-medium">Click to <span x-text="showLegend ? 'collapse' : 'view'"></span> official DOLE scoring thresholds</p>
+            </div>
         </div>
-        <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($overriddenCount) }}</p>
-        <p class="mt-1 text-xs font-bold text-slate-600">Total Overridden / Approved Cases</p>
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold text-slate-400 hidden sm:inline">Official Scoring Metric</span>
+            <div class="rounded-lg p-1 text-slate-400 hover:text-slate-600 transition-transform duration-200" :class="showLegend ? 'rotate-180' : ''">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+            </div>
+        </div>
+    </div>
+    
+    <div x-show="showLegend" x-transition.duration.200ms class="border-t border-slate-100 p-4 pt-3 bg-slate-50/40" style="display: none;">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs font-medium">
+            {{-- Exact Duplicate (100%) --}}
+            <div class="rounded-xl border border-red-200 bg-red-50/60 p-3.5 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-red-600 text-[11px] font-black text-white shadow-2xs shrink-0">100%</span>
+                        <h4 class="font-extrabold text-red-950 text-xs leading-snug">Exact Duplicate</h4>
+                    </div>
+                    <p class="text-[11px] text-red-800 leading-relaxed">Identical Full Name, Birthdate, and Government ID match.</p>
+                </div>
+            </div>
+
+            {{-- High Similarity Risk (85% - 99%) --}}
+            <div class="rounded-xl border border-orange-200 bg-orange-50/60 p-3.5 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-orange-500 text-[11px] font-black text-white shadow-2xs shrink-0">85%–99%</span>
+                        <h4 class="font-extrabold text-orange-950 text-xs leading-snug">High Similarity Risk</h4>
+                    </div>
+                    <p class="text-[11px] text-orange-800 leading-relaxed">Near-identical name spellings, phonetic match, or birthdates.</p>
+                </div>
+            </div>
+
+            {{-- Moderate Similarity Risk (70% - 84%) --}}
+            <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-amber-500 text-[11px] font-black text-white shadow-2xs shrink-0">70%–84%</span>
+                        <h4 class="font-extrabold text-amber-950 text-xs leading-snug">Moderate Risk</h4>
+                    </div>
+                    <p class="text-[11px] text-amber-800 leading-relaxed">Partial field match (e.g. same house number / address or sibling name).</p>
+                </div>
+            </div>
+
+            {{-- Low Similarity / Distinct (< 70%) --}}
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-emerald-600 text-[11px] font-black text-white shadow-2xs shrink-0">&lt; 70%</span>
+                        <h4 class="font-extrabold text-emerald-950 text-xs leading-snug">Low Similarity / Distinct</h4>
+                    </div>
+                    <p class="text-[11px] text-emerald-800 leading-relaxed">Divergent record details with minor overlap; low collision risk.</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -359,11 +384,11 @@
             <table class="w-full text-left text-sm">
                 <thead class="border-b border-slate-200 bg-slate-100/70 text-[11px] font-extrabold uppercase tracking-wider text-slate-700">
                     <tr>
-                        <th class="px-6 py-3.5">Beneficiary Name</th>
-                        <th class="px-6 py-3.5">Municipality</th>
-                        <th class="px-6 py-3.5">Date of Birth</th>
-                        <th class="px-6 py-3.5">Encoded By</th>
-                        <th class="px-6 py-3.5 text-right">Action</th>
+                        <th class="whitespace-nowrap px-6 py-3.5">Beneficiary Name</th>
+                        <th class="whitespace-nowrap px-6 py-3.5">Municipality</th>
+                        <th class="whitespace-nowrap px-6 py-3.5">Date of Birth</th>
+                        <th class="whitespace-nowrap px-6 py-3.5">Encoded By</th>
+                        <th class="whitespace-nowrap px-6 py-3.5 text-right">Action</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200 text-xs font-medium bg-white">
@@ -372,12 +397,16 @@
                             <td class="whitespace-nowrap px-6 py-3.5 font-extrabold text-slate-900">
                                 <a href="{{ route('beneficiaries.show', $b) }}" class="hover:text-blue-800 hover:underline">{{ $b->full_name }}</a>
                             </td>
-                            <td class="px-6 py-3.5 text-slate-700 font-semibold">{{ $b->municipality }}</td>
-                            <td class="px-6 py-3.5 text-slate-700 font-semibold">{{ $b->date_of_birth?->format('M d, Y') }}</td>
-                            <td class="px-6 py-3.5 text-slate-700 font-semibold">{{ $b->creator?->name ?? '—' }}</td>
-                            <td class="px-6 py-3.5 text-right">
-                                <a href="{{ route('beneficiaries.show', $b) }}" class="rounded-lg bg-slate-100 border border-slate-200 px-2.5 py-1 text-[11px] font-bold text-slate-800 hover:bg-blue-700 hover:text-white transition">
-                                    View Profile
+                            <td class="whitespace-nowrap px-6 py-3.5 text-slate-700 font-semibold">{{ $b->municipality }}</td>
+                            <td class="whitespace-nowrap px-6 py-3.5 text-slate-700 font-semibold">{{ $b->date_of_birth?->format('M d, Y') }}</td>
+                            <td class="whitespace-nowrap px-6 py-3.5 text-slate-700 font-semibold">{{ $b->creator?->name ?? '—' }}</td>
+                            <td class="whitespace-nowrap px-6 py-3.5 text-right">
+                                <a href="{{ route('beneficiaries.show', $b) }}" class="group inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-slate-100 border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-blue-800 hover:text-white hover:border-blue-800 transition shadow-2xs">
+                                    <svg class="h-3.5 w-3.5 text-slate-500 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.573 16.49 16.638 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                    <span>View Profile</span>
                                 </a>
                             </td>
                         </tr>

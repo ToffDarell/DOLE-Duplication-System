@@ -75,3 +75,19 @@ input:focus, select:focus, textarea:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Sidebar and Main Layout Synchronized Responsive Transitions */
+@media (min-width: 1024px) {
+  aside.sidebar-expanded {
+    width: 16rem !important; /* 256px */
+  }
+  aside.sidebar-collapsed {
+    width: 5rem !important; /* 80px */
+  }
+  .layout-main.content-expanded {
+    padding-left: 16rem !important; /* 256px */
+  }
+  .layout-main.content-collapsed {
+    padding-left: 5rem !important; /* 80px */
+  }
+}

@@ -1,27 +1,30 @@
 {{-- Top Navigation Bar --}}
-<header class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 shadow-xs">
-    <div class="flex items-center gap-3">
-        <button @click="sidebarOpen = !sidebarOpen" class="rounded-lg p-1.5 text-slate-600 hover:bg-slate-100 lg:hidden">
+<header class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-3 sm:px-6 shadow-xs">
+    <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <button @click="mobileMenuOpen = !mobileMenuOpen"
+                class="rounded-lg p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:outline-none lg:hidden shrink-0"
+                aria-label="Toggle navigation menu">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
-        <div>
-            <h2 class="text-base font-extrabold text-slate-900 tracking-tight">@yield('page-title', 'Dashboard')</h2>
-            <p class="text-xs text-slate-600 font-medium">@yield('page-subtitle', '')</p>
+        <div class="min-w-0">
+            <h2 class="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight truncate">@yield('page-title', 'Dashboard')</h2>
+            <p class="hidden md:block text-xs text-slate-600 font-medium truncate max-w-xs lg:max-w-md">@yield('page-subtitle', '')</p>
         </div>
     </div>
 
-    <div class="flex items-center gap-4" x-data="{ profileOpen: false }">
+    <div class="flex items-center gap-2 sm:gap-4 shrink-0" x-data="{ profileOpen: false }">
         {{-- Pending validation queue beacon (same source as sidebar badge + dashboard "Pending Validation Queue" card) --}}
         @hasanyrole('Admin|Validator')
         @if(($navDuplicatePending ?? 0) > 0)
             <a href="{{ route('duplicates.index') }}"
                title="{{ $navDuplicatePending }} of {{ $navDuplicateTotal ?? $navDuplicatePending }} detected duplicate records awaiting validator action"
-               class="relative flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-900 shadow-2xs hover:bg-amber-100 transition">
-                <span class="relative flex h-2 w-2">
+               class="relative flex items-center gap-1.5 sm:gap-2 rounded-full border border-amber-300 bg-amber-50 px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-bold text-amber-900 shadow-2xs hover:bg-amber-100 transition whitespace-nowrap">
+                <span class="relative flex h-2 w-2 shrink-0">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-600"></span>
                 </span>
-                <span>{{ $navDuplicatePending }} Pending Review</span>
+                <span class="hidden sm:inline">{{ $navDuplicatePending }} Pending Review</span>
+                <span class="sm:hidden">{{ $navDuplicatePending }} Pending</span>
             </a>
         @endif
         @endhasanyrole
@@ -29,15 +32,15 @@
         {{-- User Profile Dropdown --}}
         <div class="relative">
             <button @click="profileOpen = !profileOpen"
-                    class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-semibold transition hover:bg-slate-100">
-                <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-800 text-xs font-bold text-white shadow-2xs">
+                    class="flex items-center gap-2 sm:gap-3 rounded-xl border border-slate-200 bg-slate-50 px-2 sm:px-3 py-1.5 text-sm font-semibold transition hover:bg-slate-100">
+                <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-800 text-xs font-bold text-white shadow-2xs shrink-0">
                     {{ substr(auth()->user()->name, 0, 1) }}
                 </div>
-                <div class="text-left hidden sm:block">
-                    <p class="text-xs font-bold leading-tight text-slate-900">{{ auth()->user()->name }}</p>
+                <div class="text-left hidden md:block">
+                    <p class="text-xs font-bold leading-tight text-slate-900 truncate max-w-[120px]">{{ auth()->user()->name }}</p>
                     <p class="text-[10px] font-extrabold text-blue-800 uppercase tracking-wide">{{ auth()->user()->roles->first()?->name ?? 'User' }}</p>
                 </div>
-                <svg class="h-4 w-4 text-slate-500 transition-transform duration-200" :class="profileOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                <svg class="h-4 w-4 text-slate-500 transition-transform duration-200 shrink-0" :class="profileOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
             </button>
 
             <div x-show="profileOpen" @click.away="profileOpen = false"
