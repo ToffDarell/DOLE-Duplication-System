@@ -1224,12 +1224,13 @@
                 this.submitting = true;
                 try {
                     const formData = new FormData(form);
-                    if (this.isGraduating) {
-                        formData.set('is_graduating_student', '1');
-                        formData.set('is_graduating_college', '1');
-                        formData.set('is_student', '1');
-                        formData.set('is_enrolled', '1');
-                    }
+                    formData.set('is_student', (this.isStudent || this.isGraduating) ? '1' : '0');
+                    formData.set('is_enrolled', (this.isStudent || this.isGraduating) ? '1' : '0');
+                    formData.set('is_graduating_student', this.isGraduating ? '1' : '0');
+                    formData.set('is_graduating_college', this.isGraduating ? '1' : '0');
+                    formData.set('is_government_employee', this.isGovEmp ? '1' : '0');
+                    formData.set('is_pwd', this.isPwd ? '1' : '0');
+                    formData.set('is_senior_citizen', this.isSenior ? '1' : '0');
                     if (options.isLinking && this.existingBeneficiaryId) {
                         formData.set('existing_beneficiary_id', this.existingBeneficiaryId);
                         formData.set('confirm_override', '0');

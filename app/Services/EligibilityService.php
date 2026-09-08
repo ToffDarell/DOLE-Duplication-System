@@ -32,8 +32,22 @@ class EligibilityService
         $programCode = strtoupper($data['program_code'] ?? '');
         $programYear = (int) ($data['availment_year'] ?? date('Y'));
 
-        $isStudent = filter_var($data['is_student'] ?? ($beneficiary?->is_student ?? false), FILTER_VALIDATE_BOOLEAN);
-        $isGovEmp = filter_var($data['is_government_employee'] ?? ($beneficiary?->is_government_employee ?? false), FILTER_VALIDATE_BOOLEAN);
+        if (array_key_exists('is_student', $data)) {
+            $isStudent = filter_var($data['is_student'], FILTER_VALIDATE_BOOLEAN);
+        } elseif (isset($data['first_name']) || isset($data['last_name'])) {
+            $isStudent = false;
+        } else {
+            $isStudent = filter_var($beneficiary?->is_student ?? false, FILTER_VALIDATE_BOOLEAN);
+        }
+
+        if (array_key_exists('is_government_employee', $data)) {
+            $isGovEmp = filter_var($data['is_government_employee'], FILTER_VALIDATE_BOOLEAN);
+        } elseif (isset($data['first_name']) || isset($data['last_name'])) {
+            $isGovEmp = false;
+        } else {
+            $isGovEmp = filter_var($beneficiary?->is_government_employee ?? false, FILTER_VALIDATE_BOOLEAN);
+        }
+
         $isCalamityOverride = filter_var($data['is_calamity_override'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
         $program = Program::where('code', $programCode)->first();

@@ -26,10 +26,14 @@ class ExportController extends Controller
         $municipalities = Beneficiary::distinct()->whereNotNull('municipality')->where('municipality', '!=', '')->pluck('municipality')->sort()->values();
 
         // Selected municipality's barangays for dependent dropdown
-        $selectedMunicipality = $request->input('municipality');
+        $selectedMunicipality = trim((string) $request->input('municipality'));
         $barangays = [];
         if ($selectedMunicipality) {
-            $barangays = Beneficiary::where('municipality', $selectedMunicipality)
+            $barangays = Beneficiary::where(function ($q) use ($selectedMunicipality) {
+                $q->where('municipality', $selectedMunicipality)
+                    ->orWhereRaw('LOWER(TRIM(municipality)) = ?', [strtolower($selectedMunicipality)])
+                    ->orWhere('municipality', 'LIKE', '%'.$selectedMunicipality.'%');
+            })
                 ->distinct()
                 ->whereNotNull('barangay')
                 ->where('barangay', '!=', '')
@@ -67,12 +71,16 @@ class ExportController extends Controller
      */
     public function getBarangaysByMunicipality(Request $request): JsonResponse
     {
-        $municipality = $request->input('municipality');
+        $municipality = trim((string) $request->input('municipality'));
         if (! $municipality) {
             return response()->json([]);
         }
 
-        $barangays = Beneficiary::where('municipality', $municipality)
+        $barangays = Beneficiary::where(function ($q) use ($municipality) {
+            $q->where('municipality', $municipality)
+                ->orWhereRaw('LOWER(TRIM(municipality)) = ?', [strtolower($municipality)])
+                ->orWhere('municipality', 'LIKE', '%'.$municipality.'%');
+        })
             ->distinct()
             ->whereNotNull('barangay')
             ->where('barangay', '!=', '')
@@ -215,13 +223,20 @@ class ExportController extends Controller
         }
 
         // 3. Municipality Filter
-        if ($municipality = $request->input('municipality')) {
-            $query->where('municipality', $municipality);
+        if ($municipality = trim((string) $request->input('municipality'))) {
+            $query->where(function ($q) use ($municipality) {
+                $q->where('municipality', $municipality)
+                    ->orWhereRaw('LOWER(TRIM(municipality)) = ?', [strtolower($municipality)])
+                    ->orWhere('municipality', 'LIKE', '%'.$municipality.'%');
+            });
         }
 
         // 4. Barangay Filter (Dependent Dropdown)
-        if ($barangay = $request->input('barangay')) {
-            $query->where('barangay', $barangay);
+        if ($barangay = trim((string) $request->input('barangay'))) {
+            $query->where(function ($q) use ($barangay) {
+                $q->where('barangay', $barangay)
+                    ->orWhereRaw('LOWER(TRIM(barangay)) = ?', [strtolower($barangay)]);
+            });
         }
 
         // 5. Age Range Filter (18-30, 31-50, 51-59, 60+ / Senior)

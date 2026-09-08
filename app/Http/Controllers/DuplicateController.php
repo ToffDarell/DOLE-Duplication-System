@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
+use App\Models\Beneficiary;
 use App\Models\BeneficiaryProgram;
 use App\Models\DuplicateFlag;
 use Illuminate\Http\RedirectResponse;
@@ -13,6 +14,29 @@ class DuplicateController extends Controller
 {
     public function index(Request $request): View
     {
+        $municipalities = Beneficiary::distinct()
+            ->whereNotNull('municipality')
+            ->where('municipality', '!=', '')
+            ->pluck('municipality')
+            ->sort()
+            ->values();
+
+        $selectedMunicipality = trim((string) $request->input('municipality'));
+        $barangays = [];
+        if ($selectedMunicipality) {
+            $barangays = Beneficiary::where(function ($q) use ($selectedMunicipality) {
+                $q->where('municipality', $selectedMunicipality)
+                    ->orWhereRaw('LOWER(TRIM(municipality)) = ?', [strtolower($selectedMunicipality)])
+                    ->orWhere('municipality', 'LIKE', '%'.$selectedMunicipality.'%');
+            })
+                ->distinct()
+                ->whereNotNull('barangay')
+                ->where('barangay', '!=', '')
+                ->pluck('barangay')
+                ->sort()
+                ->values();
+        }
+
         $programUpper = $request->filled('program') ? strtoupper(trim($request->input('program'))) : null;
         if ($programUpper === 'ALL') {
             $programUpper = null;
@@ -20,17 +44,89 @@ class DuplicateController extends Controller
 
         // Base query for counts with program scope applied
         $baseCountQuery = DuplicateFlag::query();
+        $query = DuplicateFlag::with(['beneficiary.beneficiaryPrograms.program', 'matchedBeneficiary.beneficiaryPrograms.program', 'reviewer']);
+
         if ($programUpper) {
-            $baseCountQuery->where(function ($sub) use ($programUpper) {
+            $filterProg = function ($sub) use ($programUpper) {
                 $sub->whereHas('beneficiary.beneficiaryPrograms.program', function ($pq) use ($programUpper) {
                     $pq->where('code', $programUpper);
                 })->orWhereHas('matchedBeneficiary.beneficiaryPrograms.program', function ($mq) use ($programUpper) {
                     $mq->where('code', $programUpper);
                 });
-            });
+            };
+            $baseCountQuery->where($filterProg);
+            $query->where($filterProg);
         }
 
-        // Distinct flag counts dynamically updated by program
+        // Municipality Filter
+        if ($municipality = trim((string) $request->input('municipality'))) {
+            $filterMuni = function ($q) use ($municipality) {
+                $q->where(function ($sub) use ($municipality) {
+                    $sub->whereHas('beneficiary', function ($bq) use ($municipality) {
+                        $bq->where('municipality', $municipality)
+                            ->orWhereRaw('LOWER(TRIM(municipality)) = ?', [strtolower($municipality)])
+                            ->orWhere('municipality', 'LIKE', '%'.$municipality.'%');
+                    })->orWhereHas('matchedBeneficiary', function ($mq) use ($municipality) {
+                        $mq->where('municipality', $municipality)
+                            ->orWhereRaw('LOWER(TRIM(municipality)) = ?', [strtolower($municipality)])
+                            ->orWhere('municipality', 'LIKE', '%'.$municipality.'%');
+                    });
+                });
+            };
+            $baseCountQuery->where($filterMuni);
+            $query->where($filterMuni);
+        }
+
+        // Barangay Filter
+        if ($barangay = trim((string) $request->input('barangay'))) {
+            $filterBrgy = function ($q) use ($barangay) {
+                $q->where(function ($sub) use ($barangay) {
+                    $sub->whereHas('beneficiary', function ($bq) use ($barangay) {
+                        $bq->where('barangay', $barangay)
+                            ->orWhereRaw('LOWER(TRIM(barangay)) = ?', [strtolower($barangay)]);
+                    })->orWhereHas('matchedBeneficiary', function ($mq) use ($barangay) {
+                        $mq->where('barangay', $barangay)
+                            ->orWhereRaw('LOWER(TRIM(barangay)) = ?', [strtolower($barangay)]);
+                    });
+                });
+            };
+            $baseCountQuery->where($filterBrgy);
+            $query->where($filterBrgy);
+        }
+
+        // Sex Filter
+        if ($sex = $request->input('sex')) {
+            $formattedSex = ucfirst(strtolower($sex));
+            if (in_array($formattedSex, ['Male', 'Female'])) {
+                $filterSex = function ($q) use ($formattedSex) {
+                    $q->where(function ($sub) use ($formattedSex) {
+                        $sub->whereHas('beneficiary', fn ($bq) => $bq->where('sex', $formattedSex))
+                            ->orWhereHas('matchedBeneficiary', fn ($mq) => $mq->where('sex', $formattedSex));
+                    });
+                };
+                $baseCountQuery->where($filterSex);
+                $query->where($filterSex);
+            }
+        }
+
+        // Risk Level / Match Percentage Filter
+        if ($riskLevel = $request->input('risk_level')) {
+            $filterRisk = function ($q) use ($riskLevel) {
+                if ($riskLevel === 'exact' || $riskLevel === 'exact_match') {
+                    $q->where('match_score', '>=', 100);
+                } elseif ($riskLevel === 'high' || $riskLevel === 'high_risk') {
+                    $q->whereBetween('match_score', [85, 99]);
+                } elseif ($riskLevel === 'moderate' || $riskLevel === 'moderate_risk') {
+                    $q->whereBetween('match_score', [70, 84]);
+                } elseif ($riskLevel === 'low' || $riskLevel === 'low_risk') {
+                    $q->where('match_score', '<', 70);
+                }
+            };
+            $baseCountQuery->where($filterRisk);
+            $query->where($filterRisk);
+        }
+
+        // Distinct flag counts dynamically updated by active filters
         $counts = [
             'all' => (clone $baseCountQuery)->count(),
             'first_name' => (clone $baseCountQuery)->where(function ($q) {
@@ -55,18 +151,6 @@ class DuplicateController extends Controller
             'resolved' => (clone $baseCountQuery)->whereIn('status', ['resolved', 'resolved_not_duplicate', 'overridden'])->count(),
             'removed' => (clone $baseCountQuery)->where('status', 'resolved_duplicate')->count(),
         ];
-
-        $query = DuplicateFlag::with(['beneficiary.beneficiaryPrograms.program', 'matchedBeneficiary.beneficiaryPrograms.program', 'reviewer']);
-
-        if ($programUpper) {
-            $query->where(function ($q) use ($programUpper) {
-                $q->whereHas('beneficiary.beneficiaryPrograms.program', function ($pq) use ($programUpper) {
-                    $pq->where('code', $programUpper);
-                })->orWhereHas('matchedBeneficiary.beneficiaryPrograms.program', function ($mq) use ($programUpper) {
-                    $mq->where('code', $programUpper);
-                });
-            });
-        }
 
         // Determine current active filter tab
         $filter = $request->input('filter');
@@ -139,7 +223,7 @@ class DuplicateController extends Controller
 
         $flags = $query->latest()->paginate(15)->withQueryString();
 
-        return view('duplicates.index', compact('flags', 'counts', 'filter'));
+        return view('duplicates.index', compact('flags', 'counts', 'filter', 'municipalities', 'barangays'));
     }
 
     public function resolve(Request $request, DuplicateFlag $flag): RedirectResponse

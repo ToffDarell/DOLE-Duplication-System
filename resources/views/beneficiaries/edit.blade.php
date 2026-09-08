@@ -632,6 +632,21 @@
                         </div>
                     </div>
 
+                    {{-- Student Status Sync for TUPAD / SPES --}}
+                    <input type="hidden" name="is_student" :value="newIsStudent ? '1' : '0'">
+                    <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-1.5" x-show="newProgramCode === 'TUPAD' || newProgramCode === 'SPES'">
+                        <label class="flex items-center gap-2 font-bold text-slate-800 cursor-pointer">
+                            <input type="checkbox" x-model="newIsStudent" @change="const el = document.querySelector('input[name=\'is_student\']'); if (el) el.checked = newIsStudent" class="rounded border-slate-300 text-blue-700 focus:ring-blue-500">
+                            Currently Enrolled Student
+                        </label>
+                        <p class="text-[11px] text-slate-500" x-show="newProgramCode === 'TUPAD' && newIsStudent">
+                            <span class="text-rose-600 font-bold">Ineligible:</span> TUPAD guidelines require beneficiaries to be non-students. Uncheck if beneficiary is no longer enrolled in school.
+                        </p>
+                        <p class="text-[11px] text-emerald-700 font-medium" x-show="newProgramCode === 'TUPAD' && !newIsStudent">
+                            ✓ Verified: Marked as non-student (Eligible for TUPAD).
+                        </p>
+                    </div>
+
                     {{-- Calamity Override --}}
                     <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-2">
                         <label class="flex items-center gap-2 font-bold text-slate-900 cursor-pointer">
@@ -773,10 +788,14 @@
             editAvailmentRemarks: '',
             editAvailmentActionUrl: '',
 
+            newIsStudent: {{ $beneficiary->is_student ? 'true' : 'false' }},
+
             openAddAvailmentModal() {
                 this.newProgramCode = '';
                 this.newDilpType = 'individual';
                 this.newCalamityOverride = false;
+                const studentInput = document.querySelector('input[name="is_student"]');
+                this.newIsStudent = studentInput ? studentInput.checked : {{ $beneficiary->is_student ? 'true' : 'false' }};
                 this.addAvailmentModal = true;
             },
 

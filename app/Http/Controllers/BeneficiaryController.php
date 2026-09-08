@@ -351,11 +351,11 @@ class BeneficiaryController extends Controller
                     'province' => $data['province'] ?? ($beneficiary->province ?? 'Bukidnon'),
                     'district' => $data['district'] ?? $beneficiary->district,
                     'civil_status' => $data['civil_status'] ?? $beneficiary->civil_status,
-                    'is_senior_citizen' => filter_var($data['is_senior_citizen'] ?? $beneficiary->is_senior_citizen, FILTER_VALIDATE_BOOLEAN),
-                    'is_pwd' => filter_var($data['is_pwd'] ?? $beneficiary->is_pwd, FILTER_VALIDATE_BOOLEAN),
-                    'is_student' => filter_var($data['is_student'] ?? ($data['is_enrolled'] ?? ($data['is_graduating_student'] ?? $beneficiary->is_student)), FILTER_VALIDATE_BOOLEAN),
-                    'is_government_employee' => filter_var($data['is_government_employee'] ?? $beneficiary->is_government_employee, FILTER_VALIDATE_BOOLEAN),
-                    'is_graduating_college' => filter_var($data['is_graduating_student'] ?? ($data['is_graduating_college'] ?? $beneficiary->is_graduating_college), FILTER_VALIDATE_BOOLEAN),
+                    'is_senior_citizen' => filter_var($data['is_senior_citizen'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                    'is_pwd' => filter_var($data['is_pwd'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                    'is_student' => filter_var($data['is_student'] ?? ($data['is_enrolled'] ?? ($data['is_graduating_student'] ?? false)), FILTER_VALIDATE_BOOLEAN),
+                    'is_government_employee' => filter_var($data['is_government_employee'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                    'is_graduating_college' => filter_var($data['is_graduating_student'] ?? ($data['is_graduating_college'] ?? false), FILTER_VALIDATE_BOOLEAN),
                 ]);
 
                 // Attach new BeneficiaryProgram record directly to master profile

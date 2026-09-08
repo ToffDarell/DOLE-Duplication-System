@@ -4,29 +4,7 @@
 @section('page-subtitle', 'Configure cross-category filters, preview matched masterlist records, and export official PDF, Excel, and CSV reports')
 
 @section('content')
-<div x-data="{
-    municipality: '{{ request('municipality') }}',
-    selectedBarangay: '{{ request('barangay') }}',
-    barangays: @json($barangays),
-    loadingBarangays: false,
-    showLegend: false,
-    async fetchBarangays() {
-        if (!this.municipality) {
-            this.barangays = [];
-            this.selectedBarangay = '';
-            return;
-        }
-        this.loadingBarangays = true;
-        try {
-            const res = await fetch(`{{ route('api.barangays') }}?municipality=${encodeURIComponent(this.municipality)}`);
-            this.barangays = await res.json();
-        } catch (e) {
-            this.barangays = [];
-        } finally {
-            this.loadingBarangays = false;
-        }
-    }
-}">
+<div x-data="{ showLegend: false }">
     {{-- DOLE Header Banner with Integrated Export Toolbar --}}
     <div class="mb-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 rounded-2xl border border-blue-700/50 bg-blue-800 p-5 sm:p-6 text-white shadow-lg relative overflow-hidden">
         <div class="absolute -right-10 -bottom-10 h-44 w-44 rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
@@ -152,11 +130,11 @@
                 {{-- 2. Municipality Filter --}}
                 <div>
                     <label class="mb-1.5 block text-xs font-extrabold text-slate-800">Municipality (Bukidnon)</label>
-                    <select name="municipality" x-model="municipality" @change="fetchBarangays()"
+                    <select name="municipality" id="export_municipality_select" onchange="fetchExportBarangays(this.value)"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
                         <option value="">All Municipalities</option>
                         @foreach($municipalities as $muni)
-                            <option value="{{ $muni }}" {{ request('municipality') === $muni ? 'selected' : '' }}>
+                            <option value="{{ $muni }}" {{ strcasecmp(request('municipality'), $muni) === 0 ? 'selected' : '' }}>
                                 {{ $muni }}
                             </option>
                         @endforeach
@@ -167,14 +145,14 @@
                 <div>
                     <label class="mb-1.5 flex items-center justify-between text-xs font-extrabold text-slate-800">
                         <span>Barangay</span>
-                        <span x-show="loadingBarangays" class="text-[10px] text-blue-700 animate-pulse font-normal">Loading...</span>
+                        <span id="export_loading_indicator" class="text-[10px] text-blue-700 animate-pulse font-normal hidden">Loading...</span>
                     </label>
-                    <select name="barangay" x-model="selectedBarangay"
+                    <select name="barangay" id="export_barangay_select"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
                         <option value="">All Barangays</option>
-                        <template x-for="b in barangays" :key="b">
-                            <option :value="b" :selected="selectedBarangay === b" x-text="b"></option>
-                        </template>
+                        @foreach($barangays as $b)
+                            <option value="{{ $b }}" {{ strcasecmp(request('barangay'), $b) === 0 ? 'selected' : '' }}>{{ $b }}</option>
+                        @endforeach
                     </select>
                 </div>
 
@@ -256,13 +234,19 @@
         </form>
     </div>
 
-    {{-- Filter Summary KPI Cards --}}
+    @php
+        $activeReportQuery = array_filter(request()->query(), fn($v) => filled($v) && $v !== '');
+        $currentRisk = request('risk_level', '');
+    @endphp
+
+    {{-- Filter Summary KPI Cards (Clickable Quick Filters preserving Municipality & active filters) --}}
     <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="rounded-2xl border border-blue-200 bg-blue-50/60 p-4">
+        <a href="{{ route('reports.index', \Illuminate\Support\Arr::except($activeReportQuery, ['risk_level', 'page'])) }}"
+           class="block rounded-2xl border transition p-4 {{ empty($currentRisk) ? 'border-blue-700 bg-blue-100/70 ring-2 ring-blue-600/30' : 'border-blue-200 bg-blue-50/60 hover:bg-blue-100/50' }}">
             <p class="text-xs font-bold text-blue-900 uppercase tracking-wider">Filtered Beneficiaries</p>
             <p class="text-2xl font-black text-blue-950 mt-1">{{ number_format($totalCount) }}</p>
             <p class="text-[11px] font-semibold text-blue-700 mt-0.5">Matching active parameters</p>
-        </div>
+        </a>
 
         <div class="rounded-2xl border border-slate-200 bg-white p-4">
             <p class="text-xs font-bold text-slate-600 uppercase tracking-wider">Sex Breakdown</p>
@@ -270,17 +254,44 @@
             <p class="text-[11px] font-semibold text-slate-500 mt-0.5">In current filtered dataset</p>
         </div>
 
-        <div class="rounded-2xl border border-red-200 bg-red-50/60 p-4">
+        <a href="{{ route('reports.index', array_merge(\Illuminate\Support\Arr::except($activeReportQuery, ['page']), ['risk_level' => 'exact'])) }}"
+           class="block rounded-2xl border transition p-4 {{ $currentRisk === 'exact' ? 'border-red-700 bg-red-100/70 ring-2 ring-red-600/30' : 'border-red-200 bg-red-50/60 hover:bg-red-100/50' }}">
             <p class="text-xs font-bold text-red-900 uppercase tracking-wider">Exact Duplicates (100%)</p>
             <p class="text-2xl font-black text-red-950 mt-1">{{ number_format($exactDuplicateCount) }}</p>
             <p class="text-[11px] font-semibold text-red-800 mt-0.5">High-priority collisions</p>
-        </div>
+        </a>
 
-        <div class="rounded-2xl border border-orange-200 bg-orange-50/60 p-4">
+        <a href="{{ route('reports.index', array_merge(\Illuminate\Support\Arr::except($activeReportQuery, ['page']), ['risk_level' => 'high'])) }}"
+           class="block rounded-2xl border transition p-4 {{ $currentRisk === 'high' ? 'border-orange-700 bg-orange-100/70 ring-2 ring-orange-600/30' : 'border-orange-200 bg-orange-50/60 hover:bg-orange-100/50' }}">
             <p class="text-xs font-bold text-orange-900 uppercase tracking-wider">High Risk Similarity (85–99%)</p>
             <p class="text-2xl font-black text-orange-950 mt-1">{{ number_format($highRiskCount) }}</p>
             <p class="text-[11px] font-semibold text-orange-800 mt-0.5">Phonetic &amp; demographic warnings</p>
-        </div>
+        </a>
+    </div>
+
+    {{-- Quick Risk Filter Pills that preserve municipality, barangay, program, sex, etc. --}}
+    <div class="mb-5 flex flex-wrap items-center gap-2">
+        <span class="text-xs font-extrabold text-slate-500 mr-1">Quick View:</span>
+        <a href="{{ route('reports.index', \Illuminate\Support\Arr::except($activeReportQuery, ['risk_level', 'page'])) }}"
+           class="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ empty($currentRisk) ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50' }}">
+            <span>All Records</span>
+        </a>
+        <a href="{{ route('reports.index', array_merge(\Illuminate\Support\Arr::except($activeReportQuery, ['page']), ['risk_level' => 'exact'])) }}"
+           class="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $currentRisk === 'exact' ? 'bg-red-600 text-white' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50' }}">
+            <span>Exact (100%)</span>
+        </a>
+        <a href="{{ route('reports.index', array_merge(\Illuminate\Support\Arr::except($activeReportQuery, ['page']), ['risk_level' => 'high'])) }}"
+           class="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $currentRisk === 'high' ? 'bg-orange-500 text-white' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50' }}">
+            <span>High Risk (85%–99%)</span>
+        </a>
+        <a href="{{ route('reports.index', array_merge(\Illuminate\Support\Arr::except($activeReportQuery, ['page']), ['risk_level' => 'moderate'])) }}"
+           class="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $currentRisk === 'moderate' ? 'bg-amber-500 text-white' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50' }}">
+            <span>Moderate (70%–84%)</span>
+        </a>
+        <a href="{{ route('reports.index', array_merge(\Illuminate\Support\Arr::except($activeReportQuery, ['page']), ['risk_level' => 'clean'])) }}"
+           class="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $currentRisk === 'clean' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50' }}">
+            <span>Clean Records</span>
+        </a>
     </div>
 
     {{-- Live Matched Records Preview Table (Alphabetical Order - 7 Clean Columns) --}}
@@ -405,4 +416,35 @@
         </div>
     </div>
 </div>
+
+<script>
+function fetchExportBarangays(municipality) {
+    const selectEl = document.getElementById('export_barangay_select');
+    const loadingEl = document.getElementById('export_loading_indicator');
+    if (!selectEl) return;
+    
+    if (!municipality) {
+        selectEl.innerHTML = '<option value="">All Barangays</option>';
+        return;
+    }
+    
+    if (loadingEl) loadingEl.classList.remove('hidden');
+    
+    fetch(`{{ route('api.barangays') }}?municipality=${encodeURIComponent(municipality)}`)
+        .then(res => res.json())
+        .then(data => {
+            let html = '<option value="">All Barangays</option>';
+            data.forEach(b => {
+                html += `<option value="${b}">${b}</option>`;
+            });
+            selectEl.innerHTML = html;
+        })
+        .catch(err => {
+            console.error('Failed to load barangays:', err);
+        })
+        .finally(() => {
+            if (loadingEl) loadingEl.classList.add('hidden');
+        });
+}
+</script>
 @endsection

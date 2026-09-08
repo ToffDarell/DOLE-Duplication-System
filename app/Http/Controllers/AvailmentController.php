@@ -35,6 +35,7 @@ class AvailmentController extends Controller
             'is_calamity_override' => ['nullable', 'boolean'],
             'calamity_remarks' => ['nullable', 'string', 'max:500'],
             'remarks' => ['nullable', 'string', 'max:500'],
+            'is_student' => ['nullable', 'boolean'],
 
             // Optional TUPAD specific
             'project_location_barangay' => ['nullable', 'string', 'max:100'],
@@ -51,10 +52,17 @@ class AvailmentController extends Controller
 
         $availmentYear = (int) $data['availment_year'];
 
+        // If is_student is explicitly submitted, sync directly to beneficiary record
+        if ($request->has('is_student')) {
+            $isStudentVal = $request->boolean('is_student');
+            $beneficiary->update(['is_student' => $isStudentVal]);
+        }
+
         // 1. Eligibility Check
         $eligibilityData = array_merge($beneficiary->toArray(), [
             'program_code' => $program->code,
             'availment_year' => $availmentYear,
+            'is_student' => $request->has('is_student') ? $request->boolean('is_student') : (bool) $beneficiary->is_student,
             'is_calamity_override' => (bool) ($data['is_calamity_override'] ?? false),
             'calamity_remarks' => $data['calamity_remarks'] ?? null,
             'enrollment_type' => $data['enrollment_type'] ?? null,

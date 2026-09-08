@@ -76,107 +76,176 @@
 </div>
 
 {{-- Filter Tabs & Search Toolbar --}}
-<form method="GET" action="{{ route('duplicates.index') }}" class="mb-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs flex flex-col gap-3.5">
-    @if(request('filter'))
-        <input type="hidden" name="filter" value="{{ request('filter') }}">
-    @endif
+<div class="mb-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
+    <form method="GET" action="{{ route('duplicates.index') }}" class="flex flex-col gap-3.5">
+        @if(request('filter'))
+            <input type="hidden" name="filter" value="{{ request('filter') }}">
+        @endif
 
-    {{-- Tier 1: Search Bar & Global Program Selector --}}
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {{-- Live Search Input (Expansive flex container) --}}
-        <div class="flex items-center rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2 shadow-2xs transition focus-within:bg-white focus-within:border-blue-700 focus-within:ring-2 focus-within:ring-blue-100 flex-1 max-w-lg">
-            <svg class="h-4 w-4 text-slate-400 shrink-0 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
-            </svg>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Live search by beneficiary name, ID, or address..."
-                   class="w-full border-0 bg-transparent p-0 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0">
-            @if(request('search'))
-                <a href="{{ route('duplicates.index', array_filter(['filter' => request('filter'), 'program' => request('program')])) }}" 
-                   class="ml-2 text-slate-400 hover:text-slate-600 shrink-0" title="Clear search">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                </a>
-            @endif
+        {{-- Tier 1: Search Bar & Actions --}}
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {{-- Live Search Input --}}
+            <div class="flex items-center rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2 shadow-2xs transition focus-within:bg-white focus-within:border-blue-700 focus-within:ring-2 focus-within:ring-blue-100 flex-1 max-w-lg">
+                <svg class="h-4 w-4 text-slate-400 shrink-0 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+                </svg>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Live search by beneficiary name, ID, or address..."
+                       class="w-full border-0 bg-transparent p-0 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0">
+                @if(request('search'))
+                    <a href="{{ route('duplicates.index', request()->except(['search', 'page'])) }}" 
+                       class="ml-2 text-slate-400 hover:text-slate-600 shrink-0" title="Clear search">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </a>
+                @endif
+            </div>
+
+            {{-- Action Buttons --}}
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="submit" class="rounded-xl bg-blue-800 hover:bg-blue-900 px-4 py-2 text-xs font-extrabold text-white shadow-2xs transition flex items-center gap-1.5 cursor-pointer">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/>
+                    </svg>
+                    <span>Filter</span>
+                </button>
+                @if(request()->hasAny(['program', 'municipality', 'barangay', 'risk_level', 'sex', 'search', 'filter']))
+                    <a href="{{ route('duplicates.index') }}" 
+                       class="rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition"
+                       title="Reset all filters">
+                        Reset
+                    </a>
+                @endif
+            </div>
         </div>
 
-        {{-- Program Filter Dropdown & Reset Button --}}
-        <div class="flex items-center gap-2 shrink-0">
-            <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Program:</label>
-            <select name="program" onchange="this.form.submit()"
-                    class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('program') ? 'border-blue-700 bg-blue-50/50 text-blue-900 ring-1 ring-blue-700' : '' }}">
-                <option value="">All Programs</option>
-                @foreach(['TUPAD', 'SPES', 'DILP', 'GIP'] as $prog)
-                    <option value="{{ $prog }}" {{ strcasecmp(request('program'), $prog) === 0 ? 'selected' : '' }}>{{ $prog }}</option>
-                @endforeach
-            </select>
-            @if(request('program') || request('search') || request('filter'))
-                <a href="{{ route('duplicates.index') }}" 
-                   class="rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition"
-                   title="Reset all filters">
-                    Reset
-                </a>
-            @endif
+        {{-- Tier 2: 5 Category Selectors (Program, Municipality, Barangay, Risk Level, Sex) --}}
+        <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+            {{-- Program --}}
+            <div>
+                <label class="mb-1 block text-[11px] font-bold text-slate-600 uppercase tracking-wider">Program</label>
+                <select name="program" onchange="this.form.submit()"
+                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('program') ? 'border-blue-700 bg-blue-50/50 text-blue-900 ring-1 ring-blue-700' : '' }}">
+                    <option value="">All Programs</option>
+                    @foreach(['TUPAD', 'SPES', 'DILP', 'GIP'] as $prog)
+                        <option value="{{ $prog }}" {{ strcasecmp(request('program'), $prog) === 0 ? 'selected' : '' }}>{{ $prog }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Municipality --}}
+            <div>
+                <label class="mb-1 block text-[11px] font-bold text-slate-600 uppercase tracking-wider">Municipality</label>
+                <select name="municipality" id="duplicate_municipality_select" onchange="this.form.submit()"
+                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('municipality') ? 'border-blue-700 bg-blue-50/50 text-blue-900 ring-1 ring-blue-700' : '' }}">
+                    <option value="">All Municipalities</option>
+                    @foreach($municipalities as $muni)
+                        <option value="{{ $muni }}" {{ strcasecmp(request('municipality'), $muni) === 0 ? 'selected' : '' }}>{{ $muni }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Dependent Barangay --}}
+            <div>
+                <label class="mb-1 flex items-center justify-between text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    <span>Barangay</span>
+                </label>
+                <select name="barangay" id="duplicate_barangay_select" onchange="this.form.submit()"
+                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('barangay') ? 'border-blue-700 bg-blue-50/50 text-blue-900 ring-1 ring-blue-700' : '' }}">
+                    <option value="">All Barangays</option>
+                    @foreach($barangays as $b)
+                        <option value="{{ $b }}" {{ strcasecmp(request('barangay'), $b) === 0 ? 'selected' : '' }}>{{ $b }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Duplication Risk Level --}}
+            <div>
+                <label class="mb-1 block text-[11px] font-bold text-slate-600 uppercase tracking-wider">Risk Level</label>
+                <select name="risk_level" onchange="this.form.submit()"
+                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('risk_level') ? 'border-blue-700 bg-blue-50/50 text-blue-900 ring-1 ring-blue-700' : '' }}">
+                    <option value="">All Risk Levels</option>
+                    <option value="exact" {{ request('risk_level') === 'exact' ? 'selected' : '' }}>Exact (100% Match)</option>
+                    <option value="high" {{ request('risk_level') === 'high' ? 'selected' : '' }}>High Risk (85%–99%)</option>
+                    <option value="moderate" {{ request('risk_level') === 'moderate' ? 'selected' : '' }}>Moderate (70%–84%)</option>
+                    <option value="low" {{ request('risk_level') === 'low' ? 'selected' : '' }}>Low Risk (&lt; 70%)</option>
+                </select>
+            </div>
+
+            {{-- Sex --}}
+            <div>
+                <label class="mb-1 block text-[11px] font-bold text-slate-600 uppercase tracking-wider">Sex</label>
+                <select name="sex" onchange="this.form.submit()"
+                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('sex') ? 'border-blue-700 bg-blue-50/50 text-blue-900 ring-1 ring-blue-700' : '' }}">
+                    <option value="">All Sexes</option>
+                    <option value="Male" {{ strcasecmp(request('sex'), 'Male') === 0 ? 'selected' : '' }}>Male</option>
+                    <option value="Female" {{ strcasecmp(request('sex'), 'Female') === 0 ? 'selected' : '' }}>Female</option>
+                </select>
+            </div>
         </div>
-    </div>
 
-    <div class="h-px bg-slate-100 w-full"></div>
+        <div class="h-px bg-slate-100 w-full"></div>
 
-    {{-- Tier 2: Category & Status Filter Pills --}}
-    <div class="flex flex-wrap items-center gap-2">
-        {{-- 1. All Flags --}}
-        <a href="{{ route('duplicates.index', array_filter(['program' => request('program'), 'search' => request('search')])) }}" 
-           class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $filter === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
-            <span>All Flags</span>
-            <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $filter === 'all' ? 'bg-slate-700 text-white' : 'bg-white text-slate-700 border border-slate-200' }}">
-                {{ number_format($counts['all'] ?? 0) }}
-            </span>
-        </a>
+        {{-- Tier 3: Category & Status Filter Pills --}}
+        <div class="flex flex-wrap items-center gap-2">
+            @php
+                $activeQuery = array_filter(request()->query(), fn($v) => filled($v) && $v !== '');
+            @endphp
 
-        {{-- 2. First Name Match --}}
-        <a href="{{ route('duplicates.index', array_filter(['filter' => 'first_name', 'program' => request('program'), 'search' => request('search')])) }}" 
-           class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $filter === 'first_name' ? 'bg-amber-600 text-white' : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
-            <span>First Name</span>
-            <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $filter === 'first_name' ? 'bg-amber-800 text-amber-100' : 'bg-amber-50 text-amber-800 border border-amber-200' }}">
-                {{ number_format($counts['first_name'] ?? 0) }}
-            </span>
-        </a>
+            {{-- 1. All Flags --}}
+            <a href="{{ route('duplicates.index', array_filter(Arr::except($activeQuery, ['filter', 'page']))) }}" 
+               class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $filter === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
+                <span>All Flags</span>
+                <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $filter === 'all' ? 'bg-slate-700 text-white' : 'bg-white text-slate-700 border border-slate-200' }}">
+                    {{ number_format($counts['all'] ?? 0) }}
+                </span>
+            </a>
 
-        {{-- 3. Surname Match --}}
-        <a href="{{ route('duplicates.index', array_filter(['filter' => 'surname', 'program' => request('program'), 'search' => request('search')])) }}" 
-           class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $filter === 'surname' ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
-            <span>Surname</span>
-            <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $filter === 'surname' ? 'bg-indigo-800 text-indigo-100' : 'bg-indigo-50 text-indigo-800 border border-indigo-200' }}">
-                {{ number_format($counts['surname'] ?? 0) }}
-            </span>
-        </a>
+            {{-- 2. First Name Match --}}
+            <a href="{{ route('duplicates.index', array_merge(Arr::except($activeQuery, ['page']), ['filter' => 'first_name'])) }}" 
+               class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $filter === 'first_name' ? 'bg-amber-600 text-white' : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
+                <span>First Name</span>
+                <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $filter === 'first_name' ? 'bg-amber-800 text-amber-100' : 'bg-amber-50 text-amber-800 border border-amber-200' }}">
+                    {{ number_format($counts['first_name'] ?? 0) }}
+                </span>
+            </a>
 
-        {{-- 4. Address Match --}}
-        <a href="{{ route('duplicates.index', array_filter(['filter' => 'address', 'program' => request('program'), 'search' => request('search')])) }}" 
-           class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $filter === 'address' ? 'bg-blue-700 text-white' : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
-            <span>Address Match</span>
-            <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $filter === 'address' ? 'bg-blue-900 text-blue-100' : 'bg-blue-50 text-blue-800 border border-blue-200' }}">
-                {{ number_format($counts['address'] ?? 0) }}
-            </span>
-        </a>
+            {{-- 3. Surname Match --}}
+            <a href="{{ route('duplicates.index', array_merge(Arr::except($activeQuery, ['page']), ['filter' => 'surname'])) }}" 
+               class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $filter === 'surname' ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
+                <span>Surname</span>
+                <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $filter === 'surname' ? 'bg-indigo-800 text-indigo-100' : 'bg-indigo-50 text-indigo-800 border border-indigo-200' }}">
+                    {{ number_format($counts['surname'] ?? 0) }}
+                </span>
+            </a>
 
-        {{-- 5. Resolved & Approved --}}
-        <a href="{{ route('duplicates.index', array_filter(['filter' => 'resolved', 'program' => request('program'), 'search' => request('search')])) }}" 
-           class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $filter === 'resolved' ? 'bg-emerald-600 text-white' : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
-            <span>Resolved</span>
-            <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $filter === 'resolved' ? 'bg-emerald-800 text-emerald-100' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' }}">
-                {{ number_format($counts['resolved'] ?? 0) }}
-            </span>
-        </a>
+            {{-- 4. Address Match --}}
+            <a href="{{ route('duplicates.index', array_merge(Arr::except($activeQuery, ['page']), ['filter' => 'address'])) }}" 
+               class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $filter === 'address' ? 'bg-blue-700 text-white' : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
+                <span>Address Match</span>
+                <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $filter === 'address' ? 'bg-blue-900 text-blue-100' : 'bg-blue-50 text-blue-800 border border-blue-200' }}">
+                    {{ number_format($counts['address'] ?? 0) }}
+                </span>
+            </a>
 
-        {{-- 6. Duplicate & Removed --}}
-        <a href="{{ route('duplicates.index', array_filter(['filter' => 'removed', 'program' => request('program'), 'search' => request('search')])) }}" 
-           class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $filter === 'removed' ? 'bg-rose-600 text-white' : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
-            <span>Removed</span>
-            <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $filter === 'removed' ? 'bg-rose-800 text-rose-100' : 'bg-rose-50 text-rose-800 border border-rose-200' }}">
-                {{ number_format($counts['removed'] ?? 0) }}
-            </span>
-        </a>
-    </div>
-</form>
+            {{-- 5. Resolved & Approved --}}
+            <a href="{{ route('duplicates.index', array_merge(Arr::except($activeQuery, ['page']), ['filter' => 'resolved'])) }}" 
+               class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $filter === 'resolved' ? 'bg-emerald-600 text-white' : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
+                <span>Resolved</span>
+                <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $filter === 'resolved' ? 'bg-emerald-800 text-emerald-100' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' }}">
+                    {{ number_format($counts['resolved'] ?? 0) }}
+                </span>
+            </a>
+
+            {{-- 6. Duplicate & Removed --}}
+            <a href="{{ route('duplicates.index', array_merge(Arr::except($activeQuery, ['page']), ['filter' => 'removed'])) }}" 
+               class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-2xs {{ $filter === 'removed' ? 'bg-rose-600 text-white' : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
+                <span>Removed</span>
+                <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $filter === 'removed' ? 'bg-rose-800 text-rose-100' : 'bg-rose-50 text-rose-800 border border-rose-200' }}">
+                    {{ number_format($counts['removed'] ?? 0) }}
+                </span>
+            </a>
+        </div>
+    </form>
+</div>
 
 {{-- Duplicate Flags List with Alpine State --}}
 <div class="space-y-4" x-data="{

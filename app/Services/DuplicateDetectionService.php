@@ -52,6 +52,7 @@ class DuplicateDetectionService
 
         $inputLastName = mb_strtolower(trim($data['last_name'] ?? ''));
         $inputFirstName = mb_strtolower(trim($data['first_name'] ?? ''));
+        $inputMiddleName = mb_strtolower(trim($data['middle_name'] ?? ''));
         $inputDob = isset($data['date_of_birth']) ? date('Y-m-d', strtotime($data['date_of_birth'])) : null;
         $inputGovId = ! empty($data['government_id_number']) ? preg_replace('/[^a-zA-Z0-9]/', '', $data['government_id_number']) : null;
         $inputContact = ! empty($data['contact_number']) ? preg_replace('/[^0-9]/', '', $data['contact_number']) : null;
@@ -161,12 +162,42 @@ class DuplicateDetectionService
             }
             $score += $nameScore;
 
-            // 2. Date of Birth Match (30 pts)
+            // 1b. Middle Name Match (Up to 10 pts)
+            $candMiddleName = mb_strtolower(trim($candidate->middle_name ?? ''));
+            $cleanInputMiddle = preg_replace('/[^a-z0-9]/', '', $inputMiddleName);
+            $cleanCandMiddle = preg_replace('/[^a-z0-9]/', '', $candMiddleName);
+
+            if (! empty($cleanInputMiddle) && ! empty($cleanCandMiddle)) {
+                if ($cleanInputMiddle === $cleanCandMiddle) {
+                    $score += 10;
+                    $matchedFields['middle_name'] = 'Exact Middle Name match (10 pts)';
+                } elseif (
+                    soundex($cleanInputMiddle) === soundex($cleanCandMiddle) ||
+                    levenshtein($cleanInputMiddle, $cleanCandMiddle) <= 1
+                ) {
+                    $score += 8;
+                    $matchedFields['middle_name'] = 'Fuzzy Middle Name match (8 pts)';
+                }
+            }
+
+            // 2. Date of Birth Match (Up to 30 pts)
             $candDob = $candidate->date_of_birth ? $candidate->date_of_birth->format('Y-m-d') : null;
             $isSameDob = ($enableDobCheck && $inputDob && $candDob && $inputDob === $candDob);
-            if ($isSameDob) {
-                $score += 30;
-                $matchedFields['dob'] = 'Same Date of Birth (30 pts)';
+
+            if ($enableDobCheck && $inputDob && $candDob) {
+                if ($isSameDob) {
+                    $score += 30;
+                    $matchedFields['dob'] = 'Same Date of Birth (30 pts)';
+                } elseif (
+                    date('Y', strtotime($inputDob)) === date('Y', strtotime($candDob)) &&
+                    date('m-d', strtotime($inputDob)) === date('d-m', strtotime($candDob))
+                ) {
+                    $score += 24;
+                    $matchedFields['dob'] = 'Inverted Month-Day Date of Birth (24 pts)';
+                } elseif (levenshtein($inputDob, $candDob) === 1) {
+                    $score += 22;
+                    $matchedFields['dob'] = 'Near Date of Birth Match (Single-digit typo detected) (22 pts)';
+                }
             }
 
             // 3. Government ID Check (35 pts)
