@@ -313,10 +313,8 @@
                     {{-- Match Score / Policy Badge --}}
                     <div class="flex h-13 w-13 shrink-0 flex-col items-center justify-center rounded-2xl {{ $badgeBg }} font-black shadow-2xs">
                         @if($isHousehold)
-                            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
-                            </svg>
-                            <span class="text-[8px] font-bold uppercase tracking-wider opacity-90 mt-0.5">Family</span>
+                            <span class="text-sm leading-none text-white">{{ $flag->match_score }}%</span>
+                            <span class="text-[8px] font-bold uppercase tracking-wider opacity-90 mt-0.5 text-blue-100">Family</span>
                         @else
                             <span class="text-sm leading-none">{{ $flag->match_score }}%</span>
                             <span class="text-[8px] font-bold uppercase tracking-wider opacity-90 mt-0.5">Match</span>
@@ -353,8 +351,7 @@
                             @endif
 
                             <span class="text-[11px] text-slate-500 font-medium ml-1">
-                                Flag #{{ $flag->id }} &middot; Type: <span class="uppercase font-bold text-slate-700">{{ str_replace('_', ' ', $flag->match_type) }}</span> &middot;
-                                Status: <span class="font-bold text-slate-800 capitalize">{{ str_replace('_', ' ', $flag->status) }}</span>
+                                Flag #{{ $flag->id }} &middot; Match Score: <span class="font-extrabold text-blue-900">{{ $flag->match_score }}%</span> (<span class="uppercase font-bold text-slate-700">{{ strtoupper(str_replace('_', ' ', $flag->match_type)) }}</span>) &middot; Status: <span class="font-bold text-slate-800 capitalize">{{ ucfirst(str_replace('_', ' ', $flag->status)) }}</span>
                             </span>
                         </div>
                     </div>
@@ -526,7 +523,7 @@
                     <div>
                         <h3 class="text-base font-black text-slate-900">Side-by-Side Beneficiary Record Comparison</h3>
                         <p class="text-xs font-bold text-slate-500">
-                            Flag ID: #<span x-text="activeFlag?.id"></span> | Match Type: <span class="uppercase text-blue-700" x-text="activeFlag?.match_type"></span>
+                            Flag #<span x-text="activeFlag?.id"></span> &middot; Match Score: <span class="font-extrabold text-blue-900" x-text="(activeFlag?.match_score ?? 0) + '%'"></span> (<span class="uppercase font-bold text-slate-700" x-text="activeFlag?.match_type"></span>) &middot; Status: <span class="capitalize text-slate-800" x-text="activeFlag?.status"></span>
                         </p>
                     </div>
                 </div>
@@ -728,7 +725,9 @@
     <div x-show="resolveModal" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm" style="display: none;">
         <div class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl border border-slate-200" @click.away="resolveModal = false">
             <h3 class="mb-1 text-lg font-black text-slate-900" x-text="activeFlag?.household_match_flag ? 'Resolve House Number / Address Flag' : 'Resolve Duplicate Flag'"></h3>
-            <p class="mb-4 text-xs font-semibold text-slate-500" x-text="'Resolving flag for ' + (activeFlag?.beneficiary?.full_name ?? '')"></p>
+            <p class="mb-4 text-xs font-semibold text-slate-500">
+                Flag #<span x-text="activeFlag?.id"></span> &middot; Match Score: <span class="font-extrabold text-blue-900" x-text="(activeFlag?.match_score ?? 0) + '%'"></span> (<span class="uppercase font-bold text-slate-700" x-text="activeFlag?.match_type"></span>) &middot; Resolving flag for <span class="font-bold text-slate-800" x-text="activeFlag?.beneficiary?.full_name ?? ''"></span>
+            </p>
 
             <template x-if="activeFlag?.household_match_flag">
                 <div class="mb-4 rounded-xl bg-blue-50 border border-blue-200 p-3.5 text-xs text-blue-900 font-semibold leading-relaxed">

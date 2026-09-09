@@ -288,7 +288,7 @@
                                             </span>
                                         </span>
                                         <span>&middot;</span>
-                                        <span class="font-semibold">Type: <strong class="text-slate-800 uppercase">{{ str_replace('_', ' ', $flag->match_type) }}</strong></span>
+                                        <span class="font-semibold">Match Score: <span class="font-extrabold text-blue-900">{{ $flag->match_score }}%</span> (<strong class="text-slate-800 uppercase">{{ strtoupper(str_replace('_', ' ', $flag->match_type)) }}</strong>)</span>
                                         @if($flag->household_match_flag)
                                             <span class="rounded bg-blue-100 border border-blue-200 px-1.5 py-0.5 text-[10px] font-extrabold text-blue-900">
                                                 House Number Match
