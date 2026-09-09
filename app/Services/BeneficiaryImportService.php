@@ -235,11 +235,11 @@ class BeneficiaryImportService
                     }
 
                     if ($dupCheck['has_duplicates']) {
-                        $this->duplicateService->recordDuplicateFlags($beneficiary, $dupCheck['flags']);
+                        $this->duplicateService->recordDuplicateFlags($beneficiary, $dupCheck['flags'], 'pending');
                     }
 
                     if ($householdCheck['has_household_flags']) {
-                        $this->duplicateService->recordDuplicateFlags($beneficiary, $householdCheck['flags']);
+                        $this->duplicateService->recordDuplicateFlags($beneficiary, $householdCheck['flags'], 'pending');
                     }
                 });
 
@@ -781,7 +781,16 @@ class BeneficiaryImportService
             return null;
         }
 
-        return $string;
+        // Strip non-breaking spaces and normalize
+        $string = str_replace(["\xc2\xa0", "\u{00a0}"], ' ', $string);
+        $string = preg_replace('/\s+/', ' ', $string);
+
+        // Strip trailing and leading punctuation
+        $cleaned = preg_replace('/[^\p{L}\p{N}]+$/u', '', $string);
+        $cleaned = preg_replace('/^[^\p{L}\p{N}]+/u', '', $cleaned);
+        $cleaned = trim($cleaned);
+
+        return $cleaned !== '' ? $cleaned : $string;
     }
 
     /**

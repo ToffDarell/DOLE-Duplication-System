@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -498,11 +499,11 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
         }
 
         if ($dupCheck['has_duplicates']) {
-            $this->duplicateService->recordDuplicateFlags($beneficiary, $dupCheck['flags']);
+            $this->duplicateService->recordDuplicateFlags($beneficiary, $dupCheck['flags'], 'pending');
         }
 
         if ($householdCheck['has_household_flags']) {
-            $this->duplicateService->recordDuplicateFlags($beneficiary, $householdCheck['flags']);
+            $this->duplicateService->recordDuplicateFlags($beneficiary, $householdCheck['flags'], 'pending');
         }
 
         return $beneficiary;
@@ -542,12 +543,12 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
             $householdCheck = $this->duplicateService->checkHouseholdDuplicates($payload, (int) $id, $pool);
 
             if ($dupCheck['has_duplicates']) {
-                $this->duplicateService->recordDuplicateFlags($beneficiary, $dupCheck['flags']);
+                $this->duplicateService->recordDuplicateFlags($beneficiary, $dupCheck['flags'], 'pending');
                 $flaggedIds[$id] = true;
             }
 
             if ($householdCheck['has_household_flags']) {
-                $this->duplicateService->recordDuplicateFlags($beneficiary, $householdCheck['flags']);
+                $this->duplicateService->recordDuplicateFlags($beneficiary, $householdCheck['flags'], 'pending');
                 $flaggedIds[$id] = true;
             }
         }
@@ -566,27 +567,84 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
     }
 
     /**
-     * Bucket every candidate by the SOUNDEX of its surname, first name, and each
-     * surname token, so a payload can pull only the plausibly-similar records.
+     * Bucket every candidate by exact name keys and SOUNDEX of its surname,
+     * first name, and tokens, so a payload can pull all plausibly-similar records
+     * without excluding exact surname + first_name matches.
      *
      * @param  Collection<int, Beneficiary>  $candidates
-     * @return array{last: array<string, list<Beneficiary>>, first: array<string, list<Beneficiary>>}
+     * @return array{
+     *     exact_full: array<string, list<Beneficiary>>,
+     *     exact_last: array<string, list<Beneficiary>>,
+     *     exact_first: array<string, list<Beneficiary>>,
+     *     last: array<string, list<Beneficiary>>,
+     *     first: array<string, list<Beneficiary>>
+     * }
      */
     private function indexCandidatesByNameSound(Collection $candidates): array
     {
+        $byExactFull = [];
+        $byExactLast = [];
+        $byExactFirst = [];
         $byLast = [];
         $byFirst = [];
 
         foreach ($candidates as $candidate) {
-            foreach ($this->nameSoundKeys($candidate->last_name) as $key) {
+            $rawLast = mb_strtolower(trim((string) $candidate->last_name));
+            $rawFirst = mb_strtolower(trim((string) $candidate->first_name));
+            $normLast = DuplicateDetectionService::normalizeNameString($candidate->last_name);
+            $normFirst = DuplicateDetectionService::normalizeNameString($candidate->first_name);
+            $cleanLast = preg_replace('/[^a-z0-9]/', '', mb_strtolower(Str::ascii($normLast)));
+            $cleanFirst = preg_replace('/[^a-z0-9]/', '', mb_strtolower(Str::ascii($normFirst)));
+
+            // 1. Exact surname + first_name compound bucket (both raw and normalized)
+            if ($rawLast !== '' && $rawFirst !== '') {
+                $byExactFull[$rawLast.'|'.$rawFirst][] = $candidate;
+            }
+            if ($normLast !== '' && $normFirst !== '') {
+                $byExactFull[$normLast.'|'.$normFirst][] = $candidate;
+            }
+            if ($cleanLast !== '' && $cleanFirst !== '') {
+                $byExactFull[$cleanLast.'|'.$cleanFirst][] = $candidate;
+            }
+
+            // 2. Exact surname bucket
+            if ($rawLast !== '') {
+                $byExactLast[$rawLast][] = $candidate;
+            }
+            if ($normLast !== '') {
+                $byExactLast[$normLast][] = $candidate;
+            }
+            if ($cleanLast !== '') {
+                $byExactLast[$cleanLast][] = $candidate;
+            }
+
+            // 3. Exact first name bucket
+            if ($rawFirst !== '') {
+                $byExactFirst[$rawFirst][] = $candidate;
+            }
+            if ($normFirst !== '') {
+                $byExactFirst[$normFirst][] = $candidate;
+            }
+            if ($cleanFirst !== '') {
+                $byExactFirst[$cleanFirst][] = $candidate;
+            }
+
+            // 4. Soundex buckets
+            foreach ($this->nameSoundKeys($normLast !== '' ? $normLast : $candidate->last_name) as $key) {
                 $byLast[$key][] = $candidate;
             }
-            foreach ($this->nameSoundKeys($candidate->first_name) as $key) {
+            foreach ($this->nameSoundKeys($normFirst !== '' ? $normFirst : $candidate->first_name) as $key) {
                 $byFirst[$key][] = $candidate;
             }
         }
 
-        return ['last' => $byLast, 'first' => $byFirst];
+        return [
+            'exact_full' => $byExactFull,
+            'exact_last' => $byExactLast,
+            'exact_first' => $byExactFirst,
+            'last' => $byLast,
+            'first' => $byFirst,
+        ];
     }
 
     /**
@@ -596,19 +654,20 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
      */
     private function nameSoundKeys(?string $name): array
     {
-        $lower = mb_strtolower(trim((string) $name));
-        if ($lower === '') {
+        $normalized = DuplicateDetectionService::normalizeNameString($name);
+        if ($normalized === '') {
             return [];
         }
 
+        $lowerAscii = mb_strtolower(Str::ascii($normalized));
         $keys = [];
 
-        $whole = preg_replace('/[^a-z]/', '', $lower);
+        $whole = preg_replace('/[^a-z]/', '', $lowerAscii);
         if ($whole !== '') {
             $keys[soundex($whole)] = true;
         }
 
-        foreach (preg_split('/[\s\-]+/', $lower, -1, PREG_SPLIT_NO_EMPTY) as $token) {
+        foreach (preg_split('/[\s\-]+/', $lowerAscii, -1, PREG_SPLIT_NO_EMPTY) as $token) {
             $token = preg_replace('/[^a-z]/', '', $token);
             if ($token !== '') {
                 $keys[soundex($token)] = true;
@@ -619,23 +678,78 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
     }
 
     /**
-     * Candidates that could plausibly match this payload by name sound.
+     * Candidates that could plausibly match this payload by exact name or sound.
      *
      * @param  array<string, mixed>  $payload
-     * @param  array{last: array<string, list<Beneficiary>>, first: array<string, list<Beneficiary>>}  $index
+     * @param  array{
+     *     exact_full: array<string, list<Beneficiary>>,
+     *     exact_last: array<string, list<Beneficiary>>,
+     *     exact_first: array<string, list<Beneficiary>>,
+     *     last: array<string, list<Beneficiary>>,
+     *     first: array<string, list<Beneficiary>>
+     * }  $index
      * @return Collection<int, Beneficiary>
      */
     private function candidatesForPayload(array $payload, array $index): Collection
     {
         $pool = [];
 
-        foreach ($this->nameSoundKeys($payload['last_name'] ?? '') as $key) {
+        $payloadLast = (string) ($payload['last_name'] ?? '');
+        $payloadFirst = (string) ($payload['first_name'] ?? '');
+
+        $rawLast = mb_strtolower(trim($payloadLast));
+        $rawFirst = mb_strtolower(trim($payloadFirst));
+        $normLast = DuplicateDetectionService::normalizeNameString($payloadLast);
+        $normFirst = DuplicateDetectionService::normalizeNameString($payloadFirst);
+        $cleanLast = preg_replace('/[^a-z0-9]/', '', mb_strtolower(Str::ascii($normLast)));
+        $cleanFirst = preg_replace('/[^a-z0-9]/', '', mb_strtolower(Str::ascii($normFirst)));
+
+        // 1. Exact surname + first_name matches (guarantees exact name matches are NEVER excluded)
+        if ($rawLast !== '' && $rawFirst !== '') {
+            foreach ($index['exact_full'][$rawLast.'|'.$rawFirst] ?? [] as $candidate) {
+                $pool[$candidate->id] = $candidate;
+            }
+        }
+        if ($normLast !== '' && $normFirst !== '') {
+            foreach ($index['exact_full'][$normLast.'|'.$normFirst] ?? [] as $candidate) {
+                $pool[$candidate->id] = $candidate;
+            }
+        }
+        if ($cleanLast !== '' && $cleanFirst !== '') {
+            foreach ($index['exact_full'][$cleanLast.'|'.$cleanFirst] ?? [] as $candidate) {
+                $pool[$candidate->id] = $candidate;
+            }
+            // Transposed names (swapped first and last)
+            foreach ($index['exact_full'][$cleanFirst.'|'.$cleanLast] ?? [] as $candidate) {
+                $pool[$candidate->id] = $candidate;
+            }
+        }
+
+        // 2. Exact surname matches
+        if ($rawLast !== '') {
+            foreach ($index['exact_last'][$rawLast] ?? [] as $candidate) {
+                $pool[$candidate->id] = $candidate;
+            }
+        }
+        if ($normLast !== '') {
+            foreach ($index['exact_last'][$normLast] ?? [] as $candidate) {
+                $pool[$candidate->id] = $candidate;
+            }
+        }
+        if ($cleanLast !== '') {
+            foreach ($index['exact_last'][$cleanLast] ?? [] as $candidate) {
+                $pool[$candidate->id] = $candidate;
+            }
+        }
+
+        // 3. Soundex keys for surname and first name
+        foreach ($this->nameSoundKeys($normLast !== '' ? $normLast : $payloadLast) as $key) {
             foreach ($index['last'][$key] ?? [] as $candidate) {
                 $pool[$candidate->id] = $candidate;
             }
         }
 
-        foreach ($this->nameSoundKeys($payload['first_name'] ?? '') as $key) {
+        foreach ($this->nameSoundKeys($normFirst !== '' ? $normFirst : $payloadFirst) as $key) {
             foreach ($index['first'][$key] ?? [] as $candidate) {
                 $pool[$candidate->id] = $candidate;
             }
@@ -865,7 +979,16 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
             return null;
         }
 
-        return $str;
+        // Strip non-breaking spaces and normalize
+        $str = str_replace(["\xc2\xa0", "\u{00a0}"], ' ', $str);
+        $str = preg_replace('/\s+/', ' ', $str);
+
+        // Strip trailing and leading punctuation (e.g. '.', ',', ';', '-', etc.)
+        $cleaned = preg_replace('/[^\p{L}\p{N}]+$/u', '', $str);
+        $cleaned = preg_replace('/^[^\p{L}\p{N}]+/u', '', $cleaned);
+        $cleaned = trim($cleaned);
+
+        return $cleaned !== '' ? $cleaned : $str;
     }
 
     protected function fallbackNA(?string $val, string $default = 'N/A'): string

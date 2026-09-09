@@ -192,8 +192,18 @@ class BeneficiaryController extends Controller
                         $allFlags[] = [
                             'matched_beneficiary' => $hm,
                             'matched_beneficiary_id' => $hm->id,
-                            'matched_beneficiary_name' => $hm->full_name,
-                            'existing_dob' => $hm->date_of_birth ? $hm->date_of_birth->format('Y-m-d') : 'N/A',
+                            'matched_beneficiary_name' => (string) $hm->full_name,
+                            'full_name' => (string) $hm->full_name,
+                            'last_name' => (string) $hm->last_name,
+                            'first_name' => (string) $hm->first_name,
+                            'existing_dob' => $hm->date_of_birth ? $hm->date_of_birth->format('Y-m-d') : null,
+                            'date_of_birth' => $hm->date_of_birth ? $hm->date_of_birth->format('Y-m-d') : null,
+                            'existing_address' => $hm->address,
+                            'address' => $hm->address,
+                            'existing_barangay' => $hm->barangay,
+                            'barangay' => $hm->barangay,
+                            'existing_municipality' => $hm->municipality,
+                            'municipality' => $hm->municipality,
                             'input_dob' => $data['date_of_birth'] ?? null,
                             'match_score' => 85,
                             'match_type' => 'high',
@@ -647,10 +657,24 @@ class BeneficiaryController extends Controller
             'beneficiaryPrograms.tupadProfile',
             'beneficiaryPrograms.dilpGroup',
             'creator',
-            'duplicateFlags.matchedBeneficiary',
         ]);
 
-        return view('beneficiaries.show', compact('beneficiary'));
+        // Search bidirectionally for duplicate flags: where beneficiary is EITHER candidate OR matched record
+        $duplicateFlags = DuplicateFlag::with(['beneficiary', 'matchedBeneficiary'])
+            ->where(function ($query) use ($beneficiary) {
+                $query->where('beneficiary_id', $beneficiary->id)
+                    ->orWhere('matched_beneficiary_id', $beneficiary->id);
+            })
+            ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+            ->orderByDesc('match_score')
+            ->get();
+
+        $pendingFlags = $duplicateFlags->where('status', 'pending')->values();
+
+        // Attach bidirectional collection to relationship so existing blade bindings work seamlessly
+        $beneficiary->setRelation('duplicateFlags', $duplicateFlags);
+
+        return view('beneficiaries.show', compact('beneficiary', 'duplicateFlags', 'pendingFlags'));
     }
 
     public function edit(Beneficiary $beneficiary): View

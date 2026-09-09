@@ -52,6 +52,16 @@ class Beneficiary extends Model
     ];
 
     /**
+     * The accessors to append to the model's array and JSON form.
+     *
+     * @var list<string>
+     */
+    protected $appends = [
+        'full_name',
+        'age',
+    ];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -106,6 +116,23 @@ class Beneficiary extends Model
     public function matchedDuplicateFlags(): HasMany
     {
         return $this->hasMany(DuplicateFlag::class, 'matched_beneficiary_id');
+    }
+
+    /**
+     * Get the beneficiary's full name, falling back to components if the column is blank.
+     */
+    public function getFullNameAttribute(?string $value): string
+    {
+        if (! empty($value)) {
+            return $value;
+        }
+
+        return self::buildFullName(
+            (string) ($this->first_name ?? ''),
+            $this->middle_name,
+            (string) ($this->last_name ?? ''),
+            $this->suffix
+        );
     }
 
     /**

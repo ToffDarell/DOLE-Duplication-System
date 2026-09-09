@@ -67,6 +67,58 @@
     @endhasanyrole
 </div>
 
+{{-- Orange Duplicate Alerts & Conflicts Banner (Rendered when pending flags exist) --}}
+@php
+    $activePendingFlags = $pendingFlags ?? ($duplicateFlags ?? $beneficiary->duplicateFlags)->where('status', 'pending');
+@endphp
+@if($activePendingFlags->isNotEmpty())
+    @php
+        $topPendingFlag = $activePendingFlags->first();
+        $topScore = (int) $topPendingFlag->match_score;
+        $topMatched = ($topPendingFlag->beneficiary_id === $beneficiary->id)
+            ? $topPendingFlag->matchedBeneficiary
+            : $topPendingFlag->beneficiary;
+        $topMatchedName = $topMatched ? $topMatched->full_name : ($topPendingFlag->matched_fields['matched_beneficiary_name'] ?? 'Existing Masterlist Record');
+    @endphp
+    <div class="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 sm:p-5 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-start sm:items-center gap-3.5">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white font-black shadow-sm">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-amber-600 px-2.5 py-0.5 text-xs font-black text-white shadow-2xs">
+                            {{ $topScore }}% Match
+                        </span>
+                        <h3 class="text-sm font-black text-amber-950 uppercase tracking-wide">Duplicate Alerts &amp; Conflicts Pending Review</h3>
+                    </div>
+                    <p class="text-xs font-semibold text-amber-900 mt-1">
+                        Potential duplicate match flagged against 
+                        @if($topMatched)
+                            <a href="{{ route('beneficiaries.show', $topMatched) }}" class="font-black text-blue-900 underline hover:text-blue-950">
+                                {{ $topMatchedName }} (#{{ $topMatched->id }})
+                            </a>
+                        @else
+                            <span class="font-black text-amber-950">{{ $topMatchedName }}</span>
+                        @endif
+                        &mdash; Match Score: <strong class="font-black text-blue-950">{{ $topScore }}%</strong> ({{ strtoupper(str_replace('_', ' ', $topPendingFlag->match_type)) }}).
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <a href="{{ route('duplicates.index', ['search' => $beneficiary->last_name]) }}" 
+                   class="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-xs font-extrabold shadow-xs transition">
+                    <span>Review in Duplicate Console</span>
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+                </a>
+            </div>
+        </div>
+    </div>
+@endif
+
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
     {{-- Personal Info Card --}}
     <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs flex flex-col justify-between">
@@ -243,9 +295,13 @@
                 </a>
             </div>
 
-            @if($beneficiary->duplicateFlags->isNotEmpty())
+            @php
+                $flagsToRender = $duplicateFlags ?? $beneficiary->duplicateFlags;
+            @endphp
+
+            @if($flagsToRender->isNotEmpty())
                 <div class="space-y-3.5">
-                    @foreach($beneficiary->duplicateFlags as $flag)
+                    @foreach($flagsToRender as $flag)
                         @php
                             $score = (int) $flag->match_score;
                             if ($score >= 100) {
@@ -261,6 +317,12 @@
                                 $badgeClass = 'bg-emerald-600 text-white';
                                 $borderClass = 'border-emerald-200 bg-emerald-50/40';
                             }
+
+                            // Determine counterpart record bidirectionally
+                            $matchedRec = ($flag->beneficiary_id === $beneficiary->id)
+                                ? $flag->matchedBeneficiary
+                                : $flag->beneficiary;
+                            $matchedName = $matchedRec ? $matchedRec->full_name : ($flag->matched_fields['matched_beneficiary_name'] ?? 'Candidate / Masterlist Record');
                         @endphp
                         <div class="rounded-xl border {{ $borderClass }} p-4 shadow-2xs">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -271,12 +333,12 @@
                                         </span>
                                         <span class="text-xs font-extrabold text-slate-900">
                                             Matched with: 
-                                            @if($flag->matchedBeneficiary)
-                                                <a href="{{ route('beneficiaries.show', $flag->matchedBeneficiary) }}" class="text-blue-800 hover:underline font-black">
-                                                    {{ $flag->matchedBeneficiary->full_name }}
+                                            @if($matchedRec)
+                                                <a href="{{ route('beneficiaries.show', $matchedRec) }}" class="text-blue-800 hover:underline font-black">
+                                                    {{ $matchedName }} (#{{ $matchedRec->id }})
                                                 </a>
                                             @else
-                                                <span class="text-slate-700">Archived/Candidate Record</span>
+                                                <span class="text-slate-700 font-bold">{{ $matchedName }}</span>
                                             @endif
                                         </span>
                                     </div>
