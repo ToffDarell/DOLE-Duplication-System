@@ -18,11 +18,8 @@
         @if(($navDuplicatePending ?? 0) > 0)
             <a href="{{ route('duplicates.index') }}"
                title="{{ $navDuplicatePending }} of {{ $navDuplicateTotal ?? $navDuplicatePending }} detected duplicate records awaiting validator action"
-               class="relative flex items-center gap-1.5 sm:gap-2 rounded-full border border-amber-300 bg-amber-50 px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-bold text-amber-900 shadow-2xs hover:bg-amber-100 transition whitespace-nowrap">
-                <span class="relative flex h-2 w-2 shrink-0">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-600"></span>
-                </span>
+               class="relative flex items-center gap-1.5 sm:gap-2 rounded-full border border-amber-300 bg-amber-50 px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-bold text-amber-900 shadow-2xs hover:bg-amber-100 transition whitespace-nowrap tabular-nums">
+                <span class="inline-flex rounded-full h-2 w-2 bg-amber-500 shrink-0"></span>
                 <span class="hidden sm:inline">{{ $navDuplicatePending }} Pending Review</span>
                 <span class="sm:hidden">{{ $navDuplicatePending }} Pending</span>
             </a>

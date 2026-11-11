@@ -5,23 +5,22 @@
 
 @section('content')
 {{-- DOLE Official Header Banner --}}
-<div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-2xl border border-blue-700/50 bg-blue-800 p-4 sm:p-6 text-white shadow-lg relative overflow-hidden gap-4">
-    <div class="absolute -right-10 -bottom-10 h-44 w-44 rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
+<div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-2xl border border-blue-700/50 bg-blue-800 p-4 sm:p-6 text-white shadow-sm relative overflow-hidden gap-4">
     <div class="flex items-center gap-3 sm:gap-4 relative z-10 min-w-0">
-        <div class="rounded-2xl bg-white p-2 shadow-md border border-white/20 shrink-0">
+        <div class="rounded-2xl bg-white p-2 shadow-xs border border-white/20 shrink-0">
             <img src="{{ asset('logo dole.png') }}" alt="DOLE Official Logo" class="h-10 w-10 sm:h-12 sm:w-12 object-contain bg-white">
         </div>
         <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <span class="rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[9px] sm:text-[10px] font-extrabold text-white uppercase tracking-wider">DOLE Bukidnon Field Office</span>
-                <span class="rounded-full bg-amber-400/20 border border-amber-300/30 px-2.5 py-0.5 text-[9px] sm:text-[10px] font-extrabold text-amber-200 uppercase tracking-wider">CY {{ date('Y') }} Intelligence</span>
+                <span class="rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-bold text-white">DOLE Bukidnon Field Office</span>
+                <span class="rounded-full bg-amber-400/20 border border-amber-300/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-200 tabular-nums">CY {{ date('Y') }} Intelligence</span>
             </div>
-            <h2 class="mt-1 text-base sm:text-xl font-black tracking-tight text-white leading-tight">Centralized Analytics & Duplicate Engine Report</h2>
+            <h2 class="mt-1 text-base sm:text-xl font-black tracking-tight text-white leading-tight">Centralized Analytics &amp; Duplicate Engine Report</h2>
         </div>
     </div>
     <div class="mt-1 sm:mt-0 text-left sm:text-right relative z-10 shrink-0">
-        <p class="text-[10px] sm:text-[11px] font-extrabold text-blue-200 uppercase tracking-wider">Last Sync Time</p>
-        <p class="text-xs sm:text-sm font-bold text-white tracking-tight">{{ now()->format('M d, Y - h:i A') }}</p>
+        <p class="text-[11px] font-bold text-blue-200">Last Sync Time</p>
+        <p class="text-xs sm:text-sm font-bold text-white tracking-tight tabular-nums">{{ now()->format('M d, Y - h:i A') }}</p>
     </div>
 </div>
 
@@ -38,7 +37,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($totalBeneficiaries) }}</p>
+            <p class="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{{ number_format($totalBeneficiaries) }}</p>
         </div>
         <p class="mt-3 text-xs font-medium text-slate-400">Master profiles across Bukidnon LGUs</p>
     </div>
@@ -54,9 +53,9 @@
                     </svg>
                 </div>
             </div>
-            <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($totalDuplicates) }}</p>
+            <p class="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{{ number_format($totalDuplicates) }}</p>
         </div>
-        <p class="mt-3 text-xs font-medium text-slate-400">{{ number_format($pendingDuplicates) }} pending &middot; {{ number_format($overriddenCount) }} cleared / resolved</p>
+        <p class="mt-3 text-xs font-medium text-slate-400 tabular-nums">{{ number_format($pendingDuplicates) }} pending &middot; {{ number_format($overriddenCount) }} cleared / resolved</p>
     </div>
 
     {{-- Card 3: Pending Validation Queue Count --}}
@@ -70,7 +69,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format($pendingDuplicates) }}</p>
+            <p class="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{{ number_format($pendingDuplicates) }}</p>
         </div>
         <p class="mt-3 text-xs font-medium text-slate-400">Requires validator review &amp; decision</p>
     </div>
@@ -86,7 +85,7 @@
                     </svg>
                 </div>
             </div>
-            <p class="text-3xl font-black text-slate-900 tracking-tight">{{ number_format(array_sum($programDistribution)) }}</p>
+            <p class="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{{ number_format(array_sum($programDistribution)) }}</p>
         </div>
         <p class="mt-3 text-xs font-medium text-slate-400">TUPAD, SPES, DILP &amp; GIP cross-records</p>
     </div>
@@ -102,7 +101,7 @@
                 </svg>
             </div>
             <div>
-                <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Duplication Risk Level &amp; Indicator Legend</h3>
+                <h3 class="text-xs font-black text-slate-900">Duplication Risk Level &amp; Indicator Legend</h3>
                 <p class="text-[11px] text-slate-500 font-medium">Click to <span x-text="showLegend ? 'collapse' : 'view'"></span> official DOLE scoring thresholds</p>
             </div>
         </div>
@@ -120,10 +119,10 @@
             <div class="rounded-xl border border-red-200 bg-red-50/60 p-3.5 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center gap-2 mb-1.5">
-                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-red-600 text-[11px] font-black text-white shadow-2xs shrink-0">100%</span>
-                        <h4 class="font-extrabold text-red-950 text-xs leading-snug">Exact Duplicate</h4>
+                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-red-600 text-[11px] font-black text-white shadow-2xs shrink-0 tabular-nums">100%</span>
+                        <h4 class="font-extrabold text-red-950 text-xs leading-snug">Exact Match</h4>
                     </div>
-                    <p class="text-[11px] text-red-800 leading-relaxed">Identical Full Name, Birthdate, and Government ID match.</p>
+                    <p class="text-[11px] text-red-800 leading-relaxed">All core fields match identically (Full Name, Birthdate, and Address / Gov ID).</p>
                 </div>
             </div>
 
@@ -131,10 +130,10 @@
             <div class="rounded-xl border border-orange-200 bg-orange-50/60 p-3.5 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center gap-2 mb-1.5">
-                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-orange-500 text-[11px] font-black text-white shadow-2xs shrink-0">85%–99%</span>
-                        <h4 class="font-extrabold text-orange-950 text-xs leading-snug">High Similarity Risk</h4>
+                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-orange-500 text-[11px] font-black text-white shadow-2xs shrink-0 tabular-nums">85%–99%</span>
+                        <h4 class="font-extrabold text-orange-950 text-xs leading-snug">Wrong Spelling / Human Error</h4>
                     </div>
-                    <p class="text-[11px] text-orange-800 leading-relaxed">Near-identical name spellings, phonetic match, or birthdates.</p>
+                    <p class="text-[11px] text-orange-800 leading-relaxed">Misspelled name, phonetic similarity, or single-digit birthdate encoding typo.</p>
                 </div>
             </div>
 
@@ -142,10 +141,10 @@
             <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center gap-2 mb-1.5">
-                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-amber-500 text-[11px] font-black text-white shadow-2xs shrink-0">70%–84%</span>
-                        <h4 class="font-extrabold text-amber-950 text-xs leading-snug">Moderate Risk</h4>
+                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-amber-500 text-[11px] font-black text-white shadow-2xs shrink-0 tabular-nums">70%–84%</span>
+                        <h4 class="font-extrabold text-amber-950 text-xs leading-snug">Missing Suffix / Middle Name</h4>
                     </div>
-                    <p class="text-[11px] text-amber-800 leading-relaxed">Partial field match (e.g. same house number / address or sibling name).</p>
+                    <p class="text-[11px] text-amber-800 leading-relaxed">Missing Jr./Sr. suffix, same name with different middle name, or namesake.</p>
                 </div>
             </div>
 
@@ -153,10 +152,10 @@
             <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center gap-2 mb-1.5">
-                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-emerald-600 text-[11px] font-black text-white shadow-2xs shrink-0">&lt;70%</span>
-                        <h4 class="font-extrabold text-emerald-950 text-xs leading-snug">Low Similarity / Distinct</h4>
+                        <span class="inline-flex items-center justify-center min-w-16 px-2 py-0.5 rounded-lg bg-emerald-600 text-[11px] font-black text-white shadow-2xs shrink-0 tabular-nums">&lt;70%</span>
+                        <h4 class="font-extrabold text-emerald-950 text-xs leading-snug">Below Threshold / Distinct</h4>
                     </div>
-                    <p class="text-[11px] text-emerald-800 leading-relaxed">Divergent record details with minor overlap; low collision risk.</p>
+                    <p class="text-[11px] text-emerald-800 leading-relaxed">Divergent record details below the 70% DOLE duplicate flagging cutoff.</p>
                 </div>
             </div>
         </div>

@@ -246,9 +246,7 @@
 
                 {{-- GIP --}}
                 <a href="{{ route('beneficiaries.index', array_merge(request()->except('program'), ['program' => 'GIP'])) }}"
-                   class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ request('program') === 'GIP' ? 'bg-cyan-800 text-white' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100' }}">
-                    GIP
-                </a>
+                   class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ request('program') === 'GIP' ? 'bg-cyan-800 text-white' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100' }}">GIP</a>
 
                 {{-- Senior Citizens --}}
                 <a href="{{ route('beneficiaries.index', array_merge(request()->except('sector'), ['sector' => 'senior'])) }}"

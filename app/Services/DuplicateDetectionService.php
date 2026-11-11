@@ -71,9 +71,11 @@ class DuplicateDetectionService
         $inputProgramCode = strtoupper($data['program_code'] ?? '');
         $inputYear = (int) ($data['availment_year'] ?? date('Y'));
 
-        $threshold = (int) SystemSetting::get('duplicate_threshold', 75);
+        $threshold = (int) SystemSetting::get('duplicate_threshold', 70);
         $enableDobCheck = SystemSetting::get('enable_exact_dob_check', '1') === '1';
         $enableGovIdCheck = SystemSetting::get('enable_gov_id_check', '1') === '1';
+
+        [$inputBaseFirst, $inputBaseLast, $inputSuffix] = self::extractBaseNameAndSuffix($inputFirstName, $inputLastName, (string) ($data['extension_name'] ?? ''));
 
         foreach ($candidates as $candidate) {
             $score = 0;
@@ -87,7 +89,10 @@ class DuplicateDetectionService
             $cleanCandLast = preg_replace('/[^a-z0-9]/', '', mb_strtolower(Str::ascii($candLastName)));
             $cleanCandFirst = preg_replace('/[^a-z0-9]/', '', mb_strtolower(Str::ascii($candFirstName)));
 
+            [$candBaseFirst, $candBaseLast, $candSuffix] = self::extractBaseNameAndSuffix($candFirstName, $candLastName);
+
             $isExactNameMatch = false;
+            $hasSuffixMismatch = false;
             $isTransposedNameMatch = false;
             $isCompoundSurnameMatch = false;
             $nameScore = 0;
@@ -96,9 +101,23 @@ class DuplicateDetectionService
                 (! empty($inputLastName) && ! empty($candLastName) && $inputLastName === $candLastName && ! empty($inputFirstName) && ! empty($candFirstName) && $inputFirstName === $candFirstName) ||
                 (! empty($cleanInputLast) && ! empty($cleanCandLast) && $cleanInputLast === $cleanCandLast && ! empty($cleanInputFirst) && ! empty($cleanCandFirst) && $cleanInputFirst === $cleanCandFirst)
             ) {
-                $isExactNameMatch = true;
-                $nameScore = 40;
-                $matchedFields['name'] = 'Exact name match (40 pts)';
+                if ($inputSuffix !== $candSuffix) {
+                    $hasSuffixMismatch = true;
+                    $nameScore = 36;
+                    $matchedFields['name'] = 'Same Name with Missing/Different Suffix (Jr./Sr./III) (36 pts)';
+                } else {
+                    $isExactNameMatch = true;
+                    $nameScore = 40;
+                    $matchedFields['name'] = 'Exact name match (40 pts)';
+                }
+            } elseif (
+                ! empty($inputBaseFirst) && ! empty($candBaseFirst) && $inputBaseFirst === $candBaseFirst &&
+                ! empty($inputBaseLast) && ! empty($candBaseLast) && $inputBaseLast === $candBaseLast &&
+                $inputSuffix !== $candSuffix
+            ) {
+                $hasSuffixMismatch = true;
+                $nameScore = 36;
+                $matchedFields['name'] = 'Same Name with Missing/Different Suffix (Jr./Sr./III) (36 pts)';
             } elseif (
                 // Transposed First & Last Names (e.g., Cruz, Juan vs Juan, Cruz or Cruz, Juan Dela vs Juan, Cruz Dela)
                 ((! empty($cleanInputLast) && ! empty($cleanCandFirst) && $cleanInputLast === $cleanCandFirst) &&
@@ -202,6 +221,7 @@ class DuplicateDetectionService
             $candMiddleName = mb_strtolower(trim($candidate->middle_name ?? ''));
             $cleanInputMiddle = preg_replace('/[^a-z0-9]/', '', $inputMiddleName);
             $cleanCandMiddle = preg_replace('/[^a-z0-9]/', '', $candMiddleName);
+            $hasDifferentMiddleName = false;
 
             if (! empty($cleanInputMiddle) && ! empty($cleanCandMiddle)) {
                 if ($cleanInputMiddle === $cleanCandMiddle) {
@@ -213,6 +233,13 @@ class DuplicateDetectionService
                 ) {
                     $score += 8;
                     $matchedFields['middle_name'] = 'Fuzzy Middle Name match (8 pts)';
+                } else {
+                    $hasDifferentMiddleName = true;
+                    $matchedFields['middle_name_discrepancy'] = sprintf(
+                        'Same Name with Different Middle Name ("%s" vs "%s")',
+                        $candidate->middle_name ?? 'N/A',
+                        $data['middle_name'] ?? 'N/A'
+                    );
                 }
             }
 
@@ -230,6 +257,13 @@ class DuplicateDetectionService
                 ) {
                     $score += 24;
                     $matchedFields['dob'] = 'Inverted Month-Day Date of Birth (24 pts)';
+                } elseif (
+                    levenshtein($inputDob, $candDob) === 1 &&
+                    (date('Y-m', strtotime($inputDob)) !== date('Y-m', strtotime($candDob)) ||
+                     abs((int) date('d', strtotime($inputDob)) - (int) date('d', strtotime($candDob))) === 1)
+                ) {
+                    $score += 22;
+                    $matchedFields['dob'] = 'Near Date of Birth Match (Single-digit typo detected) (22 pts)';
                 } elseif (
                     date('Y-m', strtotime($inputDob)) === date('Y-m', strtotime($candDob)) &&
                     abs((int) date('d', strtotime($inputDob)) - (int) date('d', strtotime($candDob))) <= 3
@@ -375,17 +409,31 @@ class DuplicateDetectionService
                 }
             }
 
-            // 7. Check Exact Match Criteria: full name + DOB + government ID / contact number
+            // 7. Check Exact Match Criteria & DOLE Percentage Banding (100% / 85-99% / 70-84%)
             $isExactMatch = false;
-            if ($isExactNameMatch && $isSameDob && ($isSameGovId || $isSameContact)) {
+            if ($isExactNameMatch && ! $hasDifferentMiddleName && ! $hasSuffixMismatch && $isSameDob && ($isSameGovId || $isSameContact || ($isSameAddress && $cleanInputMiddle === $cleanCandMiddle))) {
                 $isExactMatch = true;
                 $score = 100;
-                $matchedFields['exact'] = 'Exact match across Name, DOB, and Gov ID / Contact (100 pts)';
-            } elseif ($isSameGovId && ($isExactNameMatch || $nameScore >= 35 || $isPrimaryTokenMatch || ($cleanInputLast === $cleanCandLast && ($lastLev <= 2 || $lastMetaMatch)))) {
+                $matchedFields['exact'] = 'Exact match across Name, DOB, and Address / Gov ID (100 pts)';
+            } elseif ($isSameGovId && ! $hasDifferentMiddleName && ! $hasSuffixMismatch && ($isExactNameMatch || $nameScore >= 35 || $isPrimaryTokenMatch || ($cleanInputLast === $cleanCandLast && ($lastLev <= 2 || $lastMetaMatch)))) {
                 // Exact Government ID match with phonetic or misspelled name
                 $isExactMatch = true;
                 $score = 100;
                 $matchedFields['exact'] = 'Exact Government ID Match with Name / Phonetic Similarity (100 pts, EXACT MATCH)';
+            }
+
+            // Enforce DOLE 70%–84% band for missing/different suffix (Jr./Sr.) or same name with different middle name
+            if (($hasSuffixMismatch || ($isExactNameMatch && $hasDifferentMiddleName)) && ! $isSameGovId) {
+                $score = min(max($score, 75), 84);
+                $isSameNameDifferentIdentity = true;
+                if ($hasSuffixMismatch) {
+                    $matchedFields['suffix_discrepancy'] = 'Missing or different suffix (Jr./Sr./III) — categorized in 70%–84% DOLE band';
+                }
+            }
+
+            // Cap non-exact matches at 99% so 100% is strictly reserved for exact matches
+            if (! $isExactMatch && $score >= 100) {
+                $score = 99;
             }
 
             // Purok / Address & Sibling Comparison insight
@@ -407,14 +455,16 @@ class DuplicateDetectionService
 
             $isTransposedAlert = ($isTransposedNameMatch && $isSameDob);
 
-            if ($score >= $threshold || $isExactMatch || $isExactNameMatch || $isLocationSurnameMatch || $isTransposedAlert) {
+            if ($score >= $threshold || $isExactMatch || $isExactNameMatch || $hasSuffixMismatch || $isLocationSurnameMatch || $isTransposedAlert) {
                 $matchType = 'low';
-                if ($isExactMatch || $score >= 90) {
+                if ($isExactMatch || $score >= 100) {
                     $matchType = 'exact';
-                } elseif ($score >= 80) {
+                } elseif ($score >= 85) {
                     $matchType = 'high';
-                } else {
+                } elseif ($score >= 70) {
                     $matchType = 'medium';
+                } else {
+                    $matchType = 'low';
                 }
 
                 if ($isExactMatch) {
@@ -811,5 +861,47 @@ class DuplicateDetectionService
         $str = preg_replace('/\s+/', ' ', $str);
 
         return trim($str);
+    }
+
+    /**
+     * Separate any generational suffix (Jr., Sr., Junior, Senior, II, III, IV) from normalized first and last names.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    public static function extractBaseNameAndSuffix(string $firstName, string $lastName, string $extension = ''): array
+    {
+        $suffixMap = [
+            'jr' => 'jr',
+            'junior' => 'jr',
+            'sr' => 'sr',
+            'senior' => 'sr',
+            'ii' => 'ii',
+            'iii' => 'iii',
+            'iv' => 'iv',
+        ];
+
+        $detectedSuffix = '';
+        $extClean = preg_replace('/[^a-z0-9]/', '', mb_strtolower(trim($extension)));
+        if ($extClean !== '' && isset($suffixMap[$extClean])) {
+            $detectedSuffix = $suffixMap[$extClean];
+        }
+
+        $stripSuffixTokens = function (string $name) use ($suffixMap, &$detectedSuffix): string {
+            $tokens = array_values(array_filter(explode(' ', $name), fn ($t) => $t !== ''));
+            if (count($tokens) > 1) {
+                $lastToken = preg_replace('/[^a-z0-9]/', '', end($tokens));
+                if (isset($suffixMap[$lastToken])) {
+                    $detectedSuffix = $suffixMap[$lastToken];
+                    array_pop($tokens);
+                }
+            }
+
+            return implode(' ', $tokens);
+        };
+
+        $baseFirst = $stripSuffixTokens($firstName);
+        $baseLast = $stripSuffixTokens($lastName);
+
+        return [$baseFirst, $baseLast, $detectedSuffix];
     }
 }

@@ -111,6 +111,49 @@ test('duplicate engine gracefully degrades DOB score for single-digit typo and i
     expect($topTypo['matched_fields']['dob'])->toContain('Near Date of Birth Match (Single-digit typo detected) (22 pts)');
 });
 
+test('duplicate engine classifies missing suffix and different middle name into DOLE 70-84% band', function () {
+    Beneficiary::create([
+        'full_name' => 'JUAN SANTOS DELA CRUZ',
+        'first_name' => 'JUAN',
+        'middle_name' => 'SANTOS',
+        'last_name' => 'DELA CRUZ',
+        'date_of_birth' => '1990-05-15',
+        'sex' => 'Male',
+        'municipality' => 'Valencia City',
+        'barangay' => 'Poblacion',
+    ]);
+
+    $service = app(DuplicateDetectionService::class);
+
+    // 1. Missing/added Jr. suffix -> 70%–84% (medium)
+    $suffixResult = $service->checkDuplicates([
+        'first_name' => 'JUAN',
+        'middle_name' => 'SANTOS',
+        'last_name' => 'DELA CRUZ JR.',
+        'date_of_birth' => '1990-05-15',
+        'municipality' => 'Valencia City',
+        'barangay' => 'Poblacion',
+    ]);
+
+    expect($suffixResult['has_duplicates'])->toBeTrue();
+    expect($suffixResult['top_match']['match_score'])->toBeBetween(70, 84);
+    expect($suffixResult['top_match']['match_type'])->toBe('medium');
+
+    // 2. Same name, different middle name -> 70%–84% (medium)
+    $diffMiddleResult = $service->checkDuplicates([
+        'first_name' => 'JUAN',
+        'middle_name' => 'REYES',
+        'last_name' => 'DELA CRUZ',
+        'date_of_birth' => '1990-05-15',
+        'municipality' => 'Valencia City',
+        'barangay' => 'Poblacion',
+    ]);
+
+    expect($diffMiddleResult['has_duplicates'])->toBeTrue();
+    expect($diffMiddleResult['top_match']['match_score'])->toBeBetween(70, 84);
+    expect($diffMiddleResult['top_match']['match_type'])->toBe('medium');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Item 2: Duplicate Resolution Console Filtering
@@ -176,10 +219,13 @@ test('duplicate resolution console filters flags by municipality, barangay, sex,
 |--------------------------------------------------------------------------
 */
 
-test('sidebar renders links for TUPAD, SPES, and GIP programs', function () {
+test('sidebar renders the Projects link that leads to TUPAD, SPES, and GIP projects', function () {
     $response = $this->actingAs($this->admin)->get(route('dashboard'));
 
-    $response->assertOk()
+    $response->assertOk()->assertSee(route('projects.index'), false);
+
+    $this->actingAs($this->admin)->get(route('projects.index'))
+        ->assertOk()
         ->assertSee('program=TUPAD', false)
         ->assertSee('program=SPES', false)
         ->assertSee('program=GIP', false);

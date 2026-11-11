@@ -32,10 +32,10 @@
             <div class="rounded-xl border border-red-200 bg-red-50/60 p-3 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="inline-flex items-center justify-center min-w-14 px-2 py-0.5 rounded-lg bg-red-600 text-[10px] font-black text-white shadow-2xs shrink-0">100%</span>
-                        <h4 class="font-extrabold text-red-950 text-xs">Exact Duplicate</h4>
+                        <span class="inline-flex items-center justify-center min-w-14 px-2 py-0.5 rounded-lg bg-red-600 text-[10px] font-black text-white shadow-2xs shrink-0 tabular-nums">100%</span>
+                        <h4 class="font-extrabold text-red-950 text-xs">Exact Match</h4>
                     </div>
-                    <p class="text-[11px] text-red-800 leading-relaxed">Identical Full Name, Birthdate, and Government ID match.</p>
+                    <p class="text-[11px] text-red-800 leading-relaxed">All records match identically (Full Name, Birthdate, and Address / Gov ID).</p>
                 </div>
             </div>
 
@@ -43,10 +43,10 @@
             <div class="rounded-xl border border-orange-200 bg-orange-50/60 p-3 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="inline-flex items-center justify-center min-w-14 px-2 py-0.5 rounded-lg bg-orange-500 text-[10px] font-black text-white shadow-2xs shrink-0">85%–99%</span>
-                        <h4 class="font-extrabold text-orange-950 text-xs">High Similarity</h4>
+                        <span class="inline-flex items-center justify-center min-w-14 px-2 py-0.5 rounded-lg bg-orange-500 text-[10px] font-black text-white shadow-2xs shrink-0 tabular-nums">85%–99%</span>
+                        <h4 class="font-extrabold text-orange-950 text-xs">Wrong Spelling / Human Error</h4>
                     </div>
-                    <p class="text-[11px] text-orange-800 leading-relaxed">Near-identical name spellings, phonetic match, or birthdates.</p>
+                    <p class="text-[11px] text-orange-800 leading-relaxed">Misspelled name, phonetic similarity, or single-digit birthdate encoding typo.</p>
                 </div>
             </div>
 
@@ -54,10 +54,10 @@
             <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-3 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="inline-flex items-center justify-center min-w-14 px-2 py-0.5 rounded-lg bg-amber-500 text-[10px] font-black text-white shadow-2xs shrink-0">70%–84%</span>
-                        <h4 class="font-extrabold text-amber-950 text-xs">Moderate Risk</h4>
+                        <span class="inline-flex items-center justify-center min-w-14 px-2 py-0.5 rounded-lg bg-amber-500 text-[10px] font-black text-white shadow-2xs shrink-0 tabular-nums">70%–84%</span>
+                        <h4 class="font-extrabold text-amber-950 text-xs">Missing Suffix / Middle Name</h4>
                     </div>
-                    <p class="text-[11px] text-amber-800 leading-relaxed">Partial field match (e.g. same house number / address or sibling name).</p>
+                    <p class="text-[11px] text-amber-800 leading-relaxed">Missing Jr./Sr. suffix, same name with different middle name, or namesake.</p>
                 </div>
             </div>
 
@@ -65,10 +65,10 @@
             <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 flex flex-col justify-between">
                 <div>
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="inline-flex items-center justify-center min-w-14 px-2 py-0.5 rounded-lg bg-emerald-600 text-[10px] font-black text-white shadow-2xs shrink-0">&lt; 70%</span>
-                        <h4 class="font-extrabold text-emerald-950 text-xs">Low Similarity</h4>
+                        <span class="inline-flex items-center justify-center min-w-14 px-2 py-0.5 rounded-lg bg-emerald-600 text-[10px] font-black text-white shadow-2xs shrink-0 tabular-nums">&lt; 70%</span>
+                        <h4 class="font-extrabold text-emerald-950 text-xs">Below Threshold</h4>
                     </div>
-                    <p class="text-[11px] text-emerald-800 leading-relaxed">Divergent record details with minor overlap; low collision risk.</p>
+                    <p class="text-[11px] text-emerald-800 leading-relaxed">Divergent record details below the 70% DOLE duplicate flagging cutoff.</p>
                 </div>
             </div>
         </div>
@@ -261,16 +261,22 @@
         this.comparisonModal = true;
     },
     getScoreBadgeClass(score) {
-        if (score >= 100) return 'bg-red-600 text-white';
-        if (score >= 85) return 'bg-orange-500 text-white';
+        if (score >= 100) return 'bg-rose-600 text-white';
+        if (score >= 85) return 'bg-orange-600 text-white';
         if (score >= 70) return 'bg-amber-500 text-white';
         return 'bg-emerald-600 text-white';
     },
+    getScoreTextClass(score) {
+        if (score >= 100) return 'text-rose-700';
+        if (score >= 85) return 'text-orange-700';
+        if (score >= 70) return 'text-amber-700';
+        return 'text-emerald-700';
+    },
     getScoreRiskLabel(score) {
-        if (score >= 100) return 'Exact Duplicate (100%)';
-        if (score >= 85) return 'High Similarity Risk (' + score + '%)';
-        if (score >= 70) return 'Moderate Risk (' + score + '%)';
-        return 'Low Similarity / Distinct (' + score + '%)';
+        if (score >= 100) return 'Exact Match (100%)';
+        if (score >= 85) return 'Wrong Spelling / Human Error (' + score + '%)';
+        if (score >= 70) return 'Missing Suffix / Middle Name (' + score + '%)';
+        return 'Below Threshold (' + score + '%)';
     },
     isMatch(val1, val2) {
         if (!val1 || !val2) return false;
@@ -285,36 +291,36 @@
             $score = (int) $flag->match_score;
             $isHousehold = (bool) $flag->household_match_flag;
 
-            if ($isHousehold) {
-                // Household / Co-availment policy check: Distinguish policy conflict from single-person duplicate
-                $badgeBg = 'bg-blue-800 text-white';
-                $badgeLabel = 'Household / Family Conflict';
-            } elseif ($score >= 100) {
-                $badgeBg = 'bg-red-600 text-white';
-                $badgeLabel = 'Exact Duplicate';
+            if ($score >= 100) {
+                $badgeBg = 'bg-rose-600 text-white';
+                $scoreTextColor = 'text-rose-700';
+                $badgeLabel = 'Exact Match';
             } elseif ($score >= 85) {
-                $badgeBg = 'bg-orange-500 text-white';
-                $badgeLabel = 'High Similarity Risk';
+                $badgeBg = 'bg-orange-600 text-white';
+                $scoreTextColor = 'text-orange-700';
+                $badgeLabel = 'Wrong Spelling / Human Error';
             } elseif ($score >= 70) {
                 $badgeBg = 'bg-amber-500 text-white';
-                $badgeLabel = 'Moderate Risk';
+                $scoreTextColor = 'text-amber-700';
+                $badgeLabel = 'Missing Suffix / Middle Name';
             } else {
-                $badgeBg = 'bg-slate-700 text-white';
-                $badgeLabel = 'Low Similarity / Distinct';
+                $badgeBg = 'bg-emerald-600 text-white';
+                $scoreTextColor = 'text-emerald-700';
+                $badgeLabel = 'Below Threshold';
             }
 
             $candFirstName = $flag->beneficiary?->first_name ?? 'Candidate';
             $matchFirstName = $flag->matchedBeneficiary?->first_name ?? 'Masterlist';
         @endphp
 
-        <div class="rounded-2xl border {{ $isHousehold ? 'border-blue-200/90 bg-blue-50/20' : 'border-slate-200/80 bg-white' }} p-5 sm:p-6 shadow-xs transition hover:shadow-sm">
+        <div class="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs transition hover:shadow-sm">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex items-center gap-3.5">
                     {{-- Match Score / Policy Badge --}}
-                    <div class="flex h-13 w-13 shrink-0 flex-col items-center justify-center rounded-2xl {{ $badgeBg }} font-black shadow-2xs">
+                    <div class="flex h-13 w-13 shrink-0 flex-col items-center justify-center rounded-2xl {{ $badgeBg }} font-black shadow-2xs tabular-nums">
                         @if($isHousehold)
                             <span class="text-sm leading-none text-white">{{ $flag->match_score }}%</span>
-                            <span class="text-[8px] font-bold uppercase tracking-wider opacity-90 mt-0.5 text-blue-100">Family</span>
+                            <span class="text-[8px] font-bold uppercase tracking-wider opacity-90 mt-0.5 text-white/90">Family</span>
                         @else
                             <span class="text-sm leading-none">{{ $flag->match_score }}%</span>
                             <span class="text-[8px] font-bold uppercase tracking-wider opacity-90 mt-0.5">Match</span>
@@ -338,10 +344,10 @@
                         {{-- Category Pills --}}
                         <div class="mt-1 flex flex-wrap items-center gap-1.5">
                             @if($isHousehold)
-                                <span class="inline-flex items-center gap-1 rounded-md bg-blue-100 border border-blue-200 px-2 py-0.5 text-[10px] font-extrabold text-blue-900">
+                                <span class="inline-flex items-center gap-1 rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-extrabold text-emerald-900">
                                     Household Co-Availment Review
                                 </span>
-                                <span class="inline-flex items-center rounded-md bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
+                                <span class="inline-flex items-center rounded-md bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 tabular-nums">
                                     {{ $score }}% Name Similarity (Distinct Individuals)
                                 </span>
                             @else
@@ -350,8 +356,8 @@
                                 </span>
                             @endif
 
-                            <span class="text-[11px] text-slate-500 font-medium ml-1">
-                                Flag #{{ $flag->id }} &middot; Match Score: <span class="font-extrabold text-blue-900">{{ $flag->match_score }}%</span> (<span class="uppercase font-bold text-slate-700">{{ strtoupper(str_replace('_', ' ', $flag->match_type)) }}</span>) &middot; Status: <span class="font-bold text-slate-800 capitalize">{{ ucfirst(str_replace('_', ' ', $flag->status)) }}</span>
+                            <span class="text-[11px] text-slate-500 font-medium ml-1 tabular-nums">
+                                Flag #{{ $flag->id }} &middot; Match Score: <span class="font-extrabold {{ $scoreTextColor }}">{{ $flag->match_score }}%</span> (<span class="uppercase font-bold text-slate-700">{{ strtoupper(str_replace('_', ' ', $flag->match_type)) }}</span>) &middot; Status: <span class="font-bold text-slate-800 capitalize">{{ ucfirst(str_replace('_', ' ', $flag->status)) }}</span>
                             </span>
                         </div>
                     </div>
@@ -523,7 +529,7 @@
                     <div>
                         <h3 class="text-base font-black text-slate-900">Side-by-Side Beneficiary Record Comparison</h3>
                         <p class="text-xs font-bold text-slate-500">
-                            Flag #<span x-text="activeFlag?.id"></span> &middot; Match Score: <span class="font-extrabold text-blue-900" x-text="(activeFlag?.match_score ?? 0) + '%'"></span> (<span class="uppercase font-bold text-slate-700" x-text="activeFlag?.match_type"></span>) &middot; Status: <span class="capitalize text-slate-800" x-text="activeFlag?.status"></span>
+                            Flag #<span x-text="activeFlag?.id"></span> &middot; Match Score: <span class="font-extrabold" :class="getScoreTextClass(activeFlag?.match_score)" x-text="(activeFlag?.match_score ?? 0) + '%'"></span> (<span class="uppercase font-bold text-slate-700" x-text="activeFlag?.match_type"></span>) &middot; Status: <span class="capitalize text-slate-800" x-text="activeFlag?.status"></span>
                         </p>
                     </div>
                 </div>
@@ -726,7 +732,7 @@
         <div class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl border border-slate-200" @click.away="resolveModal = false">
             <h3 class="mb-1 text-lg font-black text-slate-900" x-text="activeFlag?.household_match_flag ? 'Resolve House Number / Address Flag' : 'Resolve Duplicate Flag'"></h3>
             <p class="mb-4 text-xs font-semibold text-slate-500">
-                Flag #<span x-text="activeFlag?.id"></span> &middot; Match Score: <span class="font-extrabold text-blue-900" x-text="(activeFlag?.match_score ?? 0) + '%'"></span> (<span class="uppercase font-bold text-slate-700" x-text="activeFlag?.match_type"></span>) &middot; Resolving flag for <span class="font-bold text-slate-800" x-text="activeFlag?.beneficiary?.full_name ?? ''"></span>
+                Flag #<span x-text="activeFlag?.id"></span> &middot; Match Score: <span class="font-extrabold" :class="getScoreTextClass(activeFlag?.match_score)" x-text="(activeFlag?.match_score ?? 0) + '%'"></span> (<span class="uppercase font-bold text-slate-700" x-text="activeFlag?.match_type"></span>) &middot; Resolving flag for <span class="font-bold text-slate-800" x-text="activeFlag?.beneficiary?.full_name ?? ''"></span>
             </p>
 
             <template x-if="activeFlag?.household_match_flag">

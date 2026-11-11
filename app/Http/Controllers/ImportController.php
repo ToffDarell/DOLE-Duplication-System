@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Imports\BeneficiariesImport;
 use App\Models\ImportLog;
+use App\Models\Program;
+use App\Models\Project;
 use App\Models\SystemSetting;
 use App\Services\BeneficiaryImportService;
 use Illuminate\Http\JsonResponse;
@@ -18,12 +20,27 @@ class ImportController extends Controller
         protected BeneficiaryImportService $importService
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $logs = ImportLog::with('user')->latest()->paginate(10);
         $bulkThreshold = (int) SystemSetting::get('bulk_import_threshold', 600);
 
-        return view('import.index', compact('logs', 'bulkThreshold'));
+        $projectOptions = Project::with('program')->latest()->get()
+            ->map(fn (Project $p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'implementation_type' => $p->implementation_type,
+                'municipality' => $p->municipality,
+                'target_beneficiaries' => $p->target_beneficiaries,
+                'year' => $p->year,
+                'program' => $p->program->code,
+            ])
+            ->values();
+        $preselectedProject = $request->filled('project') ? Project::with('program')->find($request->input('project')) : null;
+        $municipalities = ProjectController::MUNICIPALITIES;
+        $implementationTypes = ProjectController::IMPLEMENTATION_TYPES;
+
+        return view('import.index', compact('logs', 'bulkThreshold', 'projectOptions', 'preselectedProject', 'municipalities', 'implementationTypes'));
     }
 
     /**
@@ -150,9 +167,40 @@ class ImportController extends Controller
             'program_code' => ['required', 'in:TUPAD,SPES,DILP,GIP'],
             'start_row' => ['nullable', 'integer', 'min:1'],
             'end_row' => ['nullable', 'integer', 'min:1'],
+            'project_id' => ['nullable', 'exists:projects,id'],
+            'new_project_name' => ['nullable', 'string', 'max:200'],
+            'implementation_type' => ['nullable', 'string', 'max:150'],
+            'municipality' => ['nullable', 'string', 'max:100'],
+            'target_beneficiaries' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
         ], [
             'file.uploaded' => 'The file failed to upload. Please ensure the file is saved and not locked by another application.',
         ]);
+
+        $projectId = null;
+        if ($request->filled('project_id')) {
+            $project = Project::findOrFail($request->input('project_id'));
+            if ($project->program->code !== $request->input('program_code')) {
+                return back()->withInput()->with('error', "Selected project belongs to {$project->program->code}, not {$request->input('program_code')}.");
+            }
+            $projectId = $project->id;
+        } elseif ($request->filled('new_project_name')) {
+            $startDate = $request->input('start_date');
+            $year = $startDate ? (int) date('Y', strtotime($startDate)) : (int) date('Y');
+
+            $projectId = Project::create([
+                'program_id' => Program::where('code', $request->input('program_code'))->value('id'),
+                'name' => trim($request->input('new_project_name')),
+                'implementation_type' => $request->input('implementation_type'),
+                'municipality' => $request->input('municipality'),
+                'target_beneficiaries' => $request->filled('target_beneficiaries') ? (int) $request->input('target_beneficiaries') : null,
+                'start_date' => $startDate,
+                'end_date' => $request->input('end_date'),
+                'year' => $year,
+                'created_by' => $request->user()->id,
+            ])->id;
+        }
 
         $file = $request->file('file');
         $filePath = $file->storeAs('imports', time().'_'.$file->getClientOriginalName());
@@ -167,7 +215,8 @@ class ImportController extends Controller
             $importer = new BeneficiariesImport(
                 $request->input('program_code'),
                 $request->filled('start_row') ? (int) $request->input('start_row') : null,
-                $request->filled('end_row') ? (int) $request->input('end_row') : null
+                $request->filled('end_row') ? (int) $request->input('end_row') : null,
+                $projectId
             );
 
             $importLog = $importer->import($fullPath);

@@ -12,6 +12,7 @@ use App\Http\Controllers\DilpProjectController;
 use App\Http\Controllers\DuplicateController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -69,6 +70,17 @@ Route::middleware(['auth', 'track.activity', 'check.password.reset'])->group(fun
     Route::post('dilp/groups/{group}/import-members', [DilpGroupController::class, 'importCoPartnerMembers']);
     Route::resource('dilp/groups', DilpGroupController::class)->names('dilp.groups');
     Route::resource('dilp/projects', DilpProjectController::class)->names('dilp.projects');
+
+    // Projects (browse: all roles; manage: Admin, Encoder)
+    Route::middleware('role:Admin|Encoder')->group(function () {
+        Route::get('projects/create', [ProjectController::class, 'create'])->name('projects.create');
+        Route::post('projects', [ProjectController::class, 'store'])->name('projects.store');
+        Route::get('projects/{project}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
+        Route::put('projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
+        Route::delete('projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
+    });
+    Route::get('projects', [ProjectController::class, 'index'])->name('projects.index');
+    Route::get('projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
 
     // Import Data (Admin, Encoder)
     Route::middleware('role:Admin|Encoder')->group(function () {

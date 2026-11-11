@@ -18,7 +18,7 @@
     </form>
 </div>
 
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3 items-start">
     {{-- Summary Card --}}
     <div class="gov-card p-6">
         <h3 class="mb-4 text-xs font-extrabold uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-2">Import Summary</h3>

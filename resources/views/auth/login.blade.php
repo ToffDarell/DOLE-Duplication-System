@@ -11,25 +11,19 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="flex min-h-full flex-col justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 font-sans text-slate-900 antialiased selection:bg-blue-800 selection:text-white relative overflow-hidden">
-    {{-- Soft DOLE Ambient Glow Background Elements --}}
-    <div class="pointer-events-none absolute inset-0 overflow-hidden">
-        <div class="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-blue-600/10 blur-3xl"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-blue-400/5 blur-3xl"></div>
-    </div>
-
+<body class="flex min-h-full flex-col justify-center bg-slate-50 font-sans text-slate-900 antialiased selection:bg-blue-800 selection:text-white">
     <div class="relative z-10 sm:mx-auto sm:w-full sm:max-w-md px-4 py-8">
         {{-- Official DOLE Logo Header --}}
         <div class="text-center">
-            <div class="inline-block rounded-2xl bg-white p-2.5 shadow-lg border border-slate-200/80 transition-transform duration-300 hover:scale-105">
-                <img src="{{ asset('logo dole.png') }}" alt="DOLE Official Logo" class="h-20 w-20 object-contain rounded-xl bg-white">
+            <div class="inline-block rounded-2xl bg-white p-2.5 shadow-xs border border-slate-200/80">
+                <img src="{{ asset('logo dole.png') }}" alt="DOLE Official Logo" class="h-16 w-16 object-contain rounded-xl bg-white">
             </div>
             <h2 class="mt-4 text-2xl font-black tracking-tight text-slate-900">DOLE Bukidnon</h2>
-            <p class="mt-1 text-xs font-bold uppercase tracking-wider text-blue-800">Duplicate Detection System</p>
+            <p class="mt-1 text-xs font-bold text-blue-800">Duplicate Detection System</p>
         </div>
 
         {{-- Login Card --}}
-        <div class="mt-7 rounded-3xl border border-slate-200/80 bg-white/95 p-8 shadow-xl backdrop-blur-md">
+        <div class="mt-6 rounded-2xl border border-slate-200/80 bg-white p-8 shadow-sm">
             @if(session('error'))
                 <div class="mb-5 flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-semibold text-red-800 shadow-2xs">
                     <svg class="h-5 w-5 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -44,20 +38,20 @@
                 </div>
             @endif
 
-            <form action="{{ route('login') }}" method="POST" class="space-y-5">
+            <form action="{{ route('login') }}" method="POST" class="space-y-4">
                 @csrf
                 <div>
-                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Email Address</label>
+                    <label class="mb-1.5 block text-xs font-bold text-slate-700">Email Address</label>
                     <input type="email" name="email" value="{{ old('email') }}" required autofocus
                            placeholder="staff@dole-bukidnon.gov.ph"
-                           class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition focus:border-blue-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-800/20">
+                           class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 transition focus:border-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-800/20">
                 </div>
 
                 <div x-data="{ showPass: false }">
-                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700">Password</label>
+                    <label class="mb-1.5 block text-xs font-bold text-slate-700">Password</label>
                     <div class="relative">
                         <input :type="showPass ? 'text' : 'password'" name="password" required placeholder="••••••••"
-                               class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-11 text-sm text-slate-900 placeholder-slate-400 transition focus:border-blue-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-800/20">
+                               class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 pr-11 text-sm text-slate-900 placeholder-slate-400 transition focus:border-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-800/20">
                         <button type="button" @click="showPass = !showPass" class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-blue-800 focus:outline-none transition cursor-pointer" tabindex="-1" aria-label="Toggle password visibility">
                             {{-- Eye icon (Hidden state) --}}
                             <svg x-show="!showPass" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -80,7 +74,7 @@
                 </div>
 
                 <button type="submit"
-                        class="w-full rounded-xl bg-blue-800 hover:bg-blue-900 px-4 py-3 text-sm font-extrabold text-white shadow-lg shadow-blue-800/25 transition-all duration-200 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] cursor-pointer">
+                        class="w-full rounded-xl bg-blue-800 hover:bg-blue-900 px-4 py-2.5 text-sm font-bold text-white shadow-xs transition cursor-pointer">
                     Sign In to Portal
                 </button>
             </form>

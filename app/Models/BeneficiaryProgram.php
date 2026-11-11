@@ -11,6 +11,7 @@ class BeneficiaryProgram extends Model
     protected $fillable = [
         'beneficiary_id',
         'program_id',
+        'project_id',
         'availment_year',
         'enrollment_type',
         'dilp_group_id',
@@ -39,6 +40,14 @@ class BeneficiaryProgram extends Model
     public function beneficiary(): BelongsTo
     {
         return $this->belongsTo(Beneficiary::class);
+    }
+
+    /**
+     * @return BelongsTo<Project, $this>
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     /**

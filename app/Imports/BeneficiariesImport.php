@@ -30,12 +30,15 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
 
     protected ?int $customEndRow = null;
 
+    protected ?int $projectId = null;
+
     protected ?BeneficiaryImportService $importService = null;
 
     protected ?DuplicateDetectionService $duplicateService = null;
 
-    public function __construct(string $programCode = 'TUPAD', ?int $startRow = null, ?int $endRow = null)
+    public function __construct(string $programCode = 'TUPAD', ?int $startRow = null, ?int $endRow = null, ?int $projectId = null)
     {
+        $this->projectId = $projectId;
         $this->programCode = strtoupper($programCode);
         $this->customStartRow = ($startRow !== null && $startRow > 0) ? $startRow : null;
         $this->customEndRow = ($endRow !== null && $endRow > 0) ? $endRow : null;
@@ -288,7 +291,9 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
 
         $maxBeneficiaryId = (int) Beneficiary::max('id');
 
-        DB::transaction(function () use ($beneficiaryRows, $parsedRows, $program, $currentYear, $isTupad, $timestamp, $maxBeneficiaryId) {
+        $projectId = $this->projectId;
+
+        DB::transaction(function () use ($beneficiaryRows, $parsedRows, $program, $currentYear, $isTupad, $timestamp, $maxBeneficiaryId, $projectId) {
             foreach (array_chunk($beneficiaryRows, 500) as $chunk) {
                 Beneficiary::insert($chunk);
             }
@@ -298,6 +303,7 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
             $programRows = array_map(fn ($beneficiaryId) => [
                 'beneficiary_id' => $beneficiaryId,
                 'program_id' => $program->id,
+                'project_id' => $projectId,
                 'availment_year' => $currentYear,
                 'status' => 'approved',
                 'created_at' => $timestamp,
@@ -487,6 +493,7 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
         $beneficiaryProgram = BeneficiaryProgram::create([
             'beneficiary_id' => $beneficiary->id,
             'program_id' => $program->id,
+            'project_id' => $this->projectId,
             'availment_year' => (int) date('Y'),
             'status' => $hasFlags ? 'pending' : 'approved',
         ]);
