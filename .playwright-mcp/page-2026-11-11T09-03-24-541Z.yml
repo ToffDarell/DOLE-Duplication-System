@@ -1,0 +1,572 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - link [ref=e5] [cursor=pointer]:
+      - /url: http://127.0.0.1:8000
+      - img "DOLE Logo" [ref=e7]
+      - generic [ref=e8]:
+        - heading "DOLE Bukidnon" [level=1] [ref=e9]
+        - paragraph [ref=e10]: Duplicate Detection
+    - navigation [ref=e11]:
+      - generic [ref=e12]:
+        - paragraph [ref=e13]: Main Menu
+        - list [ref=e14]:
+          - listitem [ref=e15]:
+            - link "Dashboard" [ref=e16] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000
+          - listitem [ref=e20]:
+            - link "Projects" [ref=e21] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects
+          - listitem [ref=e25]:
+            - link "Archives / Trash" [ref=e26] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/beneficiaries/archived
+          - listitem [ref=e30]:
+            - link "Duplicate Flags 146" [ref=e31] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/duplicates
+              - generic [ref=e34]: Duplicate Flags
+              - generic "Pending validation queue" [ref=e35]: "146"
+      - generic [ref=e36]:
+        - paragraph [ref=e37]: Reports & Intelligence
+        - list [ref=e38]:
+          - listitem [ref=e39]:
+            - link "Report Generator" [ref=e40] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/reports
+      - generic [ref=e44]:
+        - paragraph [ref=e45]: Programs
+        - list [ref=e46]:
+          - link "DILP Groups" [ref=e47] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dilp/groups
+          - listitem [ref=e51]:
+            - link "DILP Projects" [ref=e52] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/dilp/projects
+      - generic [ref=e56]:
+        - paragraph [ref=e57]: Data Management
+        - list [ref=e58]:
+          - listitem [ref=e59]:
+            - link "Import Excel / CSV" [ref=e60] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/import
+      - generic [ref=e64]:
+        - paragraph [ref=e65]: Administration
+        - list [ref=e66]:
+          - listitem [ref=e67]:
+            - link "User Accounts" [ref=e68] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/users
+          - listitem [ref=e72]:
+            - link "Audit Trail" [ref=e73] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/audit-logs
+          - listitem [ref=e77]:
+            - link "Settings" [ref=e78] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/settings
+    - button "Collapse Sidebar" [ref=e84]
+  - generic [ref=e88]:
+    - banner [ref=e89]:
+      - generic [ref=e91]:
+        - heading "Tupad Manolo" [level=2] [ref=e92]
+        - paragraph [ref=e93]: TUPAD project implementation and enrolled beneficiary roster
+      - generic [ref=e94]:
+        - link "146 Pending Review" [ref=e95] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/duplicates
+        - button "S System Administrator Admin" [ref=e101]:
+          - generic [ref=e102]: S
+          - generic [ref=e103]:
+            - paragraph [ref=e104]: System Administrator
+            - paragraph [ref=e105]: Admin
+    - main [ref=e108]:
+      - generic [ref=e109]:
+        - link "← Back to TUPAD Projects" [ref=e110] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/projects?program=TUPAD
+        - generic [ref=e111]:
+          - generic [ref=e112]: TUPAD
+          - generic [ref=e113]: •
+          - generic [ref=e114]: CY 2026
+      - generic [ref=e116]:
+        - generic [ref=e117]:
+          - generic [ref=e118]:
+            - generic [ref=e119]: TUPAD — Tulong Panghanapbuhay sa Ating Disadvantaged/Displaced Workers
+            - generic [ref=e120]: CY 2026
+            - generic [ref=e121]: Manolo Fortich
+          - heading "Tupad Manolo" [level=2] [ref=e126]
+          - paragraph [ref=e127]:
+            - generic [ref=e130]: "Period: Oct 19, 2026 — Dec 10, 2027"
+        - generic [ref=e131]:
+          - generic [ref=e132]: 599 Enrolled
+          - link "Edit Project" [ref=e136] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/projects/1/edit
+          - link "Import to Project" [ref=e140] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/import?project=1
+          - button "Delete" [ref=e145]
+      - generic [ref=e147]:
+        - generic [ref=e148]:
+          - generic [ref=e149]:
+            - generic [ref=e150]: "Barangay:"
+            - combobox "Barangay:" [ref=e151]:
+              - option "All Barangays (599)" [selected]
+              - option "BAGONTAAS (100)"
+              - option "BANLAG (100)"
+              - option "LUMBO (100)"
+              - option "MAILAG (50)"
+              - option "MENDIS (40)"
+              - option "MT. NEBO (60)"
+              - option "NABAG-O (50)"
+              - option "NEW EDEN (20)"
+              - option "SINABUAGAN (35)"
+              - option "SUGOD (44)"
+          - generic [ref=e152]:
+            - generic [ref=e153]: "Status:"
+            - combobox "Status:" [ref=e154]:
+              - option "All Statuses" [selected]
+              - option "Approved (507)"
+              - option "Pending (92)"
+        - generic [ref=e155]:
+          - textbox "Search name, Gov ID..." [ref=e157]
+          - button "Filter" [ref=e158]
+      - generic [ref=e159]:
+        - table [ref=e161]:
+          - rowgroup [ref=e162]:
+            - row [ref=e163]:
+              - columnheader "Beneficiary Full Name" [ref=e164]
+              - columnheader "DOB / Age / Sex" [ref=e165]
+              - columnheader "Address / Location" [ref=e166]
+              - columnheader "Government ID" [ref=e167]
+              - columnheader "Program Status" [ref=e168]
+              - columnheader "Actions" [ref=e169]
+          - rowgroup [ref=e170]:
+            - row [ref=e171]:
+              - cell [ref=e172]:
+                - link "SINAHON, MILAGROS AYOCAN" [ref=e173] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9806
+                - text: N/A
+              - cell "Jan 03, 1976 50 yrs • Female" [ref=e174]:
+                - generic [ref=e175]: Jan 03, 1976
+                - text: 50 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e176]:
+                - generic [ref=e177]: MT. NEBO
+                - text: Valencia City
+              - cell "13210173BA0376MAS20000 Voter's ID" [ref=e178]:
+                - generic [ref=e179]: 13210173BA0376MAS20000
+                - text: Voter's ID
+              - cell "Pending" [ref=e180]
+              - cell [ref=e181]:
+                - link "Profile →" [ref=e182] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9806
+                  - generic [ref=e183]: Profile
+                  - generic [ref=e184]: →
+            - row [ref=e185]:
+              - cell [ref=e186]:
+                - link "SINAHON, SALDE CONOG" [ref=e187] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9807
+                - text: N/A
+              - cell "Aug 08, 1988 38 yrs • Male" [ref=e188]:
+                - generic [ref=e189]: Aug 08, 1988
+                - text: 38 yrs • Male
+              - cell "MT. NEBO Valencia City" [ref=e190]:
+                - generic [ref=e191]: MT. NEBO
+                - text: Valencia City
+              - cell "13210174BH0888SCS10000 Voter's ID" [ref=e192]:
+                - generic [ref=e193]: 13210174BH0888SCS10000
+                - text: Voter's ID
+              - cell "Pending" [ref=e194]
+              - cell [ref=e195]:
+                - link "Profile →" [ref=e196] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9807
+                  - generic [ref=e197]: Profile
+                  - generic [ref=e198]: →
+            - row [ref=e199]:
+              - cell [ref=e200]:
+                - link "SINAHON, RAYMOND AYOKAN" [ref=e201] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9808
+                - text: N/A
+              - cell "Feb 26, 2002 24 yrs • Male" [ref=e202]:
+                - generic [ref=e203]: Feb 26, 2002
+                - text: 24 yrs • Male
+              - cell "MT. NEBO Valencia City" [ref=e204]:
+                - generic [ref=e205]: MT. NEBO
+                - text: Valencia City
+              - cell "13210173CB260RAS10000 Voter's ID" [ref=e206]:
+                - generic [ref=e207]: 13210173CB260RAS10000
+                - text: Voter's ID
+              - cell "Pending" [ref=e208]
+              - cell [ref=e209]:
+                - link "Profile →" [ref=e210] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9808
+                  - generic [ref=e211]: Profile
+                  - generic [ref=e212]: →
+            - row [ref=e213]:
+              - cell [ref=e214]:
+                - link "SUNDANAY, DAISY ECAT" [ref=e215] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9809
+                - text: N/A
+              - cell "Oct 01, 1972 54 yrs • Male" [ref=e216]:
+                - generic [ref=e217]: Oct 01, 1972
+                - text: 54 yrs • Male
+              - cell "MT. NEBO Valencia City" [ref=e218]:
+                - generic [ref=e219]: MT. NEBO
+                - text: Valencia City
+              - cell "13210173BJ0172DES10000 Voter's ID" [ref=e220]:
+                - generic [ref=e221]: 13210173BJ0172DES10000
+                - text: Voter's ID
+              - cell "Approved" [ref=e222]
+              - cell [ref=e223]:
+                - link "Profile →" [ref=e224] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9809
+                  - generic [ref=e225]: Profile
+                  - generic [ref=e226]: →
+            - row [ref=e227]:
+              - cell [ref=e228]:
+                - link "SUNDANAY, DAHLIA ORE" [ref=e229] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9810
+                - text: N/A
+              - cell "Oct 13, 1996 30 yrs • Female" [ref=e230]:
+                - generic [ref=e231]: Oct 13, 1996
+                - text: 30 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e232]:
+                - generic [ref=e233]: MT. NEBO
+                - text: Valencia City
+              - cell "13120174BJ1396DOS20000 Voter's ID" [ref=e234]:
+                - generic [ref=e235]: 13120174BJ1396DOS20000
+                - text: Voter's ID
+              - cell "Pending" [ref=e236]
+              - cell [ref=e237]:
+                - link "Profile →" [ref=e238] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9810
+                  - generic [ref=e239]: Profile
+                  - generic [ref=e240]: →
+            - row [ref=e241]:
+              - cell [ref=e242]:
+                - link "TAHURAN, HONELYN SAWAYAN" [ref=e243] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9811
+                - text: N/A
+              - cell "Feb 10, 1997 29 yrs • Female" [ref=e244]:
+                - generic [ref=e245]: Feb 10, 1997
+                - text: 29 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e246]:
+                - generic [ref=e247]: MT. NEBO
+                - text: Valencia City
+              - cell "13120174BB1097HST20000 Voter's ID" [ref=e248]:
+                - generic [ref=e249]: 13120174BB1097HST20000
+                - text: Voter's ID
+              - cell "Approved" [ref=e250]
+              - cell [ref=e251]:
+                - link "Profile →" [ref=e252] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9811
+                  - generic [ref=e253]: Profile
+                  - generic [ref=e254]: →
+            - row [ref=e255]:
+              - cell [ref=e256]:
+                - link "TENEPRE, JENNIFER LICANAY" [ref=e257] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9812
+                - text: N/A
+              - cell "Dec 10, 1993 32 yrs • Female" [ref=e258]:
+                - generic [ref=e259]: Dec 10, 1993
+                - text: 32 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e260]:
+                - generic [ref=e261]: MT. NEBO
+                - text: Valencia City
+              - cell "15-203605045--9 Philhealth Id" [ref=e262]:
+                - generic [ref=e263]: 15-203605045--9
+                - text: Philhealth Id
+              - cell "Approved" [ref=e264]
+              - cell [ref=e265]:
+                - link "Profile →" [ref=e266] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9812
+                  - generic [ref=e267]: Profile
+                  - generic [ref=e268]: →
+            - row [ref=e269]:
+              - cell [ref=e270]:
+                - link "TUMANA, REALIN BAHIAN" [ref=e271] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9813
+                - text: "09353791681"
+              - cell "Nov 10, 1975 51 yrs • Female" [ref=e272]:
+                - generic [ref=e273]: Nov 10, 1975
+                - text: 51 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e274]:
+                - generic [ref=e275]: MT. NEBO
+                - text: Valencia City
+              - cell "08-1328641-9 SSS ID" [ref=e276]:
+                - generic [ref=e277]: 08-1328641-9
+                - text: SSS ID
+              - cell "Approved" [ref=e278]
+              - cell [ref=e279]:
+                - link "Profile →" [ref=e280] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9813
+                  - generic [ref=e281]: Profile
+                  - generic [ref=e282]: →
+            - row [ref=e283]:
+              - cell [ref=e284]:
+                - link "VENCE, REA MAY ." [ref=e285] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9814
+                - text: "09362895769"
+              - cell "May 16, 2003 23 yrs • Female" [ref=e286]:
+                - generic [ref=e287]: May 16, 2003
+                - text: 23 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e288]:
+                - generic [ref=e289]: MT. NEBO
+                - text: Valencia City
+              - cell "2607-6954-8302-4104 PhilSys ID" [ref=e290]:
+                - generic [ref=e291]: 2607-6954-8302-4104
+                - text: PhilSys ID
+              - cell "Approved" [ref=e292]
+              - cell [ref=e293]:
+                - link "Profile →" [ref=e294] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9814
+                  - generic [ref=e295]: Profile
+                  - generic [ref=e296]: →
+            - row [ref=e297]:
+              - cell [ref=e298]:
+                - link "VILLALOBOS, ROSALINDA ANGGAYNA" [ref=e299] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9815
+                - text: N/A
+              - cell "Jan 11, 1986 40 yrs • Female" [ref=e300]:
+                - generic [ref=e301]: Jan 11, 1986
+                - text: 40 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e302]:
+                - generic [ref=e303]: MT. NEBO
+                - text: Valencia City
+              - cell "13100115BA1186RAVA20000 Voter's ID" [ref=e304]:
+                - generic [ref=e305]: 13100115BA1186RAVA20000
+                - text: Voter's ID
+              - cell "Approved" [ref=e306]
+              - cell [ref=e307]:
+                - link "Profile →" [ref=e308] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9815
+                  - generic [ref=e309]: Profile
+                  - generic [ref=e310]: →
+            - row [ref=e311]:
+              - cell [ref=e312]:
+                - link "ZAMORA, JIMSON PABALAY" [ref=e313] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9816
+                - text: "09353801672"
+              - cell "Mar 12, 1997 29 yrs • Male" [ref=e314]:
+                - generic [ref=e315]: Mar 12, 1997
+                - text: 29 yrs • Male
+              - cell "MT. NEBO Valencia City" [ref=e316]:
+                - generic [ref=e317]: MT. NEBO
+                - text: Valencia City
+              - cell "K03-18-004419 Driver's License" [ref=e318]:
+                - generic [ref=e319]: K03-18-004419
+                - text: Driver's License
+              - cell "Approved" [ref=e320]
+              - cell [ref=e321]:
+                - link "Profile →" [ref=e322] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9816
+                  - generic [ref=e323]: Profile
+                  - generic [ref=e324]: →
+            - row [ref=e325]:
+              - cell [ref=e326]:
+                - link "LICANAY, YOLANDA SUNDANAY" [ref=e327] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9795
+                - text: N/A
+              - cell "Feb 20, 1966 60 yrs • Female" [ref=e328]:
+                - generic [ref=e329]: Feb 20, 1966
+                - text: 60 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e330]:
+                - generic [ref=e331]: MT. NEBO
+                - text: Valencia City
+              - cell "13210173BB2066YSL20000 Voter's ID" [ref=e332]:
+                - generic [ref=e333]: 13210173BB2066YSL20000
+                - text: Voter's ID
+              - cell "Pending" [ref=e334]
+              - cell [ref=e335]:
+                - link "Profile →" [ref=e336] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9795
+                  - generic [ref=e337]: Profile
+                  - generic [ref=e338]: →
+            - row [ref=e339]:
+              - cell [ref=e340]:
+                - link "LUMINTAO, RODELYN SUNDANAY" [ref=e341] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9796
+                - text: N/A
+              - cell "Jul 08, 1999 27 yrs • Female" [ref=e342]:
+                - generic [ref=e343]: Jul 08, 1999
+                - text: 27 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e344]:
+                - generic [ref=e345]: MT. NEBO
+                - text: Valencia City
+              - cell "13210173G0899RSL20000 Voter's ID" [ref=e346]:
+                - generic [ref=e347]: 13210173G0899RSL20000
+                - text: Voter's ID
+              - cell "Approved" [ref=e348]
+              - cell [ref=e349]:
+                - link "Profile →" [ref=e350] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9796
+                  - generic [ref=e351]: Profile
+                  - generic [ref=e352]: →
+            - row [ref=e353]:
+              - cell [ref=e354]:
+                - link "MOLINA, MARGELYN ECAT" [ref=e355] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9797
+                - text: N/A
+              - cell "Jan 02, 1974 52 yrs • Female" [ref=e356]:
+                - generic [ref=e357]: Jan 02, 1974
+                - text: 52 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e358]:
+                - generic [ref=e359]: MT. NEBO
+                - text: Valencia City
+              - cell "3109-48529089-6870 PhilSys ID" [ref=e360]:
+                - generic [ref=e361]: 3109-48529089-6870
+                - text: PhilSys ID
+              - cell "Approved" [ref=e362]
+              - cell [ref=e363]:
+                - link "Profile →" [ref=e364] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9797
+                  - generic [ref=e365]: Profile
+                  - generic [ref=e366]: →
+            - row [ref=e367]:
+              - cell [ref=e368]:
+                - link "ODTOHAN, LORENA BINATAO" [ref=e369] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9798
+                - text: "09532459923"
+              - cell "Oct 27, 1990 36 yrs • Female" [ref=e370]:
+                - generic [ref=e371]: Oct 27, 1990
+                - text: 36 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e372]:
+                - generic [ref=e373]: MT. NEBO
+                - text: Valencia City
+              - cell "13120117CJ2790LBO20000 Voter's ID" [ref=e374]:
+                - generic [ref=e375]: 13120117CJ2790LBO20000
+                - text: Voter's ID
+              - cell "Approved" [ref=e376]
+              - cell [ref=e377]:
+                - link "Profile →" [ref=e378] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9798
+                  - generic [ref=e379]: Profile
+                  - generic [ref=e380]: →
+            - row [ref=e381]:
+              - cell [ref=e382]:
+                - link "PAGONZAGA, ERFREUENE ODTOHAN" [ref=e383] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9799
+                - text: "09068124037"
+              - cell "May 19, 1988 38 yrs • Male" [ref=e384]:
+                - generic [ref=e385]: May 19, 1988
+                - text: 38 yrs • Male
+              - cell "MT. NEBO Valencia City" [ref=e386]:
+                - generic [ref=e387]: MT. NEBO
+                - text: Valencia City
+              - cell "1211-0111-6864 Pag-ibig Id" [ref=e388]:
+                - generic [ref=e389]: 1211-0111-6864
+                - text: Pag-ibig Id
+              - cell "Approved" [ref=e390]
+              - cell [ref=e391]:
+                - link "Profile →" [ref=e392] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9799
+                  - generic [ref=e393]: Profile
+                  - generic [ref=e394]: →
+            - row [ref=e395]:
+              - cell [ref=e396]:
+                - link "PAYANGGA, RUDOLFO HAPLAG JR" [ref=e397] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9800
+                - text: N/A
+              - cell "Nov 11, 2002 24 yrs • Male" [ref=e398]:
+                - generic [ref=e399]: Nov 11, 2002
+                - text: 24 yrs • Male
+              - cell "MT. NEBO Valencia City" [ref=e400]:
+                - generic [ref=e401]: MT. NEBO
+                - text: Valencia City
+              - cell "2461-4201-3651-6407 PhilSys ID" [ref=e402]:
+                - generic [ref=e403]: 2461-4201-3651-6407
+                - text: PhilSys ID
+              - cell "Approved" [ref=e404]
+              - cell [ref=e405]:
+                - link "Profile →" [ref=e406] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9800
+                  - generic [ref=e407]: Profile
+                  - generic [ref=e408]: →
+            - row [ref=e409]:
+              - cell [ref=e410]:
+                - link "PELLAZAR, JIOCEBEL BINAYAO" [ref=e411] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9801
+                - text: N/A
+              - cell "Aug 30, 1983 43 yrs • Female" [ref=e412]:
+                - generic [ref=e413]: Aug 30, 1983
+                - text: 43 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e414]:
+                - generic [ref=e415]: MT. NEBO
+                - text: Valencia City
+              - cell "2981-5682-0839-6724 PhilSys ID" [ref=e416]:
+                - generic [ref=e417]: 2981-5682-0839-6724
+                - text: PhilSys ID
+              - cell "Approved" [ref=e418]
+              - cell [ref=e419]:
+                - link "Profile →" [ref=e420] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9801
+                  - generic [ref=e421]: Profile
+                  - generic [ref=e422]: →
+            - row [ref=e423]:
+              - cell [ref=e424]:
+                - link "PELLAZAR, ORLIE ECAT" [ref=e425] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9802
+                - text: N/A
+              - cell "Oct 04, 1994 32 yrs • Male" [ref=e426]:
+                - generic [ref=e427]: Oct 04, 1994
+                - text: 32 yrs • Male
+              - cell "MT. NEBO Valencia City" [ref=e428]:
+                - generic [ref=e429]: MT. NEBO
+                - text: Valencia City
+              - cell "13210174AJ04940EP10000 Voter's ID" [ref=e430]:
+                - generic [ref=e431]: 13210174AJ04940EP10000
+                - text: Voter's ID
+              - cell "Pending" [ref=e432]
+              - cell [ref=e433]:
+                - link "Profile →" [ref=e434] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9802
+                  - generic [ref=e435]: Profile
+                  - generic [ref=e436]: →
+            - row [ref=e437]:
+              - cell [ref=e438]:
+                - link "POLLO, NELLIE MONTEJO" [ref=e439] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9803
+                - text: N/A
+              - cell "Jul 02, 1979 47 yrs • Female" [ref=e440]:
+                - generic [ref=e441]: Jul 02, 1979
+                - text: 47 yrs • Female
+              - cell "MT. NEBO Valencia City" [ref=e442]:
+                - generic [ref=e443]: MT. NEBO
+                - text: Valencia City
+              - cell "15-203163338-3 Philhealth Id" [ref=e444]:
+                - generic [ref=e445]: 15-203163338-3
+                - text: Philhealth Id
+              - cell "Approved" [ref=e446]
+              - cell [ref=e447]:
+                - link "Profile →" [ref=e448] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/beneficiaries/9803
+                  - generic [ref=e449]: Profile
+                  - generic [ref=e450]: →
+        - navigation "Pagination Navigation" [ref=e452]:
+          - paragraph [ref=e453]: Showing 1 – 20 of 599 records
+          - generic [ref=e454]:
+            - generic [ref=e458]: "1"
+            - link "Go to page 2" [ref=e459] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects/1?page=2
+              - text: "2"
+            - link "Go to page 3" [ref=e460] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects/1?page=3
+              - text: "3"
+            - link "Go to page 4" [ref=e461] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects/1?page=4
+              - text: "4"
+            - link "Go to page 5" [ref=e462] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects/1?page=5
+              - text: "5"
+            - link "Go to page 6" [ref=e463] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects/1?page=6
+              - text: "6"
+            - link "Go to page 7" [ref=e464] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects/1?page=7
+              - text: "7"
+            - link "Go to page 8" [ref=e465] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects/1?page=8
+              - text: "8"
+            - link "Go to page 9" [ref=e466] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects/1?page=9
+              - text: "9"
+            - link "Go to page 10" [ref=e467] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects/1?page=10
+              - text: "10"
+            - generic [ref=e468]: …
+            - link "Go to page 29" [ref=e469] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects/1?page=29
+              - text: "29"
+            - link "Go to page 30" [ref=e470] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects/1?page=30
+              - text: "30"
+            - link "Next &raquo;" [ref=e471] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects/1?page=2

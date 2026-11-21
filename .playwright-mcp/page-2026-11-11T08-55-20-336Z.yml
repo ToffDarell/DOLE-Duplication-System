@@ -1,0 +1,160 @@
+- generic [ref=f3e2]:
+  - complementary [ref=f3e3]:
+    - link [ref=f3e5] [cursor=pointer]:
+      - /url: http://127.0.0.1:8000
+      - img "DOLE Logo" [ref=f3e7]
+      - generic [ref=f3e8]:
+        - heading "DOLE Bukidnon" [level=1] [ref=f3e9]
+        - paragraph [ref=f3e10]: Duplicate Detection
+    - navigation [ref=f3e11]:
+      - generic [ref=f3e12]:
+        - paragraph [ref=f3e13]: Main Menu
+        - list [ref=f3e14]:
+          - listitem [ref=f3e15]:
+            - link "Dashboard" [ref=f3e16] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000
+          - listitem [ref=f3e20]:
+            - link "Projects" [ref=f3e21] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects
+          - listitem [ref=f3e25]:
+            - link "Archives / Trash 4" [ref=f3e26] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/beneficiaries/archived
+              - generic [ref=f3e29]: Archives / Trash
+              - generic [ref=f3e30]: "4"
+          - listitem [ref=f3e31]:
+            - link "Duplicate Flags 139" [ref=f3e32] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/duplicates
+              - generic [ref=f3e35]: Duplicate Flags
+              - generic "Pending validation queue" [ref=f3e36]: "139"
+      - generic [ref=f3e37]:
+        - paragraph [ref=f3e38]: Reports & Intelligence
+        - list [ref=f3e39]:
+          - listitem [ref=f3e40]:
+            - link "Report Generator" [ref=f3e41] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/reports
+      - generic [ref=f3e45]:
+        - paragraph [ref=f3e46]: Programs
+        - list [ref=f3e47]:
+          - link "DILP Groups" [ref=f3e48] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dilp/groups
+          - listitem [ref=f3e52]:
+            - link "DILP Projects" [ref=f3e53] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/dilp/projects
+      - generic [ref=f3e57]:
+        - paragraph [ref=f3e58]: Data Management
+        - list [ref=f3e59]:
+          - listitem [ref=f3e60]:
+            - link "Import Excel / CSV" [ref=f3e61] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/import
+      - generic [ref=f3e65]:
+        - paragraph [ref=f3e66]: Administration
+        - list [ref=f3e67]:
+          - listitem [ref=f3e68]:
+            - link "User Accounts" [ref=f3e69] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/users
+          - listitem [ref=f3e73]:
+            - link "Audit Trail" [ref=f3e74] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/audit-logs
+          - listitem [ref=f3e78]:
+            - link "Settings" [ref=f3e79] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/settings
+    - button "Collapse Sidebar" [ref=f3e85]
+  - generic [ref=f3e89]:
+    - banner [ref=f3e90]:
+      - generic [ref=f3e92]:
+        - heading "Projects Directory" [level=2] [ref=f3e93]
+        - paragraph [ref=f3e94]: Manage program projects, view enrolled beneficiaries, and track allocations across Bukidnon
+      - generic [ref=f3e95]:
+        - link "139 Pending Review" [ref=f3e96] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/duplicates
+        - button "S System Administrator Admin" [ref=f3e102]:
+          - generic [ref=f3e103]: S
+          - generic [ref=f3e104]:
+            - paragraph [ref=f3e105]: System Administrator
+            - paragraph [ref=f3e106]: Admin
+    - main [ref=f3e109]:
+      - generic [ref=f3e110]:
+        - generic [ref=f3e111]:
+          - generic [ref=f3e112]:
+            - generic [ref=f3e113]: DOLE Bukidnon Field Office
+            - generic [ref=f3e114]: •
+            - generic [ref=f3e115]: CY 2026 Implementation
+          - heading "Program Projects Masterlist" [level=2] [ref=f3e116]
+        - generic [ref=f3e117]:
+          - link "All Beneficiaries" [ref=f3e118] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/beneficiaries
+          - link "Import Excel" [ref=f3e122] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/import
+          - link "New Project" [ref=f3e126] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/projects/create
+      - generic [ref=f3e130]:
+        - link "TUPAD Emergency Employment for Displaced Workers 0 Projects 1,201 Beneficiaries 1,201 unassigned Filter →" [ref=f3e131] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/projects?program=TUPAD
+          - generic [ref=f3e132]:
+            - generic [ref=f3e134]:
+              - generic [ref=f3e135]: TUPAD
+              - paragraph [ref=f3e137]: Emergency Employment for Displaced Workers
+            - generic [ref=f3e141]:
+              - generic [ref=f3e142]: 0 Projects
+              - generic [ref=f3e143]:
+                - text: 1,201
+                - generic [ref=f3e144]: Beneficiaries
+          - generic [ref=f3e145]:
+            - generic [ref=f3e146]: 1,201 unassigned
+            - generic [ref=f3e150]: Filter →
+        - link "SPES Special Program for Employment of Students 0 Projects 0 Beneficiaries" [ref=f3e151] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/projects?program=SPES
+          - generic [ref=f3e152]:
+            - generic [ref=f3e154]:
+              - generic [ref=f3e155]: SPES
+              - paragraph [ref=f3e157]: Special Program for Employment of Students
+            - generic [ref=f3e161]:
+              - generic [ref=f3e162]: 0 Projects
+              - generic [ref=f3e163]:
+                - text: "0"
+                - generic [ref=f3e164]: Beneficiaries
+        - link "DILP Integrated Livelihood & Emergency Grants 0 Projects 0 Beneficiaries" [ref=f3e165] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/projects?program=DILP
+          - generic [ref=f3e166]:
+            - generic [ref=f3e168]:
+              - generic [ref=f3e169]: DILP
+              - paragraph [ref=f3e171]: Integrated Livelihood & Emergency Grants
+            - generic [ref=f3e175]:
+              - generic [ref=f3e176]: 0 Projects
+              - generic [ref=f3e177]:
+                - text: "0"
+                - generic [ref=f3e178]: Beneficiaries
+        - link "GIP Government Internship Program for Youth 0 Projects 0 Beneficiaries" [ref=f3e179] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/projects?program=GIP
+          - generic [ref=f3e180]:
+            - generic [ref=f3e182]:
+              - generic [ref=f3e183]: GIP
+              - paragraph [ref=f3e185]: Government Internship Program for Youth
+            - generic [ref=f3e189]:
+              - generic [ref=f3e190]: 0 Projects
+              - generic [ref=f3e191]:
+                - text: "0"
+                - generic [ref=f3e192]: Beneficiaries
+      - generic [ref=f3e194]:
+        - generic [ref=f3e195]:
+          - link "All Programs (0)" [ref=f3e196] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/projects
+          - link "TUPAD (0)" [ref=f3e197] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/projects?program=TUPAD
+          - link "SPES (0)" [ref=f3e198] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/projects?program=SPES
+          - link "DILP (0)" [ref=f3e199] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/projects?program=DILP
+          - link "GIP (0)" [ref=f3e200] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/projects?program=GIP
+        - generic [ref=f3e201]:
+          - textbox "Search project name, town..." [ref=f3e203]
+          - button "Filter" [ref=f3e204]
+      - generic [ref=f3e206]:
+        - heading "No Program Projects Recorded Yet" [level=3] [ref=f3e210]
+        - paragraph [ref=f3e211]: Projects group beneficiaries under specific program implementations (such as TUPAD batches, SPES assignments, or DILP grants). You can create a project manually or automatically assign one during Excel masterlist imports.
+        - generic [ref=f3e212]:
+          - link "Create First Project" [ref=f3e213] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/projects/create
+          - link "Import Excel Masterlist" [ref=f3e217] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/import

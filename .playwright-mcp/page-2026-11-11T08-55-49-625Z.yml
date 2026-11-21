@@ -1,0 +1,149 @@
+- generic [ref=f4e2]:
+  - complementary [ref=f4e3]:
+    - link [ref=f4e5] [cursor=pointer]:
+      - /url: http://127.0.0.1:8000
+      - img "DOLE Logo" [ref=f4e7]
+      - generic [ref=f4e8]:
+        - heading "DOLE Bukidnon" [level=1] [ref=f4e9]
+        - paragraph [ref=f4e10]: Duplicate Detection
+    - navigation [ref=f4e11]:
+      - generic [ref=f4e12]:
+        - paragraph [ref=f4e13]: Main Menu
+        - list [ref=f4e14]:
+          - listitem [ref=f4e15]:
+            - link "Dashboard" [ref=f4e16] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000
+          - listitem [ref=f4e20]:
+            - link "Projects" [ref=f4e21] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects
+          - listitem [ref=f4e25]:
+            - link "Archives / Trash 4" [ref=f4e26] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/beneficiaries/archived
+              - generic [ref=f4e29]: Archives / Trash
+              - generic [ref=f4e30]: "4"
+          - listitem [ref=f4e31]:
+            - link "Duplicate Flags 139" [ref=f4e32] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/duplicates
+              - generic [ref=f4e35]: Duplicate Flags
+              - generic "Pending validation queue" [ref=f4e36]: "139"
+      - generic [ref=f4e37]:
+        - paragraph [ref=f4e38]: Reports & Intelligence
+        - list [ref=f4e39]:
+          - listitem [ref=f4e40]:
+            - link "Report Generator" [ref=f4e41] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/reports
+      - generic [ref=f4e45]:
+        - paragraph [ref=f4e46]: Programs
+        - list [ref=f4e47]:
+          - link "DILP Groups" [ref=f4e48] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dilp/groups
+          - listitem [ref=f4e52]:
+            - link "DILP Projects" [ref=f4e53] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/dilp/projects
+      - generic [ref=f4e57]:
+        - paragraph [ref=f4e58]: Data Management
+        - list [ref=f4e59]:
+          - listitem [ref=f4e60]:
+            - link "Import Excel / CSV" [ref=f4e61] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/import
+      - generic [ref=f4e65]:
+        - paragraph [ref=f4e66]: Administration
+        - list [ref=f4e67]:
+          - listitem [ref=f4e68]:
+            - link "User Accounts" [ref=f4e69] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/users
+          - listitem [ref=f4e73]:
+            - link "Audit Trail" [ref=f4e74] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/audit-logs
+          - listitem [ref=f4e78]:
+            - link "Settings" [ref=f4e79] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/settings
+    - button "Collapse Sidebar" [ref=f4e85]
+  - generic [ref=f4e89]:
+    - banner [ref=f4e90]:
+      - generic [ref=f4e92]:
+        - heading "Create New Project" [level=2] [ref=f4e93]
+        - paragraph [ref=f4e94]: Establish a new DOLE program project to organize and track beneficiary batches
+      - generic [ref=f4e95]:
+        - link "139 Pending Review" [ref=f4e96] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/duplicates
+        - button "S System Administrator Admin" [ref=f4e102]:
+          - generic [ref=f4e103]: S
+          - generic [ref=f4e104]:
+            - paragraph [ref=f4e105]: System Administrator
+            - paragraph [ref=f4e106]: Admin
+    - main [ref=f4e109]:
+      - link "← Back to Projects Directory" [ref=f4e111] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/projects
+      - generic [ref=f4e113]:
+        - generic [ref=f4e114]:
+          - generic [ref=f4e115]: +
+          - generic [ref=f4e116]:
+            - heading "Project Identification & Setup" [level=3] [ref=f4e117]
+            - paragraph [ref=f4e118]: All fields marked with an asterisk (*) are required by DOLE record guidelines
+        - generic [ref=f4e119]:
+          - generic [ref=f4e120]: 1. Target Program *
+          - generic [ref=f4e121]:
+            - generic [ref=f4e122] [cursor=pointer]:
+              - radio "TUPAD Tulong Panghanapbuhay sa Ating Disadvantaged/Displaced Workers" [checked] [ref=f4e123]
+              - generic [ref=f4e124]: TUPAD
+              - generic [ref=f4e125]: Tulong Panghanapbuhay sa Ating Disadvantaged/Displaced Workers
+            - generic [ref=f4e126] [cursor=pointer]:
+              - radio "SPES Special Program for Employment of Students" [ref=f4e127]
+              - generic [ref=f4e128]: SPES
+              - generic [ref=f4e129]: Special Program for Employment of Students
+            - generic [ref=f4e130] [cursor=pointer]:
+              - radio "DILP DOLE Integrated Livelihood Program" [ref=f4e131]
+              - generic [ref=f4e132]: DILP
+              - generic [ref=f4e133]: DOLE Integrated Livelihood Program
+            - generic [ref=f4e134] [cursor=pointer]:
+              - radio "GIP Government Internship Program" [ref=f4e135]
+              - generic [ref=f4e136]: GIP
+              - generic [ref=f4e137]: Government Internship Program
+        - generic [ref=f4e138]:
+          - generic [ref=f4e139]: 2. Project Title / Description Name *
+          - textbox "e.g. TUPAD Pangantucan Batch 1 - Road Maintenance & Cleanup" [ref=f4e140]
+        - generic [ref=f4e141]:
+          - generic [ref=f4e142]:
+            - generic [ref=f4e143]: Location / Municipality
+            - combobox [ref=f4e144]:
+              - option "— Select Bukidnon Municipality —" [selected]
+              - option "Baungon"
+              - option "Cabanglasan"
+              - option "Damulog"
+              - option "Dangcagan"
+              - option "Don Carlos"
+              - option "Impasugong"
+              - option "Kadingilan"
+              - option "Kalilangan"
+              - option "Kibawe"
+              - option "Kitaotao"
+              - option "Lantapan"
+              - option "Libona"
+              - option "Malaybalay City"
+              - option "Malitbog"
+              - option "Manolo Fortich"
+              - option "Maramag"
+              - option "Pangantucan"
+              - option "Quezon"
+              - option "San Fernando"
+              - option "Sumilao"
+              - option "Talakag"
+              - option "Valencia City"
+          - generic [ref=f4e145]:
+            - generic [ref=f4e146]: Implementation Year (CY) *
+            - spinbutton [ref=f4e147]: "2026"
+        - generic [ref=f4e148]:
+          - generic [ref=f4e149]:
+            - generic [ref=f4e150]: Start Date
+            - textbox [ref=f4e151]
+          - generic [ref=f4e152]:
+            - generic [ref=f4e153]: End Date
+            - textbox [ref=f4e154]
+        - generic [ref=f4e155]:
+          - generic [ref=f4e156]: Project Scope & Details
+          - textbox "Brief description of work scope, project objectives, or budget allocation notes..." [ref=f4e157]
+        - generic [ref=f4e158]:
+          - link "Cancel" [ref=f4e159] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/projects
+          - button "Save & Create Project" [ref=f4e160]

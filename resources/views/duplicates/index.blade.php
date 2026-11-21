@@ -398,6 +398,22 @@
     },
     isMissing(val) {
         return !val || String(val).trim() === '' || String(val).trim() === '—';
+    },
+    formatPrograms(beneficiary) {
+        const list = beneficiary?.beneficiary_programs || [];
+        if (!list.length) return '—';
+        const seen = new Set();
+        const labels = [];
+        list.forEach(bp => {
+            const code = bp?.program?.code;
+            if (!code) return;
+            const label = bp.availment_year ? (code + ' (' + bp.availment_year + ')') : code;
+            if (!seen.has(label)) {
+                seen.add(label);
+                labels.push(label);
+            }
+        });
+        return labels.length ? labels.join(', ') : '—';
     }
 }">
     {{-- Bulk Selection & Action Toolbar --}}
@@ -518,6 +534,15 @@
 
             $candFirstName = $flag->beneficiary?->first_name ?? 'Candidate';
             $matchFirstName = $flag->matchedBeneficiary?->first_name ?? 'Masterlist';
+            $candPrograms = $flag->beneficiary?->beneficiaryPrograms
+                ?->map(fn ($bp) => $bp->program ? ($bp->program->code.($bp->availment_year ? " ({$bp->availment_year})" : '')) : null)
+                ->filter()->unique()->values() ?? collect();
+            $matchPrograms = $flag->matchedBeneficiary?->beneficiaryPrograms
+                ?->map(fn ($bp) => $bp->program ? ($bp->program->code.($bp->availment_year ? " ({$bp->availment_year})" : '')) : null)
+                ->filter()->unique()->values() ?? collect();
+            $headerPrograms = $flag->beneficiary?->beneficiaryPrograms?->pluck('program.code')
+                ->merge($flag->matchedBeneficiary?->beneficiaryPrograms?->pluck('program.code') ?? collect())
+                ->filter()->unique()->values() ?? collect();
         @endphp
 
         <div class="rounded-2xl border bg-white p-5 sm:p-6 shadow-xs transition hover:shadow-sm"
@@ -570,6 +595,12 @@
                                     {{ $badgeLabel }}
                                 </span>
                             @endif
+
+                            @foreach($headerPrograms as $progCode)
+                                <span class="inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-extrabold text-blue-900 uppercase">
+                                    {{ $progCode }}
+                                </span>
+                            @endforeach
 
                             <span class="text-[11px] text-slate-500 font-medium ml-1 tabular-nums">
                                 Flag #{{ $flag->id }} &middot; Match Score: <span class="font-extrabold {{ $scoreTextColor }}">{{ $flag->match_score }}%</span> (<span class="uppercase font-bold text-slate-700">{{ strtoupper(str_replace('_', ' ', $flag->match_type)) }}</span>) &middot; Status: <span class="font-bold text-slate-800 capitalize">{{ ucfirst(str_replace('_', ' ', $flag->status)) }}</span>
@@ -628,6 +659,14 @@
                         <span class="rounded px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-700">NEW</span>
                     </div>
                     <p class="text-sm font-bold text-slate-900">{{ $flag->beneficiary?->full_name ?? ($flag->matched_fields['rejected_applicant_name'] ?? 'Candidate') }}</p>
+                    <p class="text-xs font-bold text-slate-700 mt-0.5">
+                        Program:
+                        @if($candPrograms->isNotEmpty())
+                            <span class="inline-flex rounded bg-blue-50 border border-blue-200 px-1.5 py-0.5 text-[10px] font-extrabold text-blue-900">{{ $candPrograms->implode(', ') }}</span>
+                        @else
+                            <span class="font-medium text-slate-400">—</span>
+                        @endif
+                    </p>
                     <p class="text-xs text-slate-600">DOB: {{ $flag->beneficiary?->date_of_birth?->format('M d, Y') ?? ($flag->matched_fields['rejected_applicant_dob'] ?? '—') }}</p>
                     <p class="text-xs font-bold text-slate-900">House Number / Address: <span class="text-blue-800 font-extrabold">{{ $flag->beneficiary?->address ?? ($flag->matched_fields['rejected_applicant_address'] ?? '(not specified)') }}</span></p>
                     <p class="text-xs text-slate-600">Barangay: {{ $flag->beneficiary?->barangay ?? '' }}, {{ $flag->beneficiary?->municipality ?? '' }}</p>
@@ -639,6 +678,14 @@
                         <span class="rounded px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-700">EXISTING</span>
                     </div>
                     <p class="text-sm font-bold text-slate-900">{{ $flag->matchedBeneficiary?->full_name }}</p>
+                    <p class="text-xs font-bold text-slate-700 mt-0.5">
+                        Program:
+                        @if($matchPrograms->isNotEmpty())
+                            <span class="inline-flex rounded bg-blue-50 border border-blue-200 px-1.5 py-0.5 text-[10px] font-extrabold text-blue-900">{{ $matchPrograms->implode(', ') }}</span>
+                        @else
+                            <span class="font-medium text-slate-400">—</span>
+                        @endif
+                    </p>
                     <p class="text-xs text-slate-600">DOB: {{ $flag->matchedBeneficiary?->date_of_birth?->format('M d, Y') ?? '—' }}</p>
                     <p class="text-xs font-bold text-slate-900">House Number / Address: <span class="text-blue-800 font-extrabold">{{ $flag->matchedBeneficiary?->address ?? '(not specified)' }}</span></p>
                     <p class="text-xs text-slate-600">Barangay: {{ $flag->matchedBeneficiary?->barangay }}, {{ $flag->matchedBeneficiary?->municipality }}</p>
@@ -798,6 +845,19 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 text-xs font-semibold">
+                            {{-- DOLE Program(s) --}}
+                            <tr class="transition hover:bg-slate-50">
+                                <td class="px-4 py-3 font-extrabold text-slate-900 bg-slate-50/50 border-r border-slate-200">DOLE Program(s)</td>
+                                <td class="px-4 py-3 border-r border-slate-200"
+                                    :class="isMatch(formatPrograms(activeFlag?.matched_beneficiary), formatPrograms(activeFlag?.beneficiary)) && formatPrograms(activeFlag?.matched_beneficiary) !== '—' ? 'bg-emerald-50 text-emerald-950 font-extrabold' : 'bg-blue-50/40 text-blue-950 font-extrabold'">
+                                    <span x-text="formatPrograms(activeFlag?.matched_beneficiary)"></span>
+                                </td>
+                                <td class="px-4 py-3"
+                                    :class="isMatch(formatPrograms(activeFlag?.matched_beneficiary), formatPrograms(activeFlag?.beneficiary)) && formatPrograms(activeFlag?.beneficiary) !== '—' ? 'bg-emerald-50 text-emerald-950 font-extrabold' : 'bg-blue-50/40 text-blue-950 font-extrabold'">
+                                    <span x-text="formatPrograms(activeFlag?.beneficiary)"></span>
+                                </td>
+                            </tr>
+
                             {{-- Full Name --}}
                             <tr class="transition hover:bg-slate-50">
                                 <td class="px-4 py-3 font-extrabold text-slate-900 bg-slate-50/50 border-r border-slate-200">Full Name</td>
@@ -1042,9 +1102,14 @@
                                     <p class="font-bold text-slate-900 truncate" x-text="item.candidate"></p>
                                     <p class="text-[10px] text-slate-500 truncate" x-text="'⇄ ' + item.matched"></p>
                                 </div>
-                                <span class="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums"
-                                      :class="getScoreBadgeClass(item.score)"
-                                      x-text="item.score + '%'"></span>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <span x-show="item.programs && item.programs !== '—'"
+                                          class="rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-extrabold text-blue-900"
+                                          x-text="item.programs"></span>
+                                    <span class="rounded-md px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums"
+                                          :class="getScoreBadgeClass(item.score)"
+                                          x-text="item.score + '%'"></span>
+                                </div>
                             </div>
                         </template>
                     </div>

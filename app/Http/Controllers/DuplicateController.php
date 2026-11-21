@@ -174,7 +174,9 @@ class DuplicateController extends Controller
 
         $query = DuplicateFlag::with([
             'beneficiary:id,full_name,first_name,last_name',
+            'beneficiary.beneficiaryPrograms.program:id,code',
             'matchedBeneficiary:id,full_name,first_name,last_name',
+            'matchedBeneficiary.beneficiaryPrograms.program:id,code',
         ])->where('status', 'pending');
 
         if ($selectAllMatching) {
@@ -193,12 +195,30 @@ class DuplicateController extends Controller
         $items = $query->latest()
             ->limit(200)
             ->get()
-            ->map(fn (DuplicateFlag $flag) => [
-                'id' => $flag->id,
-                'candidate' => $flag->beneficiary?->full_name ?? ($flag->matched_fields['rejected_applicant_name'] ?? 'Candidate'),
-                'matched' => $flag->matchedBeneficiary?->full_name ?? 'Existing Record',
-                'score' => (int) $flag->match_score,
-            ])
+            ->map(function (DuplicateFlag $flag) {
+                $programs = $flag->beneficiary?->beneficiaryPrograms
+                    ?->map(fn ($bp) => $bp->program?->code)
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all() ?? [];
+                if (empty($programs)) {
+                    $programs = $flag->matchedBeneficiary?->beneficiaryPrograms
+                        ?->map(fn ($bp) => $bp->program?->code)
+                        ->filter()
+                        ->unique()
+                        ->values()
+                        ->all() ?? [];
+                }
+
+                return [
+                    'id' => $flag->id,
+                    'candidate' => $flag->beneficiary?->full_name ?? ($flag->matched_fields['rejected_applicant_name'] ?? 'Candidate'),
+                    'matched' => $flag->matchedBeneficiary?->full_name ?? 'Existing Record',
+                    'programs' => implode(', ', $programs) ?: '—',
+                    'score' => (int) $flag->match_score,
+                ];
+            })
             ->values();
 
         return response()->json([
