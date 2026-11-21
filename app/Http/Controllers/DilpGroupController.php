@@ -8,6 +8,7 @@ use App\Models\DilpProject;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class DilpGroupController extends Controller
 {
@@ -86,38 +87,62 @@ class DilpGroupController extends Controller
     public function importCoPartnerMembers(Request $request, DilpGroup $group): RedirectResponse
     {
         $request->validate([
-            'file' => ['nullable', 'file', 'mimes:csv,txt', 'max:5120'],
-            'csv_file' => ['nullable', 'file', 'mimes:csv,txt', 'max:5120'],
+            'file' => ['nullable', 'file', 'mimes:xlsx,xls,csv,txt', 'max:10240'],
+            'csv_file' => ['nullable', 'file', 'mimes:xlsx,xls,csv,txt', 'max:10240'],
         ]);
 
         $file = $request->file('file') ?? $request->file('csv_file');
         if (! $file) {
-            return back()->withErrors(['file' => 'Please select a valid CSV file to upload.']);
+            return back()->withErrors(['file' => 'Please select a valid Excel or CSV file to upload.']);
         }
 
         $path = $file->getRealPath();
-        $handle = fopen($path, 'r');
-        if ($handle === false) {
-            return back()->withErrors(['file' => 'Failed to read uploaded CSV file.']);
-        }
+        $ext = strtolower($file->getClientOriginalExtension());
+        $rows = [];
 
-        $header = fgetcsv($handle);
-        if (! $header) {
+        if (in_array($ext, ['xlsx', 'xls'], true)) {
+            try {
+                $reader = IOFactory::createReaderForFile($path);
+                $reader->setReadDataOnly(true);
+                $spreadsheet = $reader->load($path);
+                $rows = $spreadsheet->getActiveSheet()->toArray(null, true, false, false);
+                $spreadsheet->disconnectWorksheets();
+            } catch (\Throwable $e) {
+                return back()->withErrors(['file' => 'Failed to read Excel file: '.$e->getMessage()]);
+            }
+        } else {
+            $handle = fopen($path, 'r');
+            if ($handle === false) {
+                return back()->withErrors(['file' => 'Failed to read uploaded file.']);
+            }
+            while (($row = fgetcsv($handle)) !== false) {
+                $rows[] = $row;
+            }
             fclose($handle);
-
-            return back()->withErrors(['file' => 'Uploaded CSV file is empty.']);
         }
 
-        // Clean BOM if present and normalize headers
-        $header[0] = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $header[0]);
+        // Remove leading blank rows
+        while (! empty($rows) && empty(array_filter($rows[0], fn ($v) => trim((string) $v) !== ''))) {
+            array_shift($rows);
+        }
+
+        if (empty($rows)) {
+            return back()->withErrors(['file' => 'Uploaded file is empty.']);
+        }
+
+        $header = array_shift($rows);
+        if (isset($header[0])) {
+            $header[0] = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', (string) $header[0]);
+        }
+
         $headerMap = [];
         foreach ($header as $index => $col) {
-            $cleanCol = strtolower(trim(str_replace([' ', '_', '-'], '', $col)));
-            if (in_array($cleanCol, ['membername', 'name', 'fullname', 'member'])) {
+            $cleanCol = strtolower(trim(str_replace([' ', '_', '-'], '', (string) $col)));
+            if (in_array($cleanCol, ['membername', 'name', 'fullname', 'member', 'beneficiaryname'], true)) {
                 $headerMap['member_name'] = $index;
-            } elseif (in_array($cleanCol, ['contactno', 'contactnumber', 'contact', 'phone', 'phonenumber', 'mobile'])) {
+            } elseif (in_array($cleanCol, ['contactno', 'contactnumber', 'contact', 'phone', 'phonenumber', 'mobile', 'mobileno'], true)) {
                 $headerMap['contact_no'] = $index;
-            } elseif (in_array($cleanCol, ['designation', 'position', 'role', 'title'])) {
+            } elseif (in_array($cleanCol, ['designation', 'position', 'role', 'title'], true)) {
                 $headerMap['designation'] = $index;
             }
         }
@@ -128,26 +153,27 @@ class DilpGroupController extends Controller
         $desigIdx = $headerMap['designation'] ?? 2;
 
         $importedCount = 0;
-        while (($row = fgetcsv($handle)) !== false) {
-            if (empty(array_filter($row))) {
+        foreach ($rows as $row) {
+            if (empty(array_filter($row, fn ($v) => trim((string) $v) !== ''))) {
                 continue;
             }
 
-            $memberName = trim($row[$nameIdx] ?? '');
-            $contactNo = isset($row[$contactIdx]) ? trim($row[$contactIdx]) : null;
-            $designation = isset($row[$desigIdx]) ? trim($row[$desigIdx]) : null;
+            $memberName = trim((string) ($row[$nameIdx] ?? ''));
+            $rawContact = isset($row[$contactIdx]) ? trim((string) $row[$contactIdx]) : null;
+            if ($rawContact !== null && $rawContact !== '' && preg_match('/^9\d{9}$/', $rawContact)) {
+                $rawContact = '0'.$rawContact;
+            }
+            $designation = isset($row[$desigIdx]) ? trim((string) $row[$desigIdx]) : null;
 
-            if (! empty($memberName)) {
+            if ($memberName !== '') {
                 $group->members()->create([
                     'member_name' => $memberName,
-                    'contact_no' => $contactNo,
-                    'designation' => $designation,
+                    'contact_no' => $rawContact !== '' ? $rawContact : null,
+                    'designation' => $designation !== '' ? $designation : null,
                 ]);
                 $importedCount++;
             }
         }
-
-        fclose($handle);
 
         AuditLog::log([
             'action' => 'import',

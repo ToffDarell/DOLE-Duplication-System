@@ -42,7 +42,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3 items-start">
         {{-- Batch Upload Form --}}
         <div class="gov-card p-6">
             <div class="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
@@ -52,7 +52,7 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-extrabold text-slate-900">Batch Upload Member Roster</h3>
-                        <p class="text-[11px] font-medium text-slate-500">Upload CSV contact list for this group</p>
+                        <p class="text-[11px] font-medium text-slate-500">Upload Excel (.xlsx, .xls) or CSV contact list for this group</p>
                     </div>
                 </div>
             </div>
@@ -60,9 +60,9 @@
             <form action="{{ route('dilp.groups.import-members', $group) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                 @csrf
                 <div>
-                    <label class="mb-1.5 block text-xs font-bold text-slate-800">Select CSV File *</label>
-                    <input type="file" name="file" accept=".csv,.txt" required
-                           class="w-full rounded-xl border border-slate-300 p-2 text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-600 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-amber-700">
+                    <label class="mb-1.5 block text-xs font-bold text-slate-800">Select Excel / CSV File *</label>
+                    <input type="file" name="file" accept=".xlsx,.xls,.csv,.txt" required
+                           class="w-full rounded-xl border border-slate-300 p-2 text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-600 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-amber-700 cursor-pointer">
                     @error('file')
                         <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                     @enderror
@@ -71,13 +71,13 @@
                 <div class="rounded-xl border border-amber-200 bg-amber-50/80 p-3.5 text-xs text-amber-900 shadow-2xs space-y-1.5">
                     <p class="font-bold flex items-center gap-1.5 text-amber-950">
                         <svg class="h-4 w-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
-                        CSV Format Specification:
+                        Excel / CSV Column Specification:
                     </p>
-                    <p class="text-[11px] text-amber-900">Your CSV file should include columns for:</p>
+                    <p class="text-[11px] text-amber-900">Your spreadsheet should include columns for:</p>
                     <div class="rounded-lg bg-white/90 p-2 font-mono text-[10px] text-slate-800 border border-amber-200">
-                        member_name, contact_no, designation<br>
-                        Juan Dela Cruz, 09171234567, President<br>
-                        Maria Santos, 09189998888, Secretary
+                        member_name | contact_no | designation<br>
+                        Juan Dela Cruz | 09171234567 | President<br>
+                        Maria Santos | 09189998888 | Secretary
                     </div>
                 </div>
 

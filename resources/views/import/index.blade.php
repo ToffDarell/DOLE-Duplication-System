@@ -24,7 +24,7 @@
             </span>
         </div>
 
-        <form action="{{ route('import.store') }}" method="POST" enctype="multipart/form-data">
+        <form x-ref="importForm" action="{{ route('import.store') }}" method="POST" enctype="multipart/form-data" @submit.prevent="openConfirmModal()">
             @csrf
 
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
@@ -47,6 +47,12 @@
                             <input type="file" name="file" id="import-file" accept=".xlsx,.xls,.csv" required @change="onFileSelected($event)"
                                    class="h-10 w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-700 file:px-3 file:py-1 file:text-xs file:font-bold file:text-white hover:file:bg-blue-800 cursor-pointer">
                         </div>
+                    </div>
+
+                    {{-- Program-Specific Parser & Eligibility Notice --}}
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[11px] text-slate-600 flex items-start gap-2">
+                        <span class="mt-0.5 inline-flex shrink-0 rounded-md bg-blue-100 px-1.5 py-0.5 text-[10px] font-extrabold text-blue-800" x-text="programCode"></span>
+                        <p class="leading-relaxed" x-text="programParserHint"></p>
                     </div>
 
                     {{-- Scanning Loading State --}}
@@ -198,7 +204,7 @@
             {{-- Workbench Footer Bar --}}
             <div class="mt-5 flex flex-col gap-3 border-t border-slate-200/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p class="text-xs font-medium text-slate-500">
-                    Automatically trims whitespace, normalizes <span class="font-semibold text-slate-700">"N/A"</span> values, computes age from birthdate, and runs the duplicate detection engine.
+                    Automatically trims whitespace, normalizes <span class="font-semibold text-slate-700">"N/A"</span> values, enforces program rules, and runs year-aware duplicate detection.
                 </p>
                 <button type="submit" id="btn-submit-import"
                         class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-6 py-2.5 text-sm font-extrabold text-white shadow-xs transition hover:bg-blue-800 cursor-pointer">
@@ -207,6 +213,58 @@
                 </button>
             </div>
         </form>
+
+        {{-- Upload Confirmation Prompt Modal (Cancel / Proceed) --}}
+        <div x-show="showConfirmModal" x-transition.opacity style="display: none;"
+             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
+            <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl" @click.away="if (!isSubmitting) showConfirmModal = false">
+                <div class="flex items-start gap-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="text-base font-extrabold text-slate-900">Confirm Masterlist Import</h4>
+                        <p class="mt-0.5 text-xs text-slate-500">Please double-check the file and program details before proceeding.</p>
+                    </div>
+                </div>
+
+                <dl class="mt-4 space-y-2 rounded-xl border border-slate-200/80 bg-slate-50 p-3.5 text-xs">
+                    <div class="flex items-center justify-between gap-2">
+                        <dt class="font-semibold text-slate-500">Selected File</dt>
+                        <dd class="font-bold text-slate-900 truncate max-w-[230px]" x-text="selectedFile ? selectedFile.name : 'No file selected'"></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <dt class="font-semibold text-slate-500">Target Program</dt>
+                        <dd class="font-extrabold text-blue-800" x-text="programCode"></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <dt class="font-semibold text-slate-500">Project</dt>
+                        <dd class="font-bold text-slate-900 truncate max-w-[230px]" x-text="selectedProjectLabel"></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <dt class="font-semibold text-slate-500">Detected Rows</dt>
+                        <dd class="font-bold text-emerald-700 tabular-nums" x-text="(previewData?.total_rows_found ? previewData.total_rows_found + ' beneficiaries' : 'Auto-detect on import') + (startRow ? ' (Row ' + startRow + (endRow ? '–' + endRow : '+') + ')' : '')"></dd>
+                    </div>
+                </dl>
+
+                <p class="mt-3 text-[11px] text-slate-500">
+                    If you chose the wrong file, click <strong>Cancel</strong> and pick another file — only the currently selected file will be imported.
+                </p>
+
+                <div class="mt-5 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+                    <button type="button" @click="showConfirmModal = false" :disabled="isSubmitting"
+                            class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="button" @click="confirmAndSubmit()" :disabled="isSubmitting"
+                            class="inline-flex items-center gap-1.5 rounded-xl bg-blue-700 px-5 py-2 text-xs font-extrabold text-white shadow-xs hover:bg-blue-800 transition cursor-pointer disabled:opacity-60">
+                        <span x-text="isSubmitting ? 'Importing...' : 'Yes, Proceed with Import'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Secondary Section: Full-Width Import History Logs (No vertical stretch / empty space) --}}
@@ -290,9 +348,45 @@
             startRow: '',
             endRow: '',
             selectedFile: null,
+            showConfirmModal: false,
+            isSubmitting: false,
 
             get filteredProjects() {
                 return this.projects.filter(p => p.program === this.programCode);
+            },
+
+            get programParserHint() {
+                if (this.programCode === 'SPES') {
+                    return 'SPES-specific column profile active: reads SPES columns only (Name, DOB, Sex, Classification/Student/OSY, School) and enforces age 15–30 + student/OSY/graduating rules.';
+                }
+                if (this.programCode === 'GIP') {
+                    return 'GIP-specific column profile active: reads GIP columns only (Name, DOB, Education, Internship Duration) and enforces the 1-year (12-month) / once-in-a-lifetime cap.';
+                }
+                return 'TUPAD / DILP masterlist column profile active: supports full Annex D columns. Prior-year TUPAD/DILP beneficiaries are automatically recognized as eligible returning enrollments in a new year.';
+            },
+
+            get selectedProjectLabel() {
+                if (this.chosen) {
+                    const match = this.projects.find(p => String(p.id) === String(this.chosen));
+                    return match ? match.name : 'Selected Project';
+                }
+                return this.newProjectName.trim() ? ('New: ' + this.newProjectName.trim()) : 'No project assigned';
+            },
+
+            openConfirmModal() {
+                if (!this.selectedFile) {
+                    const fileInput = document.getElementById('import-file');
+                    if (fileInput) {
+                        fileInput.reportValidity();
+                    }
+                    return;
+                }
+                this.showConfirmModal = true;
+            },
+
+            confirmAndSubmit() {
+                this.isSubmitting = true;
+                this.$refs.importForm.submit();
             },
 
             extractProjectNameFromFilename(filename) {

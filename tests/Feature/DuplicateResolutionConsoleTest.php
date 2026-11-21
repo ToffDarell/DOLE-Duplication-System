@@ -237,3 +237,160 @@ test('validator can reject a duplicate or same-household flag from the console',
     expect(Beneficiary::find($ben2->id))->not->toBeNull()
         ->and(Beneficiary::find($ben2->id)->full_name)->toBe('MARIA SANTOS');
 });
+
+test('validator can bulk resolve selected pending duplicate flags at once', function () {
+    $tupad = Program::where('code', 'TUPAD')->first();
+
+    $master = Beneficiary::create([
+        'full_name' => 'SINAHON, MARVIN',
+        'first_name' => 'MARVIN',
+        'last_name' => 'SINAHON',
+        'sex' => 'Male',
+        'date_of_birth' => '1991-05-04',
+        'barangay' => 'Mt. Nebo',
+        'municipality' => 'Valencia City',
+        'province' => 'Bukidnon',
+    ]);
+
+    $cand1 = Beneficiary::create([
+        'full_name' => 'SINAHON, RAYMOND',
+        'first_name' => 'RAYMOND',
+        'last_name' => 'SINAHON',
+        'sex' => 'Male',
+        'date_of_birth' => '2002-02-26',
+        'barangay' => 'Mt. Nebo',
+        'municipality' => 'Valencia City',
+        'province' => 'Bukidnon',
+    ]);
+
+    $cand2 = Beneficiary::create([
+        'full_name' => 'SINAHON, MILAGROS',
+        'first_name' => 'MILAGROS',
+        'last_name' => 'SINAHON',
+        'sex' => 'Female',
+        'date_of_birth' => '1976-01-03',
+        'barangay' => 'Mt. Nebo',
+        'municipality' => 'Valencia City',
+        'province' => 'Bukidnon',
+    ]);
+
+    $bp1 = BeneficiaryProgram::create(['beneficiary_id' => $cand1->id, 'program_id' => $tupad->id, 'availment_year' => 2026, 'status' => 'pending']);
+    $bp2 = BeneficiaryProgram::create(['beneficiary_id' => $cand2->id, 'program_id' => $tupad->id, 'availment_year' => 2026, 'status' => 'pending']);
+
+    $flag1 = DuplicateFlag::create(['beneficiary_id' => $cand1->id, 'matched_beneficiary_id' => $master->id, 'match_score' => 65, 'match_type' => 'low', 'household_match_flag' => true, 'status' => 'pending']);
+    $flag2 = DuplicateFlag::create(['beneficiary_id' => $cand2->id, 'matched_beneficiary_id' => $master->id, 'match_score' => 65, 'match_type' => 'low', 'household_match_flag' => true, 'status' => 'pending']);
+
+    $response = $this->actingAs($this->admin)->post(route('duplicates.bulk-resolve'), [
+        'flag_ids' => [$flag1->id, $flag2->id],
+        'status' => 'resolved_not_duplicate',
+        'remarks' => 'Verified distinct households in Brgy. Mt. Nebo',
+    ]);
+
+    $response->assertRedirect(route('duplicates.index'))
+        ->assertSessionHas('success');
+
+    expect($flag1->fresh()->status)->toBe('resolved_not_duplicate')
+        ->and($flag2->fresh()->status)->toBe('resolved_not_duplicate')
+        ->and($bp1->fresh()->status)->toBe('approved')
+        ->and($bp2->fresh()->status)->toBe('approved');
+});
+
+test('validator can bulk resolve all matching low-risk flags across pages without touching 100% exact flags', function () {
+    $master = Beneficiary::create([
+        'full_name' => 'DELA CRUZ, JUAN',
+        'first_name' => 'JUAN',
+        'last_name' => 'DELA CRUZ',
+        'sex' => 'Male',
+        'date_of_birth' => '1990-01-01',
+        'barangay' => 'Poblacion',
+        'municipality' => 'Valencia City',
+        'province' => 'Bukidnon',
+    ]);
+
+    $lowCand = Beneficiary::create([
+        'full_name' => 'DELA CRUZ, MARIA',
+        'first_name' => 'MARIA',
+        'last_name' => 'DELA CRUZ',
+        'sex' => 'Female',
+        'date_of_birth' => '1995-05-05',
+        'barangay' => 'Poblacion',
+        'municipality' => 'Valencia City',
+        'province' => 'Bukidnon',
+    ]);
+
+    $exactCand = Beneficiary::create([
+        'full_name' => 'DELA CRUZ, JUAN',
+        'first_name' => 'JUAN',
+        'last_name' => 'DELA CRUZ',
+        'sex' => 'Male',
+        'date_of_birth' => '1990-01-01',
+        'barangay' => 'Poblacion',
+        'municipality' => 'Valencia City',
+        'province' => 'Bukidnon',
+    ]);
+
+    $lowFlag = DuplicateFlag::create(['beneficiary_id' => $lowCand->id, 'matched_beneficiary_id' => $master->id, 'match_score' => 65, 'match_type' => 'low', 'status' => 'pending']);
+    $exactFlag = DuplicateFlag::create(['beneficiary_id' => $exactCand->id, 'matched_beneficiary_id' => $master->id, 'match_score' => 100, 'match_type' => 'exact', 'status' => 'pending']);
+
+    $response = $this->actingAs($this->admin)->post(route('duplicates.bulk-resolve'), [
+        'select_all_matching' => 1,
+        'confirm_bulk' => 1,
+        'risk_level' => 'low',
+        'status' => 'resolved_not_duplicate',
+        'remarks' => 'Bulk cleared low-risk <70% flags after barangay verification',
+    ]);
+
+    $response->assertRedirect(route('duplicates.index', ['risk_level' => 'low']))
+        ->assertSessionHas('success');
+
+    expect($lowFlag->fresh()->status)->toBe('resolved_not_duplicate')
+        ->and($exactFlag->fresh()->status)->toBe('pending');
+});
+
+test('bulk preview endpoint returns affected beneficiary names scoped to selected risk band', function () {
+    $master = Beneficiary::create([
+        'full_name' => 'MAGBANUA, ROBERTO',
+        'first_name' => 'ROBERTO',
+        'last_name' => 'MAGBANUA',
+        'sex' => 'Male',
+        'date_of_birth' => '1988-03-14',
+        'barangay' => 'Poblacion',
+        'municipality' => 'Valencia City',
+        'province' => 'Bukidnon',
+    ]);
+
+    $exactCand = Beneficiary::create([
+        'full_name' => 'MAGBANUA, ROBERTO',
+        'first_name' => 'ROBERTO',
+        'last_name' => 'MAGBANUA',
+        'sex' => 'Male',
+        'date_of_birth' => '1988-03-14',
+        'barangay' => 'Poblacion',
+        'municipality' => 'Valencia City',
+        'province' => 'Bukidnon',
+    ]);
+
+    $lowCand = Beneficiary::create([
+        'full_name' => 'MAGBANUA, ELENA',
+        'first_name' => 'ELENA',
+        'last_name' => 'MAGBANUA',
+        'sex' => 'Female',
+        'date_of_birth' => '1992-05-01',
+        'barangay' => 'Poblacion',
+        'municipality' => 'Valencia City',
+        'province' => 'Bukidnon',
+    ]);
+
+    DuplicateFlag::create(['beneficiary_id' => $exactCand->id, 'matched_beneficiary_id' => $master->id, 'match_score' => 100, 'match_type' => 'exact', 'status' => 'pending']);
+    DuplicateFlag::create(['beneficiary_id' => $lowCand->id, 'matched_beneficiary_id' => $master->id, 'match_score' => 65, 'match_type' => 'low', 'status' => 'pending']);
+
+    $response = $this->actingAs($this->admin)->getJson(route('duplicates.bulk-preview', [
+        'select_all_matching' => 1,
+        'risk_level' => 'exact',
+    ]));
+
+    $response->assertOk()
+        ->assertJsonPath('total', 1)
+        ->assertJsonPath('items.0.candidate', 'MAGBANUA, ROBERTO')
+        ->assertJsonPath('items.0.score', 100);
+});

@@ -10,6 +10,7 @@ use App\Models\SystemSetting;
 use App\Models\TupadProfile;
 use App\Services\BeneficiaryImportService;
 use App\Services\DuplicateDetectionService;
+use App\Services\EligibilityService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Collection;
@@ -32,18 +33,24 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
 
     protected ?int $projectId = null;
 
+    protected int $availmentYear;
+
     protected ?BeneficiaryImportService $importService = null;
 
     protected ?DuplicateDetectionService $duplicateService = null;
 
-    public function __construct(string $programCode = 'TUPAD', ?int $startRow = null, ?int $endRow = null, ?int $projectId = null)
+    protected ?EligibilityService $eligibilityService = null;
+
+    public function __construct(string $programCode = 'TUPAD', ?int $startRow = null, ?int $endRow = null, ?int $projectId = null, ?int $availmentYear = null)
     {
         $this->projectId = $projectId;
         $this->programCode = strtoupper($programCode);
         $this->customStartRow = ($startRow !== null && $startRow > 0) ? $startRow : null;
         $this->customEndRow = ($endRow !== null && $endRow > 0) ? $endRow : null;
+        $this->availmentYear = ($availmentYear !== null && $availmentYear >= 2000) ? $availmentYear : (int) date('Y');
         $this->importService = app(BeneficiaryImportService::class);
         $this->duplicateService = app(DuplicateDetectionService::class);
+        $this->eligibilityService = app(EligibilityService::class);
     }
 
     /**
@@ -259,7 +266,7 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
         // multi-row inserts are safe as long as timestamps + full_name are set.
         $timestamp = now()->toDateTimeString();
         $userId = auth()->id();
-        $currentYear = (int) date('Y');
+        $currentYear = $this->availmentYear;
         $isTupad = $program->code === 'TUPAD';
 
         $beneficiaryRows = array_map(function (array $parsed) use ($timestamp, $userId) {
@@ -283,6 +290,8 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
                 'province' => $p['province'],
                 'district' => $p['district'],
                 'is_senior_citizen' => $parsed['is_senior'] ? 1 : 0,
+                'is_student' => ! empty($p['is_student']) ? 1 : 0,
+                'is_graduating_college' => ! empty($p['is_graduating_college']) ? 1 : 0,
                 'created_by' => $userId,
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
@@ -347,7 +356,9 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
     }
 
     /**
-     * Read and normalise a single spreadsheet row into a structured result.
+     * Read and normalise a single spreadsheet row into a structured result
+     * using program-specific column profiles (SPES vs. GIP vs. TUPAD/DILP)
+     * and enforcing SPES/GIP eligibility rules.
      *
      * @return array{status: string, last_name?: string, first_name?: string, error?: string,
      *               payload?: array<string, mixed>, tupad?: array<string, mixed>,
@@ -359,15 +370,38 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
             return ['status' => 'footer'];
         }
 
-        $lastName = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'last_name', $row, 'B'));
-        $firstName = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'first_name', $row, 'C'));
+        $isSpes = $this->programCode === 'SPES';
+        $isGip = $this->programCode === 'GIP';
+        $isTupadOrDilp = ! $isSpes && ! $isGip;
 
-        if (empty($lastName) && empty($firstName)) {
-            return ['status' => 'empty'];
-        }
+        $lastName = null;
+        $firstName = null;
+        $middleName = null;
+        $suffix = null;
 
-        if ($this->isHeaderRow($lastName, $firstName)) {
-            return ['status' => 'header'];
+        if (! empty($columnMap['full_name']) && empty($columnMap['last_name']) && empty($columnMap['first_name'])) {
+            $rawFull = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'full_name', $row, ''));
+            if (empty($rawFull)) {
+                return ['status' => 'empty'];
+            }
+            if ($this->isHeaderRow($rawFull, '')) {
+                return ['status' => 'header'];
+            }
+            [$lastName, $firstName, $middleName, $suffix] = $this->parseSingleFullName($rawFull);
+        } else {
+            $lastName = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'last_name', $row, 'B'));
+            $firstName = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'first_name', $row, 'C'));
+
+            if (empty($lastName) && empty($firstName)) {
+                return ['status' => 'empty'];
+            }
+
+            if ($this->isHeaderRow($lastName, $firstName)) {
+                return ['status' => 'header'];
+            }
+
+            $middleName = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'middle_name', $row, $isTupadOrDilp ? 'D' : ''));
+            $suffix = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'suffix', $row, $isTupadOrDilp ? 'E' : ''));
         }
 
         if (empty($lastName) || empty($firstName)) {
@@ -379,10 +413,8 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
             ];
         }
 
-        $middleName = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'middle_name', $row, 'D'));
-        $suffix = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'suffix', $row, 'E'));
-
-        $dobRaw = $this->getCellValue($worksheet, $columnMap, 'date_of_birth', $row, 'F');
+        $dobFallback = $isTupadOrDilp ? 'F' : ($columnMap['date_of_birth'] ?? '');
+        $dobRaw = $this->getCellValue($worksheet, $columnMap, 'date_of_birth', $row, $dobFallback);
         $dob = $this->parseDate($dobRaw);
         if (! $dob) {
             return [
@@ -393,28 +425,51 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
             ];
         }
 
-        $sexRaw = strtolower((string) $this->getCellValue($worksheet, $columnMap, 'sex', $row, 'Q'));
+        $sexRaw = strtolower((string) $this->getCellValue($worksheet, $columnMap, 'sex', $row, $isTupadOrDilp ? 'Q' : ''));
         $sex = str_starts_with(trim($sexRaw), 'f') ? 'Female' : 'Male';
 
-        $civilStatus = $this->fallbackNA($this->normalizeCivilStatus($this->cleanString($this->getCellValue($worksheet, $columnMap, 'civil_status', $row, 'R'))));
-        $govIdType = $this->fallbackNA($this->normalizeGovIdType($this->cleanString($this->getCellValue($worksheet, $columnMap, 'government_id_type', $row, 'K'))));
-        $govIdNumber = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'government_id_number', $row, 'L')));
-        $contactNumber = $this->fallbackNA($this->normalizeContact($this->getCellValue($worksheet, $columnMap, 'contact_number', $row, 'M')));
+        $civilStatus = $this->fallbackNA($this->normalizeCivilStatus($this->cleanString($this->getCellValue($worksheet, $columnMap, 'civil_status', $row, $isTupadOrDilp ? 'R' : ''))));
+        $govIdType = $this->fallbackNA($this->normalizeGovIdType($this->cleanString($this->getCellValue($worksheet, $columnMap, 'government_id_type', $row, $isTupadOrDilp ? 'K' : ''))));
+        $govIdNumber = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'government_id_number', $row, $isTupadOrDilp ? 'L' : '')));
+        $contactNumber = $this->fallbackNA($this->normalizeContact($this->getCellValue($worksheet, $columnMap, 'contact_number', $row, $isTupadOrDilp ? 'M' : '')));
 
-        $barangay = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'barangay', $row, 'G')), 'Central');
+        $barangay = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'barangay', $row, $isTupadOrDilp ? 'G' : '')), 'Central');
         $municipality = Beneficiary::canonicalMunicipality(
-            $this->cleanString($this->getCellValue($worksheet, $columnMap, 'municipality', $row, 'H'))
+            $this->cleanString($this->getCellValue($worksheet, $columnMap, 'municipality', $row, $isTupadOrDilp ? 'H' : ''))
         ) ?? 'Pangantucan';
-        $province = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'province', $row, 'I')), 'Bukidnon');
-        $district = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'district', $row, 'J'));
+        $province = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'province', $row, $isTupadOrDilp ? 'I' : '')), 'Bukidnon');
+        $district = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'district', $row, $isTupadOrDilp ? 'J' : ''));
         $address = $this->cleanString($this->getCellValue($worksheet, $columnMap, 'address', $row, ''));
 
-        $epayment = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'epayment_account_no', $row, 'N')));
-        $benType = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'beneficiary_type', $row, 'O')));
-        $occupation = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'occupation', $row, 'P')));
-        $monthlyIncome = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'average_monthly_income', $row, 'T')));
-        $dependentName = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'dependent_name', $row, 'U')));
-        $dependentRel = $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'dependent_relationship', $row, 'V')));
+        // Program-specific columns: ONLY read TUPAD/DILP columns for TUPAD/DILP sheets
+        $epayment = $isTupadOrDilp ? $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'epayment_account_no', $row, 'N'))) : 'N/A';
+        $benType = $isTupadOrDilp ? $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'beneficiary_type', $row, 'O'))) : 'N/A';
+        $occupation = $isTupadOrDilp ? $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'occupation', $row, 'P'))) : 'N/A';
+        $monthlyIncome = $isTupadOrDilp ? $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'average_monthly_income', $row, 'T'))) : 'N/A';
+        $dependentName = $isTupadOrDilp ? $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'dependent_name', $row, 'U'))) : 'N/A';
+        $dependentRel = $isTupadOrDilp ? $this->fallbackNA($this->cleanString($this->getCellValue($worksheet, $columnMap, 'dependent_relationship', $row, 'V'))) : 'N/A';
+
+        // SPES & GIP program-specific metadata
+        $spesClassification = $isSpes ? $this->cleanString($this->getCellValue($worksheet, $columnMap, 'spes_classification', $row, '')) : null;
+        $educationalAttainment = ($isSpes || $isGip) ? $this->cleanString($this->getCellValue($worksheet, $columnMap, 'educational_attainment', $row, '')) : null;
+        $internshipDuration = $isGip ? $this->cleanString($this->getCellValue($worksheet, $columnMap, 'internship_duration', $row, '')) : null;
+
+        $isStudent = false;
+        $isOsy = false;
+        $isGraduating = false;
+
+        if ($isSpes) {
+            if ($spesClassification !== null) {
+                $clsLower = strtolower($spesClassification);
+                $isOsy = str_contains($clsLower, 'osy') || str_contains($clsLower, 'out-of-school') || str_contains($clsLower, 'out of school');
+                $isGraduating = str_contains($clsLower, 'graduating') || str_contains($clsLower, 'graduate');
+                $isStudent = str_contains($clsLower, 'student') || str_contains($clsLower, 'enrolled') || str_contains($clsLower, 'hs') || str_contains($clsLower, 'college') || str_contains($clsLower, 'shs') || str_contains($clsLower, 'jhs');
+                $benType = $spesClassification;
+            } else {
+                // Standard SPES sheet without explicit classification column defaults to student
+                $isStudent = true;
+            }
+        }
 
         $payload = [
             'first_name' => $firstName,
@@ -432,9 +487,27 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
             'municipality' => $municipality,
             'province' => $province,
             'district' => $district,
+            'is_student' => $isStudent,
+            'is_osy' => $isOsy,
+            'is_graduating_college' => $isGraduating,
+            'is_graduating_student' => $isGraduating,
+            'beneficiary_type' => $benType,
+            'educational_attainment' => $educationalAttainment,
+            'internship_duration_months' => $this->parseDurationMonths($internshipDuration),
             'program_code' => $this->programCode,
-            'availment_year' => (int) date('Y'),
+            'availment_year' => $this->availmentYear,
         ];
+
+        // Program Eligibility Checks on Import (SPES 15-30 + Student/OSY/Graduating; GIP 1-Year cap)
+        $eligibilityError = $this->validateProgramEligibilityForRow($payload, $dob);
+        if ($eligibilityError !== null) {
+            return [
+                'status' => 'error',
+                'last_name' => $lastName,
+                'first_name' => $firstName,
+                'error' => $eligibilityError,
+            ];
+        }
 
         return [
             'status' => 'ok',
@@ -457,15 +530,205 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
     }
 
     /**
+     * Validate SPES and GIP eligibility rules for an imported row.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function validateProgramEligibilityForRow(array $payload, Carbon $dob): ?string
+    {
+        if ($this->programCode === 'SPES') {
+            $spesErrors = $this->eligibilityService->checkSpesEligibility($payload, null, $dob->age);
+            if (! empty($spesErrors)) {
+                return 'SPES Eligibility: '.implode(' ', array_values($spesErrors));
+            }
+        }
+
+        if ($this->programCode === 'GIP' && $payload['internship_duration_months'] !== null) {
+            $months = (int) $payload['internship_duration_months'];
+            $education = strtolower((string) ($payload['educational_attainment'] ?? ''));
+            $isHighSchool = str_contains($education, 'high school') || str_contains($education, 'secondary') || str_contains($education, 'hs');
+
+            if ($isHighSchool && $months > 6) {
+                return 'GIP Eligibility: High School graduates are capped at a maximum of 6 months internship duration.';
+            }
+
+            if ($months > 12) {
+                return 'GIP Eligibility: GIP availment cannot exceed 12 months (1 year maximum).';
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Parse duration text like "12 months", "1 year", "18", "2 years" into integer months.
+     */
+    protected function parseDurationMonths(?string $raw): ?int
+    {
+        if ($raw === null || trim($raw) === '') {
+            return null;
+        }
+
+        $lower = strtolower(trim($raw));
+        if (preg_match('/(\d+(?:\.\d+)?)\s*(year|yr)/', $lower, $m)) {
+            return (int) round(((float) $m[1]) * 12);
+        }
+        if (preg_match('/(\d+)\s*(month|mo)/', $lower, $m)) {
+            return (int) $m[1];
+        }
+        if (is_numeric($lower)) {
+            return (int) $lower;
+        }
+
+        return null;
+    }
+
+    /**
+     * Split a single Full Name cell ("DELA CRUZ, JUAN S." or "JUAN DELA CRUZ") into [last, first, middle, suffix].
+     *
+     * @return array{0: ?string, 1: ?string, 2: ?string, 3: ?string}
+     */
+    protected function parseSingleFullName(string $fullName): array
+    {
+        $clean = trim(preg_replace('/\s+/', ' ', $fullName));
+        if (str_contains($clean, ',')) {
+            [$lastPart, $restPart] = array_pad(explode(',', $clean, 2), 2, '');
+            $last = trim($lastPart);
+            $tokens = array_values(array_filter(explode(' ', trim($restPart))));
+            $suffix = null;
+            if (! empty($tokens) && in_array(strtoupper(rtrim(end($tokens), '.')), ['JR', 'SR', 'II', 'III', 'IV', 'V'], true)) {
+                $suffix = array_pop($tokens);
+            }
+            $middle = count($tokens) > 1 ? array_pop($tokens) : null;
+            $first = implode(' ', $tokens);
+
+            return [$last ?: null, $first ?: null, $middle ?: null, $suffix];
+        }
+
+        $tokens = array_values(array_filter(explode(' ', $clean)));
+        $suffix = null;
+        if (! empty($tokens) && in_array(strtoupper(rtrim(end($tokens), '.')), ['JR', 'SR', 'II', 'III', 'IV', 'V'], true)) {
+            $suffix = array_pop($tokens);
+        }
+        if (count($tokens) < 2) {
+            return [$tokens[0] ?? null, null, null, $suffix];
+        }
+
+        $last = array_pop($tokens);
+        $first = array_shift($tokens);
+        $middle = ! empty($tokens) ? implode(' ', $tokens) : null;
+
+        return [$last, $first, $middle, $suffix];
+    }
+
+    /**
+     * Determine whether all duplicate matches represent an eligible prior-year returning
+     * beneficiary for annual programs (TUPAD/SPES/DILP) — exempt from blocking duplicate flags.
+     *
+     * @param  array{has_duplicates: bool, flags: array, cross_program_conflicts?: array}  $dupCheck
+     */
+    protected function isEligiblePriorYearReturningMatch(array $dupCheck, string $programCode): bool
+    {
+        if (strtoupper($programCode) === 'GIP') {
+            return false;
+        }
+
+        if (empty($dupCheck['has_duplicates']) || empty($dupCheck['flags'])) {
+            return false;
+        }
+
+        if (! empty($dupCheck['cross_program_conflicts'])) {
+            return false;
+        }
+
+        foreach ($dupCheck['flags'] as $match) {
+            $isReturning = ! empty($match['is_returning_beneficiary']);
+            $sameProgramCurrentYear = ! empty($match['same_program_current_year']);
+            $sameDob = ! empty($match['existing_dob']) && ! empty($match['input_dob']) && $match['existing_dob'] === $match['input_dob'];
+            $latestYear = isset($match['latest_availment_year']) ? (int) $match['latest_availment_year'] : null;
+
+            if (! $isReturning || $sameProgramCurrentYear || ! $sameDob || $latestYear === null || $latestYear >= $this->availmentYear) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if an exact matched beneficiary has already availed GIP in any prior year (once-in-a-lifetime / 1-year rule).
+     *
+     * @param  array{has_duplicates: bool, flags: array}  $dupCheck
+     */
+    protected function hasExistingGipLifetimeAvailment(array $dupCheck, Program $program): bool
+    {
+        if ($program->code !== 'GIP' || empty($dupCheck['flags'])) {
+            return false;
+        }
+
+        foreach ($dupCheck['flags'] as $match) {
+            $sameDob = ! empty($match['existing_dob']) && ! empty($match['input_dob']) && $match['existing_dob'] === $match['input_dob'];
+            $isExactName = ! empty($match['is_exact_name_match']);
+            if (! $sameDob || (! $isExactName && ($match['match_score'] ?? 0) < 85)) {
+                continue;
+            }
+
+            $existingId = $match['matched_beneficiary_id'] ?? null;
+            if ($existingId && BeneficiaryProgram::where('beneficiary_id', $existingId)->where('program_id', $program->id)->exists()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Persist one parsed row: beneficiary + program (+ TUPAD profile + flags).
      *
      * @param  array<string, mixed>  $parsed
-     * @param  array{has_duplicates: bool, flags: array}  $dupCheck
+     * @param  array{has_duplicates: bool, flags: array, cross_program_conflicts?: array, top_match?: ?array}  $dupCheck
      * @param  array{has_household_flags: bool, flags: array}  $householdCheck
      */
     private function persistRow(array $parsed, Program $program, array $dupCheck, array $householdCheck): Beneficiary
     {
         $payload = $parsed['payload'];
+
+        // GIP once-in-a-lifetime / 1-year cap enforcement during import
+        if ($this->hasExistingGipLifetimeAvailment($dupCheck, $program)) {
+            throw new Exception('GIP Eligibility: Beneficiary has already availed of GIP (1-year / once-in-a-lifetime limit).');
+        }
+
+        // Year-Aware Annual Returning Beneficiary:
+        // If TUPAD/SPES/DILP beneficiary only availed in a prior year (< availmentYear),
+        // link the new year's enrollment to their existing master profile WITHOUT flagging as duplicate.
+        if ($this->isEligiblePriorYearReturningMatch($dupCheck, $program->code)) {
+            $existingId = $dupCheck['flags'][0]['matched_beneficiary_id'] ?? null;
+            $existingBeneficiary = $existingId ? Beneficiary::find($existingId) : null;
+
+            if ($existingBeneficiary) {
+                $hasHousehold = $householdCheck['has_household_flags'];
+                $beneficiaryProgram = BeneficiaryProgram::create([
+                    'beneficiary_id' => $existingBeneficiary->id,
+                    'program_id' => $program->id,
+                    'project_id' => $this->projectId,
+                    'availment_year' => $this->availmentYear,
+                    'status' => $hasHousehold ? 'pending' : 'approved',
+                ]);
+
+                if ($program->code === 'TUPAD') {
+                    TupadProfile::create(array_merge(
+                        ['beneficiary_program_id' => $beneficiaryProgram->id],
+                        $parsed['tupad'],
+                    ));
+                }
+
+                if ($hasHousehold) {
+                    $this->duplicateService->recordDuplicateFlags($existingBeneficiary, $householdCheck['flags'], 'pending');
+                }
+
+                return $existingBeneficiary;
+            }
+        }
 
         $beneficiary = Beneficiary::create([
             'full_name' => $parsed['full_name'],
@@ -485,6 +748,8 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
             'province' => $payload['province'],
             'district' => $payload['district'],
             'is_senior_citizen' => $parsed['is_senior'],
+            'is_student' => ! empty($payload['is_student']),
+            'is_graduating_college' => ! empty($payload['is_graduating_college']),
             'created_by' => auth()->id(),
         ]);
 
@@ -494,7 +759,7 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
             'beneficiary_id' => $beneficiary->id,
             'program_id' => $program->id,
             'project_id' => $this->projectId,
-            'availment_year' => (int) date('Y'),
+            'availment_year' => $this->availmentYear,
             'status' => $hasFlags ? 'pending' : 'approved',
         ]);
 
@@ -549,7 +814,9 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
             $dupCheck = $this->duplicateService->checkDuplicates($payload, (int) $id, $pool);
             $householdCheck = $this->duplicateService->checkHouseholdDuplicates($payload, (int) $id, $pool);
 
-            if ($dupCheck['has_duplicates']) {
+            $isReturningAnnual = $this->isEligiblePriorYearReturningMatch($dupCheck, (string) ($payload['program_code'] ?? $this->programCode));
+
+            if ($dupCheck['has_duplicates'] && ! $isReturningAnnual) {
                 $this->duplicateService->recordDuplicateFlags($beneficiary, $dupCheck['flags'], 'pending');
                 $flaggedIds[$id] = true;
             }
@@ -796,6 +1063,7 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
                 || str_contains($rowText, 'first name')
                 || str_contains($rowText, 'surname')
                 || str_contains($rowText, 'given name')
+                || str_contains($rowText, 'full name')
                 || str_contains($rowText, 'name of beneficiary')
                 || str_contains($rowText, 'beneficiary name');
 
@@ -827,7 +1095,8 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
 
         $startRow = $headerRow !== null ? ($headerRow + 1) : 2;
         $mappingScanRow = $headerRow ?? min(20, $highestRow);
-        $columnMap = $this->resolveColumnMap($worksheet, $mappingScanRow);
+        $mappingMinRow = $headerRow !== null ? max(1, $headerRow - 1) : 1;
+        $columnMap = $this->resolveColumnMap($worksheet, $mappingScanRow, $mappingMinRow);
 
         return [
             'start_row' => $startRow,
@@ -837,17 +1106,20 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
     }
 
     /**
-     * Map column letters dynamically across rows 1 through header row.
+     * Map column letters dynamically across the detected header band
+     * using program-specific rules (SPES vs. GIP vs. TUPAD/DILP).
      */
-    protected function resolveColumnMap(Worksheet $worksheet, int $scanMaxRow): array
+    protected function resolveColumnMap(Worksheet $worksheet, int $scanMaxRow, int $scanMinRow = 1): array
     {
         $mapping = [];
-        $maxCol = 30;
+        $isSpes = $this->programCode === 'SPES';
+        $isGip = $this->programCode === 'GIP';
+        $maxCol = ($isSpes || $isGip) ? 20 : 30;
 
         for ($col = 1; $col <= $maxCol; $col++) {
             $colLetter = Coordinate::stringFromColumnIndex($col);
             $combinedArr = [];
-            for ($r = 1; $r <= $scanMaxRow; $r++) {
+            for ($r = $scanMinRow; $r <= $scanMaxRow; $r++) {
                 $cellVal = trim((string) $worksheet->getCell($colLetter.$r)->getValue());
                 if (! empty($cellVal)) {
                     $combinedArr[] = $cellVal;
@@ -865,6 +1137,8 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
                 $mapping['last_name'] = $colLetter;
             } elseif (str_contains($combined, 'first name') || str_contains($combined, 'given name') || str_contains($combined, 'pangalan')) {
                 $mapping['first_name'] = $colLetter;
+            } elseif (str_contains($combined, 'full name') || str_contains($combined, 'name of beneficiary') || str_contains($combined, 'beneficiary name') || $combined === 'name') {
+                $mapping['full_name'] = $colLetter;
             } elseif (str_contains($combined, 'middle name') || str_contains($combined, 'middle initial')) {
                 $mapping['middle_name'] = $colLetter;
             } elseif (str_contains($combined, 'suffix') || str_contains($combined, 'extension')) {
@@ -883,21 +1157,27 @@ class BeneficiariesImport implements ToCollection, WithChunkReading
                 $mapping['government_id_number'] = $colLetter;
             } elseif (str_contains($combined, 'contact') || str_contains($combined, 'mobile') || str_contains($combined, 'phone')) {
                 $mapping['contact_number'] = $colLetter;
-            } elseif (str_contains($combined, 'e-payment') || str_contains($combined, 'epayment') || str_contains($combined, 'account no')) {
+            } elseif ($isSpes && (str_contains($combined, 'classification') || str_contains($combined, 'student status') || str_contains($combined, 'applicant type') || str_contains($combined, 'category') || str_contains($combined, 'osy'))) {
+                $mapping['spes_classification'] = $colLetter;
+            } elseif ($isGip && (str_contains($combined, 'duration') || str_contains($combined, 'months') || str_contains($combined, 'period'))) {
+                $mapping['internship_duration'] = $colLetter;
+            } elseif (($isSpes || $isGip) && (str_contains($combined, 'education') || str_contains($combined, 'attainment') || str_contains($combined, 'course') || str_contains($combined, 'grade'))) {
+                $mapping['educational_attainment'] = $colLetter;
+            } elseif (! $isSpes && ! $isGip && (str_contains($combined, 'e-payment') || str_contains($combined, 'epayment') || str_contains($combined, 'account no'))) {
                 $mapping['epayment_account_no'] = $colLetter;
-            } elseif (str_contains($combined, 'type of beneficiary') || str_contains($combined, 'beneficiary type') || str_contains($combined, 'sector')) {
+            } elseif (! $isSpes && ! $isGip && (str_contains($combined, 'type of beneficiary') || str_contains($combined, 'beneficiary type') || str_contains($combined, 'sector'))) {
                 $mapping['beneficiary_type'] = $colLetter;
-            } elseif (str_contains($combined, 'occupation') || str_contains($combined, 'work') || str_contains($combined, 'hanapbuhay')) {
+            } elseif (! $isSpes && ! $isGip && (str_contains($combined, 'occupation') || str_contains($combined, 'work') || str_contains($combined, 'hanapbuhay'))) {
                 $mapping['occupation'] = $colLetter;
-            } elseif (str_contains($combined, 'relationship to dependent') || str_contains($combined, 'relationship')) {
+            } elseif (! $isSpes && ! $isGip && (str_contains($combined, 'relationship to dependent') || str_contains($combined, 'relationship'))) {
                 $mapping['dependent_relationship'] = $colLetter;
-            } elseif (str_contains($combined, 'dependent') || str_contains($combined, 'name of dependent')) {
+            } elseif (! $isSpes && ! $isGip && (str_contains($combined, 'dependent') || str_contains($combined, 'name of dependent'))) {
                 $mapping['dependent_name'] = $colLetter;
             } elseif (str_contains($combined, 'sex') || str_contains($combined, 'gender')) {
                 $mapping['sex'] = $colLetter;
             } elseif (str_contains($combined, 'civil status') || str_contains($combined, 'marital status')) {
                 $mapping['civil_status'] = $colLetter;
-            } elseif (str_contains($combined, 'average monthly income') || str_contains($combined, 'income') || str_contains($combined, 'salary')) {
+            } elseif (! $isSpes && ! $isGip && (str_contains($combined, 'average monthly income') || str_contains($combined, 'income') || str_contains($combined, 'salary'))) {
                 $mapping['average_monthly_income'] = $colLetter;
             } elseif (str_contains($combined, 'address') || str_contains($combined, 'purok') || str_contains($combined, 'sitio')) {
                 $mapping['address'] = $colLetter;

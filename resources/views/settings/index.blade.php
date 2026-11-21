@@ -163,5 +163,72 @@
             </button>
         </div>
     </form>
+
+    {{-- 5. Yearly Compressed Archives (.json.gz) & Database Sustainability --}}
+    <div class="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs space-y-5">
+        <div class="flex flex-col gap-2 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 font-bold shadow-2xs">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900">Yearly Compressed Archives &amp; Database Sustainability</h3>
+                    <p class="text-xs text-slate-500 font-semibold">Generate compact gzipped archives (~85–90% size reduction per year) and prune bulky import error logs safely</p>
+                </div>
+            </div>
+            <form action="{{ route('archives.prune-logs') }}" method="POST"
+                  data-confirm="Prune bulky row-level error payloads from import logs prior to {{ $settings['current_fiscal_year'] }}? All beneficiary records and history remain completely intact."
+                  data-confirm-title="Prune Old Import Logs"
+                  data-confirm-btn="Yes, Prune Logs">
+                @csrf
+                <input type="hidden" name="before_year" value="{{ $settings['current_fiscal_year'] }}">
+                <button type="submit" class="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                    Prune Old Import Logs (&lt; {{ $settings['current_fiscal_year'] }})
+                </button>
+            </form>
+        </div>
+
+        {{-- Generate Archive Per Year --}}
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+            @forelse($yearSummaries as $summary)
+                <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
+                    <div>
+                        <p class="text-sm font-extrabold text-slate-900 tabular-nums">CY {{ $summary['year'] }}</p>
+                        <p class="text-[11px] font-semibold text-slate-500 tabular-nums">{{ number_format($summary['total']) }} enrollments</p>
+                    </div>
+                    <form action="{{ route('archives.yearly.create') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="year" value="{{ $summary['year'] }}">
+                        <button type="submit" class="rounded-lg bg-emerald-700 px-3 py-1.5 text-[11px] font-extrabold text-white hover:bg-emerald-800 transition cursor-pointer">
+                            Compress (.gz)
+                        </button>
+                    </form>
+                </div>
+            @empty
+                <p class="text-xs text-slate-500 sm:col-span-3">No yearly enrollments available to archive yet.</p>
+            @endforelse
+        </div>
+
+        {{-- Existing Compressed Archives --}}
+        @if($archives->isNotEmpty())
+            <div class="border-t border-slate-100 pt-4">
+                <h4 class="mb-2.5 text-xs font-extrabold uppercase tracking-wider text-slate-600">Stored Compressed Archives</h4>
+                <div class="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+                    @foreach($archives as $archive)
+                        <div class="flex items-center justify-between bg-white px-4 py-2.5 text-xs">
+                            <div class="min-w-0">
+                                <p class="font-bold text-slate-900 truncate">{{ $archive['filename'] }}</p>
+                                <p class="text-[11px] text-slate-500 tabular-nums">{{ $archive['size_human'] }} &middot; Created {{ $archive['modified_at'] }}</p>
+                            </div>
+                            <a href="{{ route('archives.yearly.download', $archive['filename']) }}"
+                               class="shrink-0 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] font-extrabold text-blue-800 hover:bg-blue-100 transition">
+                                Download
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+    </div>
 </div>
 @endsection

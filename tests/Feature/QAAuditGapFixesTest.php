@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Services\EligibilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 uses(RefreshDatabase::class);
 
@@ -220,4 +222,52 @@ test('DILP group member batch upload processes CSV files and creates member reco
     $showResponse->assertOk();
     $showResponse->assertSee('Pedro Penduko');
     $showResponse->assertSee('Chairman');
+});
+
+test('dilp group member roster supports Excel xlsx upload', function () {
+    $this->actingAs($this->admin);
+
+    $group = DilpGroup::create([
+        'group_name' => 'Valencia Women Livelihood Assoc.',
+        'co_partner_name' => 'LGU Valencia',
+    ]);
+
+    $spreadsheet = new Spreadsheet;
+    $sheet = $spreadsheet->getActiveSheet();
+    $sheet->setCellValue('A1', 'Member Name');
+    $sheet->setCellValue('B1', 'Contact Number');
+    $sheet->setCellValue('C1', 'Designation');
+    $sheet->setCellValue('A2', 'Elena Cruz');
+    $sheet->setCellValue('B2', '9175551234');
+    $sheet->setCellValue('C2', 'President');
+    $sheet->setCellValue('A3', 'Rosa Mendoza');
+    $sheet->setCellValue('B3', '09185554321');
+    $sheet->setCellValue('C3', 'Secretary');
+
+    $tempPath = tempnam(sys_get_temp_dir(), 'dilp_roster_').'.xlsx';
+    (new Xlsx($spreadsheet))->save($tempPath);
+
+    $uploaded = new UploadedFile($tempPath, 'roster.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+    $response = $this->post(route('dilp.groups.import-members', $group), [
+        'file' => $uploaded,
+    ]);
+
+    @unlink($tempPath);
+
+    $response->assertRedirect(route('dilp.groups.show', $group))
+        ->assertSessionHas('success');
+
+    $this->assertDatabaseHas('dilp_group_members', [
+        'dilp_group_id' => $group->id,
+        'member_name' => 'Elena Cruz',
+        'contact_no' => '09175551234',
+        'designation' => 'President',
+    ]);
+    $this->assertDatabaseHas('dilp_group_members', [
+        'dilp_group_id' => $group->id,
+        'member_name' => 'Rosa Mendoza',
+        'contact_no' => '09185554321',
+        'designation' => 'Secretary',
+    ]);
 });

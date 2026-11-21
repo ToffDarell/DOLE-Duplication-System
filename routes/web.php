@@ -12,6 +12,7 @@ use App\Http\Controllers\DilpProjectController;
 use App\Http\Controllers\DuplicateController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\ParticipationHistoryController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
@@ -52,6 +53,9 @@ Route::middleware(['auth', 'track.activity', 'check.password.reset'])->group(fun
     Route::match(['get', 'post'], 'beneficiaries/check-duplicate', [BeneficiaryController::class, 'checkDuplicate'])->name('beneficiaries.check-duplicate');
     Route::resource('beneficiaries', BeneficiaryController::class);
 
+    // Privacy-Safe Yearly Participation History (Name + Program + Year only)
+    Route::get('participation-history', [ParticipationHistoryController::class, 'index'])->name('history.index');
+
     // Reports & Export Options
     Route::get('reports', [ExportController::class, 'index'])->name('reports.index');
     Route::get('export/excel', [ExportController::class, 'exportExcel'])->name('export.excel');
@@ -62,6 +66,8 @@ Route::middleware(['auth', 'track.activity', 'check.password.reset'])->group(fun
     // Duplicates Review (Admin, Validator)
     Route::middleware('role:Admin|Validator')->group(function () {
         Route::get('duplicates', [DuplicateController::class, 'index'])->name('duplicates.index');
+        Route::get('duplicates/bulk-preview', [DuplicateController::class, 'bulkPreview'])->name('duplicates.bulk-preview');
+        Route::post('duplicates/bulk-resolve', [DuplicateController::class, 'bulkResolve'])->name('duplicates.bulk-resolve');
         Route::post('duplicates/{flag}/resolve', [DuplicateController::class, 'resolve'])->name('duplicates.resolve');
     });
 
@@ -102,5 +108,8 @@ Route::middleware(['auth', 'track.activity', 'check.password.reset'])->group(fun
 
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::post('archives/yearly', [SettingController::class, 'createYearlyArchive'])->name('archives.yearly.create');
+        Route::get('archives/yearly/{filename}', [SettingController::class, 'downloadYearlyArchive'])->name('archives.yearly.download');
+        Route::post('archives/prune-logs', [SettingController::class, 'pruneImportLogs'])->name('archives.prune-logs');
     });
 });

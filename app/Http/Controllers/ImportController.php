@@ -87,6 +87,7 @@ class ImportController extends Controller
 
             $lastNameCol = $columnMap['last_name'] ?? 'B';
             $firstNameCol = $columnMap['first_name'] ?? 'C';
+            $fullNameCol = $columnMap['full_name'] ?? null;
             $noCol = $columnMap['no'] ?? 'A';
 
             $footerKeywords = [
@@ -106,9 +107,10 @@ class ImportController extends Controller
                 $noVal = trim((string) $worksheet->getCell($noCol.$r)->getValue());
                 $lastName = trim((string) $worksheet->getCell($lastNameCol.$r)->getValue());
                 $firstName = trim((string) $worksheet->getCell($firstNameCol.$r)->getValue());
+                $fullName = $fullNameCol ? trim((string) $worksheet->getCell($fullNameCol.$r)->getValue()) : '';
                 $colAVal = trim((string) $worksheet->getCell('A'.$r)->getValue());
 
-                $checkText = strtolower($noVal.' '.$lastName.' '.$firstName.' '.$colAVal);
+                $checkText = strtolower($noVal.' '.$lastName.' '.$firstName.' '.$fullName.' '.$colAVal);
 
                 // Check footer keywords
                 $isFooter = false;
@@ -124,7 +126,7 @@ class ImportController extends Controller
                     break;
                 }
 
-                if (empty($lastName) && empty($firstName)) {
+                if (empty($lastName) && empty($firstName) && empty($fullName)) {
                     $consecutiveEmpty++;
                     if ($consecutiveEmpty >= 4) {
                         $endRow = max($startRow, $r - $consecutiveEmpty);
@@ -144,6 +146,8 @@ class ImportController extends Controller
                 'total_rows_found' => max(0, $totalFound),
                 'header_row' => $headerRow,
                 'program_code' => $programCode,
+                'column_profile' => $detection['profile'] ?? null,
+                'mapped_columns' => $columnMap,
                 'filename' => $file->getClientOriginalName(),
             ]);
         } catch (\Throwable $e) {
@@ -179,15 +183,20 @@ class ImportController extends Controller
         ]);
 
         $projectId = null;
+        $availmentYear = (int) SystemSetting::get('current_fiscal_year', date('Y'));
         if ($request->filled('project_id')) {
             $project = Project::findOrFail($request->input('project_id'));
             if ($project->program->code !== $request->input('program_code')) {
                 return back()->withInput()->with('error', "Selected project belongs to {$project->program->code}, not {$request->input('program_code')}.");
             }
             $projectId = $project->id;
+            if ($project->year) {
+                $availmentYear = (int) $project->year;
+            }
         } elseif ($request->filled('new_project_name')) {
             $startDate = $request->input('start_date');
-            $year = $startDate ? (int) date('Y', strtotime($startDate)) : (int) date('Y');
+            $year = $startDate ? (int) date('Y', strtotime($startDate)) : $availmentYear;
+            $availmentYear = $year;
 
             $projectId = Project::create([
                 'program_id' => Program::where('code', $request->input('program_code'))->value('id'),
@@ -216,7 +225,8 @@ class ImportController extends Controller
                 $request->input('program_code'),
                 $request->filled('start_row') ? (int) $request->input('start_row') : null,
                 $request->filled('end_row') ? (int) $request->input('end_row') : null,
-                $projectId
+                $projectId,
+                $availmentYear
             );
 
             $importLog = $importer->import($fullPath);

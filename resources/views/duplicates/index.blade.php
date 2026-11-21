@@ -247,11 +247,28 @@
     </form>
 </div>
 
-{{-- Duplicate Flags List with Alpine State --}}
+{{-- Duplicate Flags List with Alpine State + Bulk Resolve --}}
 <div class="space-y-4" x-data="{
     resolveModal: false,
     comparisonModal: false,
+    bulkModal: false,
     activeFlag: null,
+    pagePendingIds: @js($pagePendingIds ?? []),
+    pageExactIds: @js($pageExactIds ?? []),
+    pageHighRiskIds: @js($pageHighRiskIds ?? []),
+    pageModerateIds: @js($pageModerateIds ?? []),
+    pageLowRiskIds: @js($pageLowRiskIds ?? []),
+    bandCounts: @js($pendingBandCounts ?? ['exact' => 0, 'high' => 0, 'moderate' => 0, 'low' => 0]),
+    totalMatchingPending: {{ (int) ($pendingMatchingCount ?? 0) }},
+    selectedIds: [],
+    selectedBand: null,
+    selectAllMatching: false,
+    bulkDecision: 'resolved_not_duplicate',
+    bulkConfirm: false,
+    showPreviewNames: false,
+    previewNamesLoading: false,
+    previewNames: [],
+    previewNamesTotal: 0,
     showResolveModal(flag) {
         this.activeFlag = flag;
         this.resolveModal = true;
@@ -259,6 +276,103 @@
     showComparisonModal(flag) {
         this.activeFlag = flag;
         this.comparisonModal = true;
+    },
+    get allPageSelected() {
+        return !this.selectedBand && this.pagePendingIds.length > 0 && this.pagePendingIds.every(id => this.selectedIds.includes(id));
+    },
+    get activeSelectedCount() {
+        if (this.selectedBand) return this.bandCounts[this.selectedBand] || 0;
+        return this.selectAllMatching ? this.totalMatchingPending : this.selectedIds.length;
+    },
+    get hasExactSelected() {
+        if (this.selectedBand === 'exact') return true;
+        if (this.selectedBand && this.selectedBand !== 'exact') return false;
+        return this.selectedIds.some(id => this.pageExactIds.includes(id));
+    },
+    get needsBulkConfirmation() {
+        return this.selectAllMatching || this.selectedBand !== null || this.bulkDecision === 'resolved_duplicate' || this.hasExactSelected;
+    },
+    get selectedBandLabel() {
+        const labels = {
+            exact: '100% Exact Match',
+            high: '85%–99% Wrong Spelling / Human Error',
+            moderate: '70%–84% Missing Suffix / Middle Name',
+            low: '< 70% Below Threshold',
+        };
+        return this.selectedBand ? (labels[this.selectedBand] || this.selectedBand) : '';
+    },
+    toggleSelectPage() {
+        this.selectedBand = null;
+        if (this.allPageSelected) {
+            this.selectedIds = [];
+            this.selectAllMatching = false;
+        } else {
+            this.selectedIds = [...this.pagePendingIds];
+            this.selectAllMatching = false;
+        }
+    },
+    toggleFlag(id) {
+        this.selectedBand = null;
+        this.selectAllMatching = false;
+        if (this.selectedIds.includes(id)) {
+            this.selectedIds = this.selectedIds.filter(item => item !== id);
+        } else {
+            this.selectedIds = [...this.selectedIds, id];
+        }
+    },
+    selectBandAll(band, pageIds) {
+        this.selectedBand = band;
+        this.selectAllMatching = true;
+        this.selectedIds = [...pageIds];
+    },
+    clearSelection() {
+        this.selectedBand = null;
+        this.selectedIds = [];
+        this.selectAllMatching = false;
+    },
+    openBulkModal() {
+        if (this.activeSelectedCount === 0) return;
+        this.bulkConfirm = false;
+        this.showPreviewNames = false;
+        this.previewNames = [];
+        this.previewNamesTotal = 0;
+        this.bulkModal = true;
+    },
+    async togglePreviewNames() {
+        this.showPreviewNames = !this.showPreviewNames;
+        if (this.showPreviewNames && this.previewNames.length === 0) {
+            await this.loadPreviewNames();
+        }
+    },
+    async loadPreviewNames() {
+        this.previewNamesLoading = true;
+        try {
+            const params = new URLSearchParams();
+            if (this.selectAllMatching) {
+                params.set('select_all_matching', '1');
+                const activeBand = this.selectedBand || '{{ request('risk_level') }}';
+                if (activeBand) params.set('risk_level', activeBand);
+                @foreach(['program', 'municipality', 'barangay', 'sex', 'filter', 'search', 'match_type'] as $fKey)
+                    @if(request()->filled($fKey))
+                        params.set('{{ $fKey }}', @js(request($fKey)));
+                    @endif
+                @endforeach
+            } else {
+                this.selectedIds.forEach(id => params.append('flag_ids[]', id));
+            }
+            const res = await fetch('{{ route('duplicates.bulk-preview') }}?' + params.toString(), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                this.previewNames = data.items || [];
+                this.previewNamesTotal = data.total || this.previewNames.length;
+            }
+        } catch (err) {
+            console.error('Failed to load affected names preview:', err);
+        } finally {
+            this.previewNamesLoading = false;
+        }
     },
     getScoreBadgeClass(score) {
         if (score >= 100) return 'bg-rose-600 text-white';
@@ -286,6 +400,99 @@
         return !val || String(val).trim() === '' || String(val).trim() === '—';
     }
 }">
+    {{-- Bulk Selection & Action Toolbar --}}
+    @if(!empty($pagePendingIds))
+        <div class="rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-xs space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-3">
+                    <label class="inline-flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer select-none">
+                        <input type="checkbox"
+                               :checked="allPageSelected"
+                               @change="toggleSelectPage()"
+                               class="h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-600 cursor-pointer">
+                        <span>Select all pending on page (<span class="tabular-nums">{{ count($pagePendingIds) }}</span>)</span>
+                    </label>
+
+                    @if(($pendingBandCounts['exact'] ?? 0) > 0)
+                        <button type="button" @click="selectBandAll('exact', pageExactIds)"
+                                :class="selectedBand === 'exact' ? 'ring-2 ring-rose-500 bg-rose-100' : 'bg-rose-50 hover:bg-rose-100'"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-2.5 py-1 text-[11px] font-extrabold text-rose-800 transition cursor-pointer">
+                            <span>Select 100% Exact</span>
+                            <span class="rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] text-white tabular-nums">{{ $pendingBandCounts['exact'] }}</span>
+                        </button>
+                    @endif
+
+                    @if(($pendingBandCounts['high'] ?? 0) > 0)
+                        <button type="button" @click="selectBandAll('high', pageHighRiskIds)"
+                                :class="selectedBand === 'high' ? 'ring-2 ring-orange-500 bg-orange-100' : 'bg-orange-50 hover:bg-orange-100'"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-orange-200 px-2.5 py-1 text-[11px] font-extrabold text-orange-800 transition cursor-pointer">
+                            <span>Select 85%–99%</span>
+                            <span class="rounded-full bg-orange-600 px-1.5 py-0.5 text-[10px] text-white tabular-nums">{{ $pendingBandCounts['high'] }}</span>
+                        </button>
+                    @endif
+
+                    @if(($pendingBandCounts['moderate'] ?? 0) > 0)
+                        <button type="button" @click="selectBandAll('moderate', pageModerateIds)"
+                                :class="selectedBand === 'moderate' ? 'ring-2 ring-amber-500 bg-amber-100' : 'bg-amber-50 hover:bg-amber-100'"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 px-2.5 py-1 text-[11px] font-extrabold text-amber-800 transition cursor-pointer">
+                            <span>Select 70%–84%</span>
+                            <span class="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] text-white tabular-nums">{{ $pendingBandCounts['moderate'] }}</span>
+                        </button>
+                    @endif
+
+                    @if(($pendingBandCounts['low'] ?? 0) > 0)
+                        <button type="button" @click="selectBandAll('low', pageLowRiskIds)"
+                                :class="selectedBand === 'low' ? 'ring-2 ring-emerald-500 bg-emerald-100' : 'bg-emerald-50 hover:bg-emerald-100'"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 px-2.5 py-1 text-[11px] font-extrabold text-emerald-800 transition cursor-pointer">
+                            <span>Select &lt; 70%</span>
+                            <span class="rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] text-white tabular-nums">{{ $pendingBandCounts['low'] }}</span>
+                        </button>
+                    @endif
+                </div>
+
+                <div class="flex items-center gap-2" x-show="activeSelectedCount > 0" style="display: none;">
+                    <span class="rounded-lg bg-blue-50 border border-blue-200 px-2.5 py-1 text-xs font-extrabold text-blue-900 tabular-nums">
+                        <span x-text="activeSelectedCount"></span> selected
+                    </span>
+                    <button type="button" @click="clearSelection()"
+                            class="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                        Clear
+                    </button>
+                    <button type="button" @click="openBulkModal()"
+                            class="inline-flex items-center gap-1.5 rounded-xl bg-blue-800 px-4 py-1.5 text-xs font-extrabold text-white shadow-xs hover:bg-blue-900 transition cursor-pointer">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                        </svg>
+                        <span>Bulk Resolve (<span x-text="activeSelectedCount"></span>)</span>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Gmail-style Select All Matching Across All Pages Banner --}}
+            <div x-show="allPageSelected && totalMatchingPending > pagePendingIds.length" x-transition style="display: none;"
+                 class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50/70 px-3.5 py-2 text-xs text-blue-950">
+                <template x-if="!selectAllMatching">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span>All <strong class="tabular-nums" x-text="pagePendingIds.length"></strong> pending flags on this page are selected.</span>
+                        <button type="button" @click="selectAllMatching = true"
+                                class="font-extrabold text-blue-800 underline hover:text-blue-950 cursor-pointer">
+                            Select all <span class="tabular-nums" x-text="totalMatchingPending"></span> matching pending flags across all pages
+                        </button>
+                    </div>
+                </template>
+                <template x-if="selectAllMatching">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span>All <strong class="tabular-nums" x-text="totalMatchingPending"></strong> matching pending flags across all pages are selected.</span>
+                        <button type="button" @click="selectAllMatching = false"
+                                class="font-extrabold text-blue-800 underline hover:text-blue-950 cursor-pointer">
+                            Select this page only
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    @endif
+
     @forelse($flags as $flag)
         @php
             $score = (int) $flag->match_score;
@@ -313,9 +520,17 @@
             $matchFirstName = $flag->matchedBeneficiary?->first_name ?? 'Masterlist';
         @endphp
 
-        <div class="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs transition hover:shadow-sm">
+        <div class="rounded-2xl border bg-white p-5 sm:p-6 shadow-xs transition hover:shadow-sm"
+             :class="selectedIds.includes({{ $flag->id }}) ? 'border-blue-500 ring-1 ring-blue-500/20 bg-blue-50/15' : 'border-slate-200/80'">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex items-center gap-3.5">
+                    @if($flag->status === 'pending')
+                        <input type="checkbox"
+                               aria-label="Select flag #{{ $flag->id }}"
+                               :checked="selectedIds.includes({{ $flag->id }})"
+                               @change="toggleFlag({{ $flag->id }})"
+                               class="h-4 w-4 shrink-0 rounded border-slate-300 text-blue-700 focus:ring-blue-600 cursor-pointer">
+                    @endif
                     {{-- Match Score / Policy Badge --}}
                     <div class="flex h-13 w-13 shrink-0 flex-col items-center justify-center rounded-2xl {{ $badgeBg }} font-black shadow-2xs tabular-nums">
                         @if($isHousehold)
@@ -767,6 +982,139 @@
                     </button>
                     <button type="submit" class="rounded-xl bg-blue-800 px-5 py-2 text-xs font-extrabold text-white shadow-md hover:bg-blue-900 transition cursor-pointer">
                         Submit Decision
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Bulk Resolve Decision Modal --}}
+    <div x-show="bulkModal" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm" style="display: none;">
+        <div class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl border border-slate-200" @click.away="bulkModal = false">
+            <h3 class="mb-1 text-lg font-black text-slate-900">Bulk Resolve Duplicate Flags</h3>
+            <p class="mb-4 text-xs font-semibold text-slate-500">
+                Applying one validator decision &amp; audit justification to
+                <strong class="text-blue-900 tabular-nums" x-text="activeSelectedCount + ' pending flag(s)'"></strong>
+                <span x-show="selectAllMatching" class="font-bold text-blue-800">(across all matching pages)</span>.
+            </p>
+
+            {{-- Safety Warning Banner --}}
+            <div x-show="bulkDecision === 'resolved_duplicate' || hasExactSelected || selectAllMatching"
+                 class="mb-4 rounded-xl border p-3 text-xs font-semibold leading-relaxed"
+                 :class="(bulkDecision === 'resolved_duplicate' || hasExactSelected) ? 'border-rose-300 bg-rose-50 text-rose-900' : 'border-amber-300 bg-amber-50 text-amber-900'">
+                <p class="font-extrabold mb-0.5" x-text="bulkDecision === 'resolved_duplicate' ? 'Warning: Destructive Action' : 'Bulk Verification Notice'"></p>
+                <p x-show="bulkDecision === 'resolved_duplicate'">
+                    Confirming true duplicates will <strong>remove all selected candidate beneficiary records</strong> from the active masterlist (recoverable via Archives).
+                </p>
+                <p x-show="bulkDecision !== 'resolved_duplicate' && hasExactSelected">
+                    Your selection includes one or more <strong>100% Exact Match</strong> flags. Please verify carefully before approving.
+                </p>
+                <p x-show="bulkDecision !== 'resolved_duplicate' && !hasExactSelected && selectAllMatching">
+                    This decision will apply to all <strong class="tabular-nums" x-text="activeSelectedCount"></strong> pending flags
+                    <span x-show="selectedBand"> in the <strong x-text="selectedBandLabel"></strong> band</span>
+                    matching your active filters across every page.
+                </p>
+            </div>
+
+            {{-- Collapsible List of Affected Beneficiary Names --}}
+            <div class="mb-4 rounded-xl border border-slate-200 bg-slate-50/80 overflow-hidden">
+                <button type="button" @click="togglePreviewNames()"
+                        class="flex w-full items-center justify-between px-3.5 py-2.5 text-xs font-extrabold text-slate-800 hover:bg-slate-100/80 transition cursor-pointer">
+                    <span class="flex items-center gap-2">
+                        <svg class="h-4 w-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+                        </svg>
+                        <span>View list of affected names (<span class="tabular-nums" x-text="activeSelectedCount"></span>)</span>
+                    </span>
+                    <svg class="h-4 w-4 text-slate-400 transition-transform duration-150" :class="showPreviewNames ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+                    </svg>
+                </button>
+
+                <div x-show="showPreviewNames" x-transition class="border-t border-slate-200 bg-white">
+                    <div x-show="previewNamesLoading" class="px-3.5 py-4 text-center text-xs font-semibold text-slate-500">
+                        Loading affected beneficiaries...
+                    </div>
+                    <div x-show="!previewNamesLoading && previewNames.length > 0" class="max-h-48 overflow-y-auto divide-y divide-slate-100">
+                        <template x-for="item in previewNames" :key="item.id">
+                            <div class="flex items-center justify-between gap-2 px-3.5 py-2 text-[11px]">
+                                <div class="min-w-0 flex-1">
+                                    <p class="font-bold text-slate-900 truncate" x-text="item.candidate"></p>
+                                    <p class="text-[10px] text-slate-500 truncate" x-text="'⇄ ' + item.matched"></p>
+                                </div>
+                                <span class="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums"
+                                      :class="getScoreBadgeClass(item.score)"
+                                      x-text="item.score + '%'"></span>
+                            </div>
+                        </template>
+                    </div>
+                    <div x-show="!previewNamesLoading && previewNamesTotal > previewNames.length"
+                         class="border-t border-slate-100 bg-slate-50 px-3.5 py-1.5 text-center text-[10px] font-bold text-slate-500 tabular-nums">
+                        Showing first <span x-text="previewNames.length"></span> of <span x-text="previewNamesTotal"></span> matching flags
+                    </div>
+                </div>
+            </div>
+
+            <form action="{{ route('duplicates.bulk-resolve') }}" method="POST" class="space-y-4">
+                @csrf
+
+                {{-- Pass selected IDs when not selecting all matching --}}
+                <template x-if="!selectAllMatching">
+                    <div>
+                        <template x-for="id in selectedIds" :key="id">
+                            <input type="hidden" name="flag_ids[]" :value="id">
+                        </template>
+                    </div>
+                </template>
+                <input type="hidden" name="select_all_matching" :value="selectAllMatching ? 1 : 0">
+                <template x-if="selectedBand">
+                    <input type="hidden" name="risk_level" :value="selectedBand">
+                </template>
+
+                {{-- Preserve active filter parameters so select_all_matching scopes identically --}}
+                @foreach(['program', 'municipality', 'barangay', 'sex', 'filter', 'search', 'match_type'] as $filterKey)
+                    @if(request()->filled($filterKey))
+                        <input type="hidden" name="{{ $filterKey }}" value="{{ request($filterKey) }}">
+                    @endif
+                @endforeach
+                @if(request()->filled('risk_level'))
+                    <template x-if="!selectedBand">
+                        <input type="hidden" name="risk_level" value="{{ request('risk_level') }}">
+                    </template>
+                @endif
+
+                <div>
+                    <label class="mb-1.5 block text-xs font-extrabold text-slate-800">Bulk Decision Outcome *</label>
+                    <select name="status" x-model="bulkDecision" required
+                            class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
+                        <option value="resolved_not_duplicate">Not a Duplicate / Distinct Individuals (Approve All)</option>
+                        <option value="overridden">Approve &amp; Keep Records (Override Warning)</option>
+                        <option value="resolved_duplicate">Confirm True Duplicate / Same House (Remove All)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-1.5 block text-xs font-extrabold text-slate-800">Shared Remarks / Justification *</label>
+                    <textarea name="remarks" required rows="3" placeholder="e.g., Verified distinct family members / separate house numbers in barangay validation..."
+                              class="w-full rounded-xl border border-slate-300 p-3 text-xs font-semibold focus:border-blue-700 focus:outline-none shadow-2xs"></textarea>
+                </div>
+
+                {{-- Explicit Confirmation Checkbox for Cross-Page or Destructive Actions --}}
+                <label x-show="needsBulkConfirmation" class="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-800 cursor-pointer">
+                    <input type="checkbox" name="confirm_bulk" value="1" x-model="bulkConfirm" :required="needsBulkConfirmation"
+                           class="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-600 cursor-pointer">
+                    <span>I confirm that I have reviewed this batch and want to resolve <strong class="tabular-nums" x-text="activeSelectedCount"></strong> pending flag(s).</span>
+                </label>
+
+                <div class="flex justify-end gap-2 border-t border-slate-200 pt-4">
+                    <button type="button" @click="bulkModal = false" class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            :disabled="needsBulkConfirmation && !bulkConfirm"
+                            class="rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md transition cursor-pointer disabled:opacity-50"
+                            :class="bulkDecision === 'resolved_duplicate' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-blue-800 hover:bg-blue-900'">
+                        Apply to <span x-text="activeSelectedCount"></span> Flag(s)
                     </button>
                 </div>
             </form>

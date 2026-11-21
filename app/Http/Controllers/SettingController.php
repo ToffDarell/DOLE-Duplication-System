@@ -4,18 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
 use App\Models\SystemSetting;
+use App\Services\YearlyArchiveService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SettingController extends Controller
 {
+    public function __construct(
+        protected YearlyArchiveService $archiveService
+    ) {}
+
     public function index(): View
     {
         $settings = [
             'agency_name' => SystemSetting::get('agency_name', 'DOLE Field Office - Bukidnon'),
             'system_title' => SystemSetting::get('system_title', 'DOLE Bukidnon Duplicate Detection System'),
-            'duplicate_threshold' => SystemSetting::get('duplicate_threshold', '75'),
+            'duplicate_threshold' => SystemSetting::get('duplicate_threshold', '70'),
             'enable_exact_dob_check' => SystemSetting::get('enable_exact_dob_check', '1'),
             'enable_gov_id_check' => SystemSetting::get('enable_gov_id_check', '1'),
             'default_import_start_row' => SystemSetting::get('default_import_start_row', '16'),
@@ -25,7 +31,48 @@ class SettingController extends Controller
             'audit_log_retention_days' => SystemSetting::get('audit_log_retention_days', '365'),
         ];
 
-        return view('settings.index', compact('settings'));
+        $yearSummaries = $this->archiveService->availableYearsSummary();
+        $archives = $this->archiveService->listArchives();
+
+        return view('settings.index', compact('settings', 'yearSummaries', 'archives'));
+    }
+
+    public function createYearlyArchive(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'year' => ['required', 'integer', 'min:2020', 'max:2035'],
+        ]);
+
+        $result = $this->archiveService->createYearlyArchive((int) $data['year']);
+
+        return redirect()->route('settings.index')
+            ->with('success', sprintf(
+                'Compressed %d archive created (%s — %d records, %s, %.1f%% reduction).',
+                $result['year'],
+                $result['filename'],
+                $result['total_enrollments'],
+                $this->archiveService->formatBytes($result['compressed_bytes']),
+                $result['compression_ratio']
+            ));
+    }
+
+    public function downloadYearlyArchive(string $filename): BinaryFileResponse
+    {
+        $path = $this->archiveService->resolveArchivePath($filename);
+        abort_if($path === null, 404, 'Archive file not found.');
+
+        return response()->download($path, basename($path), [
+            'Content-Type' => 'application/gzip',
+        ]);
+    }
+
+    public function pruneImportLogs(Request $request): RedirectResponse
+    {
+        $beforeYear = (int) ($request->input('before_year') ?: SystemSetting::get('current_fiscal_year', date('Y')));
+        $pruned = $this->archiveService->pruneOldImportLogs($beforeYear);
+
+        return redirect()->route('settings.index')
+            ->with('success', "Pruned bulky error payloads from {$pruned} import logs prior to {$beforeYear}. All beneficiary records remain intact.");
     }
 
     public function update(Request $request): RedirectResponse

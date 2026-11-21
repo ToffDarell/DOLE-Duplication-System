@@ -351,27 +351,35 @@ class BeneficiaryImportService
             $mappingScanRow = min(20, $highestRow);
         }
 
-        $columnMap = $this->resolveHeaderMapping($worksheet, $mappingScanRow);
+        $mappingMinRow = $headerRow !== null ? max(1, $headerRow - 1) : 1;
+        $columnMap = $this->resolveHeaderMapping($worksheet, $mappingScanRow, $programCode, $mappingMinRow);
 
         return [
             'start_row' => $startRow,
             'header_row' => $headerRow,
             'column_map' => $columnMap,
+            'profile' => strtoupper($programCode) === 'SPES'
+                ? 'SPES Program-Specific Columns'
+                : (strtoupper($programCode) === 'GIP' ? 'GIP Program-Specific Columns' : 'TUPAD / DILP Masterlist Columns'),
         ];
     }
 
     /**
-     * Dynamically map column letters by scanning rows 1 through the header row.
+     * Dynamically map column letters by scanning the header band,
+     * restricted to program-specific columns for SPES and GIP.
      */
-    protected function resolveHeaderMapping($worksheet, int $scanMaxRow = 20): array
+    protected function resolveHeaderMapping($worksheet, int $scanMaxRow = 20, string $programCode = 'TUPAD', int $scanMinRow = 1): array
     {
         $mapping = [];
-        $maxCol = 30; // Columns A to AD
+        $code = strtoupper($programCode);
+        $isSpes = $code === 'SPES';
+        $isGip = $code === 'GIP';
+        $maxCol = ($isSpes || $isGip) ? 20 : 30;
 
         for ($col = 1; $col <= $maxCol; $col++) {
             $colLetter = Coordinate::stringFromColumnIndex($col);
             $combinedArr = [];
-            for ($r = 1; $r <= $scanMaxRow; $r++) {
+            for ($r = $scanMinRow; $r <= $scanMaxRow; $r++) {
                 $cellVal = trim((string) $worksheet->getCell($colLetter.$r)->getValue());
                 if (! empty($cellVal)) {
                     $combinedArr[] = $cellVal;
@@ -389,6 +397,8 @@ class BeneficiaryImportService
                 $mapping['last_name'] = $colLetter;
             } elseif (str_contains($combined, 'first name') || str_contains($combined, 'given name') || str_contains($combined, 'pangalan')) {
                 $mapping['first_name'] = $colLetter;
+            } elseif (str_contains($combined, 'full name') || str_contains($combined, 'name of beneficiary') || str_contains($combined, 'beneficiary name') || $combined === 'name') {
+                $mapping['full_name'] = $colLetter;
             } elseif (str_contains($combined, 'middle name') || str_contains($combined, 'middle initial') || str_contains($combined, 'm.i.')) {
                 $mapping['middle_name'] = $colLetter;
             } elseif (str_contains($combined, 'extension') || str_contains($combined, 'suffix') || str_contains($combined, 'exten') || str_contains($combined, 'ext.')) {
@@ -407,21 +417,31 @@ class BeneficiaryImportService
                 $mapping['government_id_number'] = $colLetter;
             } elseif (str_contains($combined, 'contact') || str_contains($combined, 'mobile') || str_contains($combined, 'phone') || str_contains($combined, 'cellphone') || str_contains($combined, 'tel no')) {
                 $mapping['contact_number'] = $colLetter;
-            } elseif (str_contains($combined, 'e-payment') || str_contains($combined, 'epayment') || str_contains($combined, 'account no')) {
+            } elseif ($isSpes && (str_contains($combined, 'classification') || str_contains($combined, 'student status') || str_contains($combined, 'applicant type') || str_contains($combined, 'category') || str_contains($combined, 'osy') || str_contains($combined, 'school'))) {
+                if (str_contains($combined, 'school')) {
+                    $mapping['school'] = $colLetter;
+                } else {
+                    $mapping['spes_classification'] = $colLetter;
+                }
+            } elseif ($isGip && (str_contains($combined, 'duration') || str_contains($combined, 'months') || str_contains($combined, 'period'))) {
+                $mapping['internship_duration'] = $colLetter;
+            } elseif (($isSpes || $isGip) && (str_contains($combined, 'education') || str_contains($combined, 'attainment') || str_contains($combined, 'course') || str_contains($combined, 'grade'))) {
+                $mapping['educational_attainment'] = $colLetter;
+            } elseif (! $isSpes && ! $isGip && (str_contains($combined, 'e-payment') || str_contains($combined, 'epayment') || str_contains($combined, 'account no'))) {
                 $mapping['epayment_account_no'] = $colLetter;
-            } elseif (str_contains($combined, 'type of beneficiary') || str_contains($combined, 'beneficiary type') || str_contains($combined, 'sector') || str_contains($combined, 'classification')) {
+            } elseif (! $isSpes && ! $isGip && (str_contains($combined, 'type of beneficiary') || str_contains($combined, 'beneficiary type') || str_contains($combined, 'sector') || str_contains($combined, 'classification'))) {
                 $mapping['beneficiary_type'] = $colLetter;
-            } elseif (str_contains($combined, 'occupation') || str_contains($combined, 'job') || str_contains($combined, 'work') || str_contains($combined, 'hanapbuhay')) {
+            } elseif (! $isSpes && ! $isGip && (str_contains($combined, 'occupation') || str_contains($combined, 'job') || str_contains($combined, 'work') || str_contains($combined, 'hanapbuhay'))) {
                 $mapping['occupation'] = $colLetter;
-            } elseif (str_contains($combined, 'relationship to dependent') || str_contains($combined, 'relationship with dependent') || str_contains($combined, 'relationship') || str_contains($combined, 'rel to dep') || str_contains($combined, 'dependent relationship')) {
+            } elseif (! $isSpes && ! $isGip && (str_contains($combined, 'relationship to dependent') || str_contains($combined, 'relationship with dependent') || str_contains($combined, 'relationship') || str_contains($combined, 'rel to dep') || str_contains($combined, 'dependent relationship'))) {
                 $mapping['dependent_relationship'] = $colLetter;
-            } elseif (str_contains($combined, 'dependent') || str_contains($combined, 'dependents') || str_contains($combined, 'name of dependent')) {
+            } elseif (! $isSpes && ! $isGip && (str_contains($combined, 'dependent') || str_contains($combined, 'dependents') || str_contains($combined, 'name of dependent'))) {
                 $mapping['dependent_name'] = $colLetter;
             } elseif (str_contains($combined, 'sex') || str_contains($combined, 'gender') || str_contains($combined, 'kasarian')) {
                 $mapping['sex'] = $colLetter;
             } elseif (str_contains($combined, 'civil status') || str_contains($combined, 'marital status')) {
                 $mapping['civil_status'] = $colLetter;
-            } elseif (str_contains($combined, 'average monthly income') || str_contains($combined, 'monthly income') || str_contains($combined, 'average income') || str_contains($combined, 'income') || str_contains($combined, 'salary')) {
+            } elseif (! $isSpes && ! $isGip && (str_contains($combined, 'average monthly income') || str_contains($combined, 'monthly income') || str_contains($combined, 'average income') || str_contains($combined, 'income') || str_contains($combined, 'salary'))) {
                 $mapping['average_monthly_income'] = $colLetter;
             } elseif (str_contains($combined, 'address') || str_contains($combined, 'purok') || str_contains($combined, 'sitio') || str_contains($combined, 'tirahan')) {
                 $mapping['address'] = $colLetter;

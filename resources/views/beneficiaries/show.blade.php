@@ -67,7 +67,7 @@
     @endhasanyrole
 </div>
 
-{{-- Orange Duplicate Alerts & Conflicts Banner (Rendered when pending flags exist) --}}
+{{-- Dynamic Risk-Colored Duplicate Alerts & Conflicts Banner (Rendered when pending flags exist) --}}
 @php
     $activePendingFlags = $pendingFlags ?? ($duplicateFlags ?? $beneficiary->duplicateFlags)->where('status', 'pending');
 @endphp
@@ -79,38 +79,72 @@
             ? $topPendingFlag->matchedBeneficiary
             : $topPendingFlag->beneficiary;
         $topMatchedName = $topMatched ? $topMatched->full_name : ($topPendingFlag->matched_fields['matched_beneficiary_name'] ?? 'Existing Masterlist Record');
+
+        if ($topScore >= 100) {
+            $bannerWrap = 'border-rose-300 bg-rose-50';
+            $bannerIcon = 'bg-rose-600';
+            $bannerPill = 'bg-rose-600';
+            $bannerHeading = 'text-rose-950';
+            $bannerText = 'text-rose-900';
+            $bannerScore = 'text-rose-700';
+            $bannerBtn = 'bg-rose-600 hover:bg-rose-700';
+        } elseif ($topScore >= 85) {
+            $bannerWrap = 'border-orange-300 bg-orange-50';
+            $bannerIcon = 'bg-orange-500';
+            $bannerPill = 'bg-orange-600';
+            $bannerHeading = 'text-orange-950';
+            $bannerText = 'text-orange-900';
+            $bannerScore = 'text-orange-700';
+            $bannerBtn = 'bg-orange-600 hover:bg-orange-700';
+        } elseif ($topScore >= 75) {
+            $bannerWrap = 'border-amber-300 bg-amber-50';
+            $bannerIcon = 'bg-amber-500';
+            $bannerPill = 'bg-amber-600';
+            $bannerHeading = 'text-amber-950';
+            $bannerText = 'text-amber-900';
+            $bannerScore = 'text-amber-700';
+            $bannerBtn = 'bg-amber-600 hover:bg-amber-700';
+        } else {
+            $bannerWrap = 'border-emerald-300 bg-emerald-50';
+            $bannerIcon = 'bg-emerald-600';
+            $bannerPill = 'bg-emerald-600';
+            $bannerHeading = 'text-emerald-950';
+            $bannerText = 'text-emerald-900';
+            $bannerScore = 'text-emerald-700';
+            $bannerBtn = 'bg-emerald-600 hover:bg-emerald-700';
+        }
     @endphp
-    <div class="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 sm:p-5 shadow-xs">
+    <div class="mb-6 rounded-2xl border {{ $bannerWrap }} p-4 sm:p-5 shadow-xs">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-start sm:items-center gap-3.5">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white font-black shadow-sm">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $bannerIcon }} text-white font-black shadow-sm">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
                     </svg>
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <span class="rounded-full bg-amber-600 px-2.5 py-0.5 text-xs font-black text-white shadow-2xs">
+                        <span class="rounded-full {{ $bannerPill }} px-2.5 py-0.5 text-xs font-black text-white shadow-2xs tabular-nums">
                             {{ $topScore }}% Match
                         </span>
-                        <h3 class="text-sm font-black text-amber-950 uppercase tracking-wide">Duplicate Alerts &amp; Conflicts Pending Review</h3>
+                        <h3 class="text-sm font-black {{ $bannerHeading }} uppercase tracking-wide">Duplicate Alerts &amp; Conflicts Pending Review</h3>
                     </div>
-                    <p class="text-xs font-semibold text-amber-900 mt-1">
+                    <p class="text-xs font-semibold {{ $bannerText }} mt-1">
                         Potential duplicate match flagged against 
                         @if($topMatched)
                             <a href="{{ route('beneficiaries.show', $topMatched) }}" class="font-black text-blue-900 underline hover:text-blue-950">
                                 {{ $topMatchedName }} (#{{ $topMatched->id }})
                             </a>
                         @else
-                            <span class="font-black text-amber-950">{{ $topMatchedName }}</span>
+                            <span class="font-black {{ $bannerHeading }}">{{ $topMatchedName }}</span>
                         @endif
-                        &mdash; Match Score: <strong class="font-black text-blue-950">{{ $topScore }}%</strong> ({{ strtoupper(str_replace('_', ' ', $topPendingFlag->match_type)) }}).
+                        &mdash; Match Score: <strong class="font-black {{ $bannerScore }} tabular-nums">{{ $topScore }}%</strong> ({{ strtoupper(str_replace('_', ' ', $topPendingFlag->match_type)) }}).
                     </p>
                 </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
                 <a href="{{ route('duplicates.index', ['search' => $beneficiary->last_name]) }}" 
-                   class="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-xs font-extrabold shadow-xs transition">
+                   class="inline-flex items-center gap-1.5 rounded-xl {{ $bannerBtn }} text-white px-4 py-2 text-xs font-extrabold shadow-xs transition">
                     <span>Review in Duplicate Console</span>
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
                 </a>
