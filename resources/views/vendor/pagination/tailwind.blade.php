@@ -15,7 +15,7 @@
         </p>
 
         {{-- Page Controls --}}
-        <div class="flex items-center gap-1">
+        <div class="flex flex-wrap items-center justify-center gap-1 max-w-full">
 
             {{-- Previous --}}
             @if ($paginator->onFirstPage())

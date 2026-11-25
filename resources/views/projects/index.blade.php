@@ -16,7 +16,9 @@
                 CY {{ date('Y') }} Implementation
             </span>
         </div>
-        <h2 class="mt-1 text-xl font-black text-slate-900 tracking-tight">Program Projects Masterlist</h2>
+        <h2 class="mt-1 text-xl font-black text-slate-900 tracking-tight">
+            {{ \App\Models\Program::isTupadOnly() ? 'TUPAD Projects Masterlist' : 'Program Projects Masterlist' }}
+        </h2>
     </div>
 
     {{-- Header Action Buttons --}}
@@ -38,7 +40,7 @@
             <span>Import Excel</span>
         </a>
 
-        <a href="{{ route('projects.create', ['program' => $selected?->code]) }}"
+        <a href="{{ route('projects.create', ['program' => $selected?->code ?? 'TUPAD']) }}"
            class="inline-flex items-center gap-2 rounded-xl bg-blue-800 px-4 py-2.5 text-xs font-extrabold text-white shadow-md transition hover:bg-blue-900 focus:ring-2 focus:ring-blue-600/30">
             <svg class="h-4 w-4 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
@@ -49,7 +51,32 @@
     </div>
 </div>
 
-{{-- 4 DOLE Program Selection Cards --}}
+@if(\App\Models\Program::isTupadOnly())
+    @php $tupadProg = $programs->first(); @endphp
+    @if($tupadProg)
+        <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="gov-card border-l-4 border-l-blue-700 p-4">
+                <p class="text-xs font-bold text-slate-500">TUPAD Projects</p>
+                <p class="mt-1 text-2xl font-black text-slate-900 tabular-nums">{{ number_format($tupadProg->projects_count) }}</p>
+            </div>
+            <a href="{{ route('beneficiaries.index', ['program' => 'TUPAD']) }}" class="group gov-card gov-card-hover border-l-4 border-l-emerald-600 p-4 block active:scale-[0.98] transition-[transform,border-color,box-shadow]">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-slate-500 group-hover:text-emerald-700 transition-colors">Enrolled Beneficiaries</p>
+                    <span class="text-xs font-bold text-emerald-700 opacity-0 group-hover:opacity-100 transition-opacity">&rarr;</span>
+                </div>
+                <p class="mt-1 text-2xl font-black text-slate-900 tabular-nums">{{ number_format($tupadProg->beneficiaries_count) }}</p>
+            </a>
+            <a href="{{ route('beneficiaries.index') }}" class="group gov-card gov-card-hover border-l-4 border-l-amber-500 p-4 block active:scale-[0.98] transition-[transform,border-color,box-shadow]">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-slate-500 group-hover:text-amber-700 transition-colors">Unassigned to Project</p>
+                    <span class="text-xs font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity">&rarr;</span>
+                </div>
+                <p class="mt-1 text-2xl font-black text-slate-900 tabular-nums">{{ number_format($tupadProg->unassigned_count) }}</p>
+            </a>
+        </div>
+    @endif
+@else
+{{-- DOLE Program Selection Cards --}}
 <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
     @foreach($programs as $prog)
         @php
@@ -169,22 +196,29 @@
         </a>
     @endforeach
 </div>
+@endif
 
 {{-- Search & Program Filter Pill Bar --}}
 <div class="gov-card p-4 mb-6">
     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {{-- Quick Filter Pills --}}
         <div class="flex flex-wrap items-center gap-1.5">
-            <a href="{{ route('projects.index', request('search') ? ['search' => request('search')] : []) }}"
-               class="rounded-xl px-3 py-1.5 text-xs font-extrabold transition {{ empty($selected) ? 'bg-blue-800 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-                All Programs ({{ $totalProjectsCount }})
-            </a>
-            @foreach($programs as $p)
-                <a href="{{ route('projects.index', array_merge(request()->query(), ['program' => $p->code])) }}"
-                   class="rounded-xl px-3 py-1.5 text-xs font-extrabold transition {{ $selected?->id === $p->id ? 'bg-blue-800 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-                    {{ $p->code }} ({{ $p->projects_count }})
+            @if(\App\Models\Program::isTupadOnly())
+                <span class="rounded-xl bg-blue-800 px-3 py-1.5 text-xs font-extrabold text-white shadow-xs tabular-nums">
+                    TUPAD Projects ({{ $totalProjectsCount }})
+                </span>
+            @else
+                <a href="{{ route('projects.index', request('search') ? ['search' => request('search')] : []) }}"
+                   class="rounded-xl px-3 py-1.5 text-xs font-extrabold transition {{ empty($selected) ? 'bg-blue-800 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                    All Programs ({{ $totalProjectsCount }})
                 </a>
-            @endforeach
+                @foreach($programs as $p)
+                    <a href="{{ route('projects.index', array_merge(request()->query(), ['program' => $p->code])) }}"
+                       class="rounded-xl px-3 py-1.5 text-xs font-extrabold transition {{ $selected?->id === $p->id ? 'bg-blue-800 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                        {{ $p->code }} ({{ $p->projects_count }})
+                    </a>
+                @endforeach
+            @endif
         </div>
 
         {{-- Search Input Form --}}
@@ -217,8 +251,8 @@
     </div>
 </div>
 
-{{-- Active Filter Context Notice --}}
-@if($selected)
+{{-- Active Filter Context Notice (Multi-Program Mode Only) --}}
+@if($selected && !\App\Models\Program::isTupadOnly())
     <div class="mb-4 flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50/70 px-4 py-2.5 text-xs text-blue-900">
         <div class="flex items-center gap-2">
             <span class="font-extrabold uppercase">Filtered Program:</span>

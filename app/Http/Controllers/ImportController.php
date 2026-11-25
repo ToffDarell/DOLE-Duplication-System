@@ -25,7 +25,11 @@ class ImportController extends Controller
         $logs = ImportLog::with('user')->latest()->paginate(10);
         $bulkThreshold = (int) SystemSetting::get('bulk_import_threshold', 600);
 
-        $projectOptions = Project::with('program')->latest()->get()
+        $enabledProgramCodes = Program::enabledCodes();
+        $projectOptions = Project::with('program')
+            ->whereHas('program', fn ($q) => $q->whereIn('code', $enabledProgramCodes))
+            ->latest()
+            ->get()
             ->map(fn (Project $p) => [
                 'id' => $p->id,
                 'name' => $p->name,

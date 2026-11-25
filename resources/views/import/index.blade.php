@@ -31,22 +31,33 @@
                 {{-- Left Column (5 cols): Step 1 — Program, File & Row Verification --}}
                 <div class="lg:col-span-5 space-y-4">
                     <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-                        <div class="sm:col-span-1 flex flex-col justify-end">
-                            <label for="import-program" class="mb-1.5 block text-xs font-bold text-slate-700 truncate">Target Program *</label>
-                            <select name="program_code" id="import-program" x-model="programCode" @change="onProgramOrFileChange()" required 
-                                    class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
-                                <option value="TUPAD">TUPAD</option>
-                                <option value="SPES">SPES</option>
-                                <option value="DILP">DILP</option>
-                                <option value="GIP">GIP</option>
-                            </select>
-                        </div>
+                        @if(\App\Models\Program::isTupadOnly())
+                            <input type="hidden" name="program_code" id="import-program" value="TUPAD">
+                            <div class="sm:col-span-3 flex flex-col justify-end">
+                                <div class="mb-1.5 flex items-center justify-between">
+                                    <label for="import-file" class="block text-xs font-bold text-slate-700 truncate">Excel / CSV Masterlist File *</label>
+                                    <span class="rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-extrabold text-blue-800">TUPAD Program</span>
+                                </div>
+                                <input type="file" name="file" id="import-file" accept=".xlsx,.xls,.csv" required @change="onFileSelected($event)"
+                                       class="h-10 w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-700 file:px-3 file:py-1 file:text-xs file:font-bold file:text-white hover:file:bg-blue-800 cursor-pointer">
+                            </div>
+                        @else
+                            <div class="sm:col-span-1 flex flex-col justify-end">
+                                <label for="import-program" class="mb-1.5 block text-xs font-bold text-slate-700 truncate">Target Program *</label>
+                                <select name="program_code" id="import-program" x-model="programCode" @change="onProgramOrFileChange()" required 
+                                        class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 focus:border-blue-700 focus:outline-none">
+                                    @foreach(\App\Models\Program::enabledCodes() as $code)
+                                        <option value="{{ $code }}">{{ $code }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                        <div class="sm:col-span-2 flex flex-col justify-end">
-                            <label for="import-file" class="mb-1.5 block text-xs font-bold text-slate-700 truncate">Excel / CSV Masterlist File *</label>
-                            <input type="file" name="file" id="import-file" accept=".xlsx,.xls,.csv" required @change="onFileSelected($event)"
-                                   class="h-10 w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-700 file:px-3 file:py-1 file:text-xs file:font-bold file:text-white hover:file:bg-blue-800 cursor-pointer">
-                        </div>
+                            <div class="sm:col-span-2 flex flex-col justify-end">
+                                <label for="import-file" class="mb-1.5 block text-xs font-bold text-slate-700 truncate">Excel / CSV Masterlist File *</label>
+                                <input type="file" name="file" id="import-file" accept=".xlsx,.xls,.csv" required @change="onFileSelected($event)"
+                                       class="h-10 w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-700 file:px-3 file:py-1 file:text-xs file:font-bold file:text-white hover:file:bg-blue-800 cursor-pointer">
+                            </div>
+                        @endif
                     </div>
 
                     {{-- Program-Specific Parser & Eligibility Notice --}}
@@ -362,7 +373,7 @@
                 if (this.programCode === 'GIP') {
                     return 'GIP-specific column profile active: reads GIP columns only (Name, DOB, Education, Internship Duration) and enforces the 1-year (12-month) / once-in-a-lifetime cap.';
                 }
-                return 'TUPAD / DILP masterlist column profile active: supports full Annex D columns. Prior-year TUPAD/DILP beneficiaries are automatically recognized as eligible returning enrollments in a new year.';
+                return '{{ \App\Models\Program::isTupadOnly() ? "TUPAD masterlist column profile active: supports full DOLE Annex D columns. Prior-year TUPAD beneficiaries are automatically recognized as eligible returning enrollments in a new year." : "TUPAD / DILP masterlist column profile active: supports full Annex D columns. Prior-year TUPAD/DILP beneficiaries are automatically recognized as eligible returning enrollments in a new year." }}';
             },
 
             get selectedProjectLabel() {

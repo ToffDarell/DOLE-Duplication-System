@@ -22,7 +22,7 @@ class ExportController extends Controller
      */
     public function index(Request $request): View
     {
-        $programs = Program::all();
+        $programs = Program::enabled()->get();
         $municipalities = Beneficiary::distinct()->whereNotNull('municipality')->where('municipality', '!=', '')->pluck('municipality')->sort()->values();
 
         // Selected municipality's barangays for dependent dropdown

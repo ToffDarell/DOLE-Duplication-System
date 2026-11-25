@@ -219,7 +219,9 @@ test('duplicate resolution console filters flags by municipality, barangay, sex,
 |--------------------------------------------------------------------------
 */
 
-test('sidebar renders the Projects link that leads to TUPAD, SPES, and GIP projects', function () {
+test('sidebar renders the Projects link that leads to TUPAD, SPES, and GIP projects when multi-program mode is enabled', function () {
+    config(['dole.enabled_programs' => ['TUPAD', 'SPES', 'DILP', 'GIP']]);
+
     $response = $this->actingAs($this->admin)->get(route('dashboard'));
 
     $response->assertOk()->assertSee(route('projects.index'), false);
@@ -231,10 +233,76 @@ test('sidebar renders the Projects link that leads to TUPAD, SPES, and GIP proje
         ->assertSee('program=GIP', false);
 });
 
-test('beneficiaries masterlist displays GIP quick filter pill', function () {
+test('beneficiaries masterlist displays GIP quick filter pill when multi-program mode is enabled', function () {
+    config(['dole.enabled_programs' => ['TUPAD', 'SPES', 'DILP', 'GIP']]);
+
     $response = $this->actingAs($this->admin)->get(route('beneficiaries.index'));
 
     $response->assertOk()
         ->assertSee('program=GIP', false)
         ->assertSee('>GIP<', false);
+});
+
+test('default TUPAD-only mode hides SPES, DILP, and GIP from sidebar, projects, import, and filters', function () {
+    $this->actingAs($this->admin)->get(route('dashboard'))
+        ->assertOk()
+        ->assertDontSee('DILP Groups')
+        ->assertDontSee('DILP Projects')
+        ->assertSee('Total TUPAD enrollments')
+        ->assertSee(route('beneficiaries.index'), false);
+
+    $this->actingAs($this->admin)->get(route('projects.index'))
+        ->assertOk()
+        ->assertSee('TUPAD Projects Masterlist')
+        ->assertDontSee('program=SPES', false)
+        ->assertDontSee('program=DILP', false)
+        ->assertDontSee('program=GIP', false);
+
+    $this->actingAs($this->admin)->get(route('beneficiaries.index'))
+        ->assertOk()
+        ->assertSee('All Records')
+        ->assertDontSee('program=SPES', false)
+        ->assertDontSee('program=DILP', false)
+        ->assertDontSee('program=GIP', false);
+
+    $this->actingAs($this->admin)->get(route('import.index'))
+        ->assertOk()
+        ->assertSee('TUPAD Program')
+        ->assertDontSee('<option value="SPES">', false)
+        ->assertDontSee('<option value="DILP">', false)
+        ->assertDontSee('<option value="GIP">', false);
+});
+
+test('duplicates console treats status=all as unfiltered instead of zero results', function () {
+    $a = Beneficiary::create([
+        'full_name' => 'ROBERTO MAGBANUA',
+        'first_name' => 'ROBERTO',
+        'last_name' => 'MAGBANUA',
+        'date_of_birth' => '1988-03-14',
+        'sex' => 'Male',
+        'municipality' => 'Valencia City',
+        'barangay' => 'Poblacion',
+    ]);
+    $b = Beneficiary::create([
+        'full_name' => 'ROBERTO MAGBANUA',
+        'first_name' => 'ROBERTO',
+        'last_name' => 'MAGBANUA',
+        'date_of_birth' => '1988-03-14',
+        'sex' => 'Male',
+        'municipality' => 'Valencia City',
+        'barangay' => 'Poblacion',
+    ]);
+
+    DuplicateFlag::create([
+        'beneficiary_id' => $a->id,
+        'matched_beneficiary_id' => $b->id,
+        'match_score' => 100,
+        'match_type' => 'exact',
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('duplicates.index', ['status' => 'all']))
+        ->assertOk()
+        ->assertSee('ROBERTO MAGBANUA');
 });

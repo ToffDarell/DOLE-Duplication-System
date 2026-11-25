@@ -53,7 +53,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid grid-cols-1 gap-4 {{ \App\Models\Program::isTupadOnly() ? '' : 'sm:grid-cols-2 lg:grid-cols-4' }}">
                 @foreach($programs as $prog)
                     <label class="group relative flex cursor-pointer flex-col rounded-2xl border-2 p-4 transition-all duration-200"
                            :class="{

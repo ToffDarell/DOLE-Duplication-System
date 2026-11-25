@@ -1,5 +1,5 @@
 ﻿{{-- Sidebar Navigation --}}
-<aside class="fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-200 bg-white transition-all duration-200 shadow-xl lg:shadow-xs lg:z-30 sidebar-expanded w-64"
+<aside class="fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-200 bg-white transition-[width,transform] duration-200 shadow-xl lg:shadow-xs lg:z-30 sidebar-expanded w-64"
        :class="{
            'translate-x-0': mobileMenuOpen,
            '-translate-x-full': !mobileMenuOpen,
@@ -56,13 +56,23 @@
             <ul class="space-y-1 font-semibold text-xs">
                 <li>
                     <a href="{{ route('projects.index') }}"
-                       title="Projects & Beneficiaries"
+                       title="Projects"
                        :class="!sidebarOpen ? 'lg:justify-center lg:px-2' : ''"
-                       class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition {{ request()->routeIs('projects.*') || request()->routeIs('beneficiaries.index') || request()->routeIs('beneficiaries.create') || request()->routeIs('beneficiaries.edit') || request()->routeIs('beneficiaries.show') ? 'bg-blue-800 text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
+                       class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors {{ request()->routeIs('projects.*') ? 'bg-blue-800 text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg>
                         <span :class="{'lg:hidden': !sidebarOpen}" class="truncate">Projects</span>
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('beneficiaries.index') }}"
+                       title="Beneficiaries Masterlist"
+                       :class="!sidebarOpen ? 'lg:justify-center lg:px-2' : ''"
+                       class="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors {{ request()->routeIs('beneficiaries.index') || request()->routeIs('beneficiaries.create') || request()->routeIs('beneficiaries.edit') || request()->routeIs('beneficiaries.show') ? 'bg-blue-800 text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
+                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+                        <span :class="{'lg:hidden': !sidebarOpen}" class="truncate">Beneficiaries</span>
+                    </a>
+                </li>
+                @if(in_array('DILP', \App\Models\Program::enabledCodes(), true))
                 <li>
                     <a href="{{ route('dilp.groups.index') }}"
                        title="DILP Groups"
@@ -81,6 +91,7 @@
                         <span :class="{'lg:hidden': !sidebarOpen}" class="truncate">DILP Projects</span>
                     </a>
                 </li>
+                @endif
                 <li>
                     <a href="{{ route('history.index') }}"
                        title="Yearly Participation History"

@@ -5,7 +5,7 @@
 
 @section('content')
 {{-- DOLE Official Header Banner --}}
-<div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-2xl border border-blue-700/50 bg-blue-800 p-4 sm:p-6 text-white shadow-sm relative overflow-hidden gap-4">
+<div class="mb-6 flex flex-col lg:flex-row items-start lg:items-center justify-between rounded-2xl border border-blue-700/50 bg-blue-800 p-4 sm:p-6 text-white shadow-sm relative overflow-hidden gap-4">
     <div class="flex items-center gap-3 sm:gap-4 relative z-10 min-w-0">
         <div class="rounded-2xl bg-white p-2 shadow-xs border border-white/20 shrink-0">
             <img src="{{ asset('logo dole.png') }}" alt="DOLE Official Logo" class="h-10 w-10 sm:h-12 sm:w-12 object-contain bg-white">
@@ -14,23 +14,35 @@
             <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span class="rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-bold text-white">DOLE Bukidnon Field Office</span>
                 <span class="rounded-full bg-amber-400/20 border border-amber-300/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-200 tabular-nums">CY {{ date('Y') }} Intelligence</span>
+                <span class="text-[11px] font-medium text-blue-200/90 tabular-nums">&middot; Synced {{ now()->format('M d, h:i A') }}</span>
             </div>
             <h2 class="mt-1 text-base sm:text-xl font-black tracking-tight text-white leading-tight">Centralized Analytics &amp; Duplicate Engine Report</h2>
         </div>
     </div>
-    <div class="mt-1 sm:mt-0 text-left sm:text-right relative z-10 shrink-0">
-        <p class="text-[11px] font-bold text-blue-200">Last Sync Time</p>
-        <p class="text-xs sm:text-sm font-bold text-white tracking-tight tabular-nums">{{ now()->format('M d, Y - h:i A') }}</p>
+    <div class="flex flex-wrap items-center gap-2 relative z-10 shrink-0 w-full lg:w-auto">
+        @hasanyrole('Admin|Encoder')
+        <a href="{{ route('import.index') }}" class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white px-3.5 py-2 text-xs font-bold text-blue-800 shadow-xs hover:bg-blue-50 active:scale-[0.98] transition-all">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+            {{ \App\Models\Program::isTupadOnly() ? 'Import TUPAD Excel' : 'Import Excel Roster' }}
+        </a>
+        @endhasanyrole
+        @hasanyrole('Admin|Validator')
+        <a href="{{ route('duplicates.index', ['status' => 'pending']) }}" class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-3.5 py-2 text-xs font-bold text-white hover:bg-white/20 active:scale-[0.98] transition-all">
+            <svg class="h-4 w-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+            Review Pending
+            <span class="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-black text-white tabular-nums">{{ number_format($pendingDuplicates) }}</span>
+        </a>
+        @endhasanyrole
     </div>
 </div>
 
 {{-- Top Summary Cards (KPI Metrics) --}}
 <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
     {{-- Card 1: Total Beneficiaries Registered --}}
-    <div class="gov-card gov-card-hover p-5 border-l-4 border-l-blue-700 flex flex-col justify-between h-full">
+    <a href="{{ route('beneficiaries.index') }}" class="group gov-card gov-card-hover p-5 border-l-4 border-l-blue-700 flex flex-col justify-between h-full transition-all active:scale-[0.98]">
         <div>
             <div class="flex items-start justify-between gap-3 mb-2">
-                <p class="text-sm font-bold text-slate-700 leading-snug">Total Beneficiaries Registered</p>
+                <p class="text-sm font-bold text-slate-700 group-hover:text-blue-700 transition-colors leading-snug">Total Beneficiaries Registered</p>
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-700 text-white shadow-xs">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v-.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
@@ -39,14 +51,17 @@
             </div>
             <p class="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{{ number_format($totalBeneficiaries) }}</p>
         </div>
-        <p class="mt-3 text-xs font-medium text-slate-400">Master profiles across Bukidnon LGUs</p>
-    </div>
+        <div class="mt-3 flex items-center justify-between gap-2 text-xs font-medium text-slate-400">
+            <span>Master profiles across Bukidnon LGUs</span>
+            <span class="font-bold text-blue-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">&rarr;</span>
+        </div>
+    </a>
 
     {{-- Card 2: Total Duplicates Flagged --}}
-    <div class="gov-card gov-card-hover p-5 border-l-4 border-l-amber-500 flex flex-col justify-between h-full">
+    <a href="{{ route('duplicates.index') }}" class="group gov-card gov-card-hover p-5 border-l-4 border-l-amber-500 flex flex-col justify-between h-full transition-[transform,border-color,box-shadow] active:scale-[0.98]">
         <div>
             <div class="flex items-start justify-between gap-3 mb-2">
-                <p class="text-sm font-bold text-slate-700 leading-snug">Total Duplicates Flagged</p>
+                <p class="text-sm font-bold text-slate-700 group-hover:text-amber-700 transition-colors leading-snug">Total Duplicates Flagged</p>
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
@@ -55,14 +70,17 @@
             </div>
             <p class="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{{ number_format($totalDuplicates) }}</p>
         </div>
-        <p class="mt-3 text-xs font-medium text-slate-400 tabular-nums">{{ number_format($pendingDuplicates) }} pending &middot; {{ number_format($overriddenCount) }} cleared / resolved</p>
-    </div>
+        <div class="mt-3 flex items-center justify-between gap-2 text-xs font-medium text-slate-400 tabular-nums">
+            <span>{{ number_format($pendingDuplicates) }} pending &middot; {{ number_format($overriddenCount) }} cleared / resolved</span>
+            <span class="font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">&rarr;</span>
+        </div>
+    </a>
 
     {{-- Card 3: Pending Validation Queue Count --}}
-    <div class="gov-card gov-card-hover p-5 border-l-4 border-l-rose-600 flex flex-col justify-between h-full">
+    <a href="{{ route('duplicates.index', ['status' => 'pending']) }}" class="group gov-card gov-card-hover p-5 border-l-4 border-l-rose-600 flex flex-col justify-between h-full transition-all active:scale-[0.98]">
         <div>
             <div class="flex items-start justify-between gap-3 mb-2">
-                <p class="text-sm font-bold text-slate-700 leading-snug">Pending Validation Queue</p>
+                <p class="text-sm font-bold text-slate-700 group-hover:text-rose-700 transition-colors leading-snug">Pending Validation Queue</p>
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white shadow-xs">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -71,14 +89,17 @@
             </div>
             <p class="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{{ number_format($pendingDuplicates) }}</p>
         </div>
-        <p class="mt-3 text-xs font-medium text-slate-400">Requires validator review &amp; decision</p>
-    </div>
+        <div class="mt-3 flex items-center justify-between gap-2 text-xs font-medium text-slate-400">
+            <span>Requires validator review &amp; decision</span>
+            <span class="font-bold text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">&rarr;</span>
+        </div>
+    </a>
 
     {{-- Card 4: Total Program Availments --}}
-    <div class="gov-card gov-card-hover p-5 border-l-4 border-l-emerald-600 flex flex-col justify-between h-full">
+    <a href="{{ route('projects.index') }}" class="group gov-card gov-card-hover p-5 border-l-4 border-l-emerald-600 flex flex-col justify-between h-full transition-all active:scale-[0.98]">
         <div>
             <div class="flex items-start justify-between gap-3 mb-2">
-                <p class="text-sm font-bold text-slate-700 leading-snug">Total Program Availments</p>
+                <p class="text-sm font-bold text-slate-700 group-hover:text-emerald-700 transition-colors leading-snug">Total Program Availments</p>
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -87,8 +108,11 @@
             </div>
             <p class="text-3xl font-black text-slate-900 tracking-tight tabular-nums">{{ number_format(array_sum($programDistribution)) }}</p>
         </div>
-        <p class="mt-3 text-xs font-medium text-slate-400">TUPAD, SPES, DILP &amp; GIP cross-records</p>
-    </div>
+        <div class="mt-3 flex items-center justify-between gap-2 text-xs font-medium text-slate-400">
+            <span>{{ \App\Models\Program::isTupadOnly() ? 'Total TUPAD enrollments (incl. repeat batches)' : 'Total enrollments across TUPAD, SPES, DILP & GIP' }}</span>
+            <span class="font-bold text-emerald-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">&rarr;</span>
+        </div>
+    </a>
 </div>
 
 {{-- Collapsible Duplication Risk Level Reference --}}
@@ -219,7 +243,7 @@
     </div>
 </div>
 
-{{-- Row 1: Charts -- Duplicate Status Breakdown & Program Distribution --}}
+{{-- Row 1: Charts -- Duplicate Status Breakdown + Pending Risk Bands (TUPAD-Only) / Program Distribution --}}
 <div class="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
     {{-- Chart 1: Duplicate Status Breakdown (Pie / Donut Chart) --}}
     <div class="gov-card p-6 flex flex-col justify-between">
@@ -242,6 +266,74 @@
         </div>
     </div>
 
+    @if(\App\Models\Program::isTupadOnly())
+    {{-- TUPAD Pending Queue Breakdown by DOLE Score Band (Clickable Shortcuts) --}}
+    <div class="gov-card p-6 flex flex-col justify-between">
+        <div>
+            <div class="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
+                <div>
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-900">Pending Flags by DOLE Score Band</h3>
+                    <p class="text-[11px] font-medium text-slate-500">Click any band to jump straight into its filtered review queue</p>
+                </div>
+                <span class="rounded-md bg-blue-50 px-2.5 py-1 text-[10px] font-extrabold text-blue-800 uppercase tabular-nums">{{ number_format($pendingDuplicates) }} Pending</span>
+            </div>
+            <div class="space-y-2.5">
+                <a href="{{ route('duplicates.index', ['risk_level' => 'exact']) }}"
+                   class="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50/60 px-4 py-3 transition hover:bg-rose-50">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex w-16 justify-center rounded-lg bg-rose-600 px-2 py-1 text-[11px] font-black text-white tabular-nums">100%</span>
+                        <div>
+                            <p class="text-xs font-extrabold text-rose-950">Exact Match</p>
+                            <p class="text-[11px] text-rose-800">All core identity fields match identically</p>
+                        </div>
+                    </div>
+                    <span class="text-lg font-black text-rose-700 tabular-nums">{{ number_format($pendingRiskBands['exact'] ?? 0) }} &rarr;</span>
+                </a>
+
+                <a href="{{ route('duplicates.index', ['risk_level' => 'high']) }}"
+                   class="flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50/60 px-4 py-3 transition hover:bg-orange-50">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex w-16 justify-center rounded-lg bg-orange-600 px-2 py-1 text-[11px] font-black text-white tabular-nums">85%–99%</span>
+                        <div>
+                            <p class="text-xs font-extrabold text-orange-950">Wrong Spelling / Human Error</p>
+                            <p class="text-[11px] text-orange-800">Misspelled names or 1-digit birthdate typos</p>
+                        </div>
+                    </div>
+                    <span class="text-lg font-black text-orange-700 tabular-nums">{{ number_format($pendingRiskBands['high'] ?? 0) }} &rarr;</span>
+                </a>
+
+                <a href="{{ route('duplicates.index', ['risk_level' => 'moderate']) }}"
+                   class="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 transition hover:bg-amber-50">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex w-16 justify-center rounded-lg bg-amber-500 px-2 py-1 text-[11px] font-black text-white tabular-nums">70%–84%</span>
+                        <div>
+                            <p class="text-xs font-extrabold text-amber-950">Missing Suffix / Middle Name</p>
+                            <p class="text-[11px] text-amber-800">Missing Jr./Sr., different middle name, or namesake</p>
+                        </div>
+                    </div>
+                    <span class="text-lg font-black text-amber-700 tabular-nums">{{ number_format($pendingRiskBands['moderate'] ?? 0) }} &rarr;</span>
+                </a>
+
+                <a href="{{ route('duplicates.index', ['risk_level' => 'low']) }}"
+                   class="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 transition hover:bg-emerald-50">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex w-16 justify-center rounded-lg bg-emerald-600 px-2 py-1 text-[11px] font-black text-white tabular-nums">&lt; 70%</span>
+                        <div>
+                            <p class="text-xs font-extrabold text-emerald-950">Below Threshold / Household Review</p>
+                            <p class="text-[11px] text-emerald-800">Distinct individuals flagged for household check</p>
+                        </div>
+                    </div>
+                    <span class="text-lg font-black text-emerald-700 tabular-nums">{{ number_format($pendingRiskBands['low'] ?? 0) }} &rarr;</span>
+                </a>
+            </div>
+        </div>
+        <div class="mt-4 border-t border-slate-100 pt-3 text-center">
+            <p class="text-[11px] font-semibold text-slate-500">
+                Prioritize 100% Exact and 85%–99% flags first; bulk-clear &lt; 70% flags after barangay verification.
+            </p>
+        </div>
+    </div>
+    @else
     {{-- Chart 2: Program Distribution (Pie / Donut Chart) --}}
     <div class="gov-card p-6 flex flex-col justify-between">
         <div>
@@ -262,16 +354,17 @@
             </p>
         </div>
     </div>
+    @endif
 </div>
 
-{{-- Row 2: Registration & Duplicate Trends + Geographic Distribution --}}
-<div class="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+{{-- Row 2: Registration & Duplicate Trends (Full-Width Primary Trend Chart) --}}
+<div class="mb-8">
     {{-- Chart 3: Registration & Duplicate Trends --}}
     <div class="gov-card p-6 flex flex-col justify-between">
         <div>
             <div class="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3.5">
                 <div>
-                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-900">Registration & Duplicate Trends</h3>
+                    <h3 class="text-xs font-extrabold text-slate-900">Registration &amp; Duplicate Trends</h3>
                     <p class="text-[11px] font-medium text-slate-500">Monthly new registrations vs policy violations flagged (CY {{ date('Y') }})</p>
                 </div>
                 <div class="flex items-center gap-3 text-xs font-semibold">
@@ -290,29 +383,6 @@
         <div class="mt-4 border-t border-slate-100 pt-3 text-center">
             <p class="text-[11px] font-semibold text-slate-500">
                 Identifies seasonal registration surges and spike patterns in potential duplicate entries.
-            </p>
-        </div>
-    </div>
-
-    {{-- Chart 4: Top Municipalities Concentration --}}
-    <div class="gov-card p-6 flex flex-col justify-between">
-        <div>
-            <div class="mb-4 flex items-center justify-between border-b border-slate-200 pb-3.5">
-                <div>
-                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-900">Top Density Areas</h3>
-                    <p class="text-[11px] font-medium text-slate-500">High concentration municipalities in Bukidnon</p>
-                </div>
-                <span class="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-medium border border-emerald-200/60 flex items-center gap-1 shrink-0">
-                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Density Hubs
-                </span>
-            </div>
-            <div class="relative h-72 w-full">
-                <canvas id="chartGeographicDistribution"></canvas>
-            </div>
-        </div>
-        <div class="mt-4 border-t border-slate-100 pt-3 text-center">
-            <p class="text-[11px] font-semibold text-slate-500">
-                Visualizes high-density areas requiring closer monitoring for duplicate submissions.
             </p>
         </div>
     </div>
@@ -368,44 +438,41 @@
     </div>
 
     {{-- Recent Beneficiaries Master Table (2 Cols) --}}
-    <div class="gov-card overflow-hidden lg:col-span-2">
-        <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-6 py-4">
+    <div class="gov-card overflow-hidden lg:col-span-2 min-w-0">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/80 px-5 py-4">
             <div>
-                <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-900">Recently Registered Beneficiaries</h3>
+                <h3 class="text-xs font-extrabold text-slate-900">Recently Registered Beneficiaries</h3>
                 <p class="text-[11px] font-medium text-slate-500">Latest additions to the Bukidnon regional beneficiary database</p>
             </div>
-            <a href="{{ route('beneficiaries.index') }}" class="rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-extrabold text-slate-800 shadow-2xs transition hover:bg-slate-100 hover:text-blue-800">
-                View Full Registry →
+            <a href="{{ route('beneficiaries.index') }}" class="rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-extrabold text-slate-800 shadow-2xs transition-colors hover:bg-slate-100 hover:text-blue-800">
+                View Full Registry &rarr;
             </a>
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b border-slate-200 bg-slate-100/70 text-[11px] font-extrabold uppercase tracking-wider text-slate-700">
+            <table class="w-full text-left text-xs">
+                <thead class="border-b border-slate-200 bg-slate-100/70 text-[11px] font-bold text-slate-600">
                     <tr>
-                        <th class="whitespace-nowrap px-6 py-3.5">Beneficiary Name</th>
-                        <th class="whitespace-nowrap px-6 py-3.5">Municipality</th>
-                        <th class="whitespace-nowrap px-6 py-3.5">Date of Birth</th>
-                        <th class="whitespace-nowrap px-6 py-3.5">Encoded By</th>
-                        <th class="whitespace-nowrap px-6 py-3.5 text-right">Action</th>
+                        <th class="px-4 py-3">Beneficiary Name</th>
+                        <th class="whitespace-nowrap px-4 py-3">Municipality</th>
+                        <th class="whitespace-nowrap px-4 py-3">Date of Birth</th>
+                        <th class="hidden xl:table-cell whitespace-nowrap px-4 py-3">Encoded By</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-right">Action</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200 text-xs font-medium bg-white">
                     @forelse($recentBeneficiaries as $b)
-                        <tr class="transition hover:bg-slate-50/80">
-                            <td class="whitespace-nowrap px-6 py-3.5 font-extrabold text-slate-900">
-                                <a href="{{ route('beneficiaries.show', $b) }}" class="hover:text-blue-800 hover:underline">{{ $b->full_name }}</a>
+                        <tr class="transition-colors hover:bg-slate-50/80">
+                            <td class="px-4 py-3 font-extrabold text-slate-900 max-w-[220px]">
+                                <a href="{{ route('beneficiaries.show', $b) }}" class="block truncate hover:text-blue-800 hover:underline" title="{{ $b->full_name }}">{{ $b->full_name }}</a>
                             </td>
-                            <td class="whitespace-nowrap px-6 py-3.5 text-slate-700 font-semibold">{{ $b->municipality }}</td>
-                            <td class="whitespace-nowrap px-6 py-3.5 text-slate-700 font-semibold">{{ $b->date_of_birth?->format('M d, Y') }}</td>
-                            <td class="whitespace-nowrap px-6 py-3.5 text-slate-700 font-semibold">{{ $b->creator?->name ?? '—' }}</td>
-                            <td class="whitespace-nowrap px-6 py-3.5 text-right">
-                                <a href="{{ route('beneficiaries.show', $b) }}" class="group inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-slate-100 border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-blue-800 hover:text-white hover:border-blue-800 transition shadow-2xs">
-                                    <svg class="h-3.5 w-3.5 text-slate-500 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.573 16.49 16.638 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    </svg>
-                                    <span>View Profile</span>
+                            <td class="whitespace-nowrap px-4 py-3 text-slate-700 font-semibold">{{ $b->municipality }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 text-slate-700 font-semibold tabular-nums">{{ $b->date_of_birth?->format('M d, Y') }}</td>
+                            <td class="hidden xl:table-cell whitespace-nowrap px-4 py-3 text-slate-600 font-medium max-w-[140px] truncate">{{ $b->creator?->name ?? '—' }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 text-right">
+                                <a href="{{ route('beneficiaries.show', $b) }}" class="group inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-slate-100 border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-blue-800 hover:text-white hover:border-blue-800 active:scale-[0.97] transition-[background-color,color,border-color,transform] shadow-2xs">
+                                    <span>View</span>
+                                    <span aria-hidden="true">&rarr;</span>
                                 </a>
                             </td>
                         </tr>

@@ -43,7 +43,17 @@
             </div>
         @endif
 
-        {{-- Program Selection Radio Cards --}}
+        {{-- Program Assignment --}}
+        @if(\App\Models\Program::isTupadOnly())
+            <input type="hidden" name="program_id" value="{{ $project->program_id }}">
+            <div class="mb-5 flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50/70 px-4 py-3">
+                <div>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-blue-800">Program Assignment</p>
+                    <p class="text-sm font-black text-blue-950">{{ $project->program?->code ?? 'TUPAD' }} &mdash; {{ $project->program?->name }}</p>
+                </div>
+                <span class="rounded-lg bg-blue-700 px-2.5 py-1 text-xs font-extrabold text-white">{{ $project->program?->code ?? 'TUPAD' }}</span>
+            </div>
+        @else
         <div class="mb-6">
             <label class="mb-2 block text-xs font-extrabold uppercase tracking-wider text-slate-700">
                 1. Program Assignment *
@@ -68,6 +78,7 @@
                 @endforeach
             </div>
         </div>
+        @endif
 
         {{-- Project Name & Type of Implementation --}}
         <div class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">

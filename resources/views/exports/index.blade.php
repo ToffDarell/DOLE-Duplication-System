@@ -6,16 +6,15 @@
 @section('content')
 <div x-data="{ showLegend: false }">
     {{-- DOLE Header Banner with Integrated Export Toolbar --}}
-    <div class="mb-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 rounded-2xl border border-blue-700/50 bg-blue-800 p-5 sm:p-6 text-white shadow-lg relative overflow-hidden">
-        <div class="absolute -right-10 -bottom-10 h-44 w-44 rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
+    <div class="mb-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 rounded-2xl border border-blue-700/50 bg-blue-800 p-5 sm:p-6 text-white shadow-sm relative overflow-hidden">
         <div class="flex items-center gap-3.5 relative z-10">
-            <div class="rounded-2xl bg-white p-2 shadow-md border border-white/20 shrink-0">
+            <div class="rounded-2xl bg-white p-2 shadow-xs border border-white/20 shrink-0">
                 <img src="{{ asset('logo dole.png') }}" alt="DOLE Official Logo" class="h-10 w-10 sm:h-12 sm:w-12 object-contain bg-white">
             </div>
             <div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-extrabold text-white uppercase tracking-wider">DOLE Bukidnon Field Office</span>
-                    <span class="rounded-full bg-emerald-400/20 border border-emerald-300/30 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-200 uppercase tracking-wider">Official Report Engine</span>
+                    <span class="rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-bold text-white">DOLE Bukidnon Field Office</span>
+                    <span class="rounded-full bg-emerald-400/20 border border-emerald-300/30 px-2.5 py-0.5 text-[10px] font-bold text-emerald-200">Official Report Engine</span>
                 </div>
                 <h2 class="mt-1 text-lg sm:text-xl font-black tracking-tight text-white">Custom Beneficiary Report &amp; Export Console</h2>
             </div>
@@ -25,7 +24,7 @@
         <div class="flex flex-wrap items-center gap-2 relative z-10">
             {{-- Excel Export --}}
             <a href="{{ route('export.excel', request()->query()) }}" 
-               class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition cursor-pointer">
+               class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition-[background-color,transform] cursor-pointer">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
                 </svg>
@@ -34,7 +33,7 @@
 
             {{-- PDF Export --}}
             <a href="{{ route('export.pdf', request()->query()) }}" 
-               class="inline-flex items-center gap-1.5 rounded-xl bg-red-600 hover:bg-red-500 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition cursor-pointer">
+               class="inline-flex items-center gap-1.5 rounded-xl bg-red-600 hover:bg-red-500 active:scale-[0.98] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition-[background-color,transform] cursor-pointer">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
                 </svg>
@@ -43,14 +42,14 @@
 
             {{-- CSV Export --}}
             <a href="{{ route('export.csv', request()->query()) }}" 
-               class="inline-flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 px-3 py-2 text-xs font-bold text-white transition shadow-2xs">
+               class="inline-flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 active:scale-[0.98] border border-white/30 px-3 py-2 text-xs font-bold text-white transition-[background-color,transform] shadow-2xs">
                 <span>CSV</span>
             </a>
         </div>
     </div>
 
     {{-- Collapsible Indicator Key / Legend Card --}}
-    <div class="mb-5 rounded-2xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden transition-all">
+    <div class="mb-5 rounded-2xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
         <div class="flex items-center justify-between p-3.5 sm:px-5 cursor-pointer hover:bg-slate-50/70 select-none" @click="showLegend = !showLegend">
             <div class="flex items-center gap-2.5">
                 <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-800 shrink-0">
@@ -59,7 +58,7 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Duplication Risk Level Definitions</h3>
+                    <h3 class="text-xs font-extrabold text-slate-900">Duplication Risk Level Definitions</h3>
                     <p class="text-[11px] text-slate-500 font-medium">Click to <span x-text="showLegend ? 'collapse' : 'view'"></span> risk thresholds used for report filtering</p>
                 </div>
             </div>
@@ -109,18 +108,18 @@
     <div class="mb-5 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
         <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
-                <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Multi-Category Report Parameters</h3>
-                <p class="text-xs text-slate-500 mt-0.5">Customize target filters before exporting official masterlists</p>
+                <h3 class="text-xs font-extrabold text-slate-900">Multi-Category Report Parameters</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Select filters below, then click Apply Filters &amp; Preview before exporting</p>
             </div>
-            <span class="rounded-lg bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-extrabold text-blue-800">Live Dynamic Cascade</span>
+            <span class="rounded-lg bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-bold text-blue-800">Dynamic Barangay Cascade</span>
         </div>
 
         <form method="GET" action="{{ route('reports.index') }}" class="space-y-4">
             <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
                 {{-- 1. Sex Filter --}}
                 <div>
-                    <label class="mb-1.5 block text-xs font-extrabold text-slate-800">Sex / Gender</label>
-                    <select name="sex" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
+                    <label for="export_sex_select" class="mb-1.5 block text-xs font-bold text-slate-800">Sex / Gender</label>
+                    <select id="export_sex_select" name="sex" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
                         <option value="">All (Male &amp; Female)</option>
                         <option value="Male" {{ request('sex') === 'Male' ? 'selected' : '' }}>Male</option>
                         <option value="Female" {{ request('sex') === 'Female' ? 'selected' : '' }}>Female</option>
@@ -129,7 +128,7 @@
 
                 {{-- 2. Municipality Filter --}}
                 <div>
-                    <label class="mb-1.5 block text-xs font-extrabold text-slate-800">Municipality (Bukidnon)</label>
+                    <label for="export_municipality_select" class="mb-1.5 block text-xs font-bold text-slate-800">Municipality (Bukidnon)</label>
                     <select name="municipality" id="export_municipality_select" onchange="fetchExportBarangays(this.value)"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
                         <option value="">All Municipalities</option>
@@ -143,9 +142,9 @@
 
                 {{-- 3. Dependent Barangay Filter --}}
                 <div>
-                    <label class="mb-1.5 flex items-center justify-between text-xs font-extrabold text-slate-800">
+                    <label for="export_barangay_select" class="mb-1.5 flex items-center justify-between text-xs font-bold text-slate-800">
                         <span>Barangay</span>
-                        <span id="export_loading_indicator" class="text-[10px] text-blue-700 animate-pulse font-normal hidden">Loading...</span>
+                        <span id="export_loading_indicator" class="text-[10px] text-blue-700 font-semibold hidden">Loading...</span>
                     </label>
                     <select name="barangay" id="export_barangay_select"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
@@ -158,8 +157,8 @@
 
                 {{-- 4. Age Range Filter --}}
                 <div>
-                    <label class="mb-1.5 block text-xs font-extrabold text-slate-800">Age Range</label>
-                    <select name="age_range" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
+                    <label for="export_age_select" class="mb-1.5 block text-xs font-bold text-slate-800">Age Range</label>
+                    <select id="export_age_select" name="age_range" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
                         <option value="">All Ages (18+)</option>
                         <option value="18-30" {{ request('age_range') === '18-30' ? 'selected' : '' }}>Youth / Young Adult (18–30)</option>
                         <option value="31-50" {{ request('age_range') === '31-50' ? 'selected' : '' }}>Adult Workforce (31–50)</option>
@@ -170,8 +169,8 @@
 
                 {{-- 5. Duplication Risk Level --}}
                 <div>
-                    <label class="mb-1.5 block text-xs font-extrabold text-slate-800">Duplication Risk Level</label>
-                    <select name="risk_level" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
+                    <label for="export_risk_select" class="mb-1.5 block text-xs font-bold text-slate-800">Duplication Risk Level</label>
+                    <select id="export_risk_select" name="risk_level" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
                         <option value="">All Risk Levels</option>
                         <option value="exact" {{ request('risk_level') === 'exact' ? 'selected' : '' }}>Exact Duplicate (100% Match)</option>
                         <option value="high" {{ request('risk_level') === 'high' ? 'selected' : '' }}>High Risk (85%–99% Match)</option>
@@ -182,9 +181,10 @@
                 </div>
 
                 {{-- 6. Program Filter --}}
+                @if(!\App\Models\Program::isTupadOnly())
                 <div>
-                    <label class="mb-1.5 block text-xs font-extrabold text-slate-800">Program</label>
-                    <select name="program" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
+                    <label for="export_program_select" class="mb-1.5 block text-xs font-bold text-slate-800">Program</label>
+                    <select id="export_program_select" name="program" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
                         <option value="">All Programs</option>
                         @foreach($programs as $prog)
                             <option value="{{ $prog->code }}" {{ request('program') === $prog->code ? 'selected' : '' }}>
@@ -193,24 +193,25 @@
                         @endforeach
                     </select>
                 </div>
+                @endif
 
                 {{-- 7. Search Keyword --}}
                 <div>
-                    <label class="mb-1.5 block text-xs font-extrabold text-slate-800">Keyword Search</label>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Name, ID, or Contact..."
+                    <label for="export_search_input" class="mb-1.5 block text-xs font-bold text-slate-800">Keyword Search</label>
+                    <input id="export_search_input" type="text" name="search" value="{{ request('search') }}" placeholder="Name, ID, or Contact..."
                            class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
                 </div>
 
                 {{-- 8. Date Range --}}
                 <div class="flex items-center gap-2">
                     <div class="w-1/2">
-                        <label class="mb-1.5 block text-xs font-extrabold text-slate-800">Date From</label>
-                        <input type="date" name="date_from" value="{{ request('date_from') }}"
+                        <label for="export_date_from" class="mb-1.5 block text-xs font-bold text-slate-800">Date From</label>
+                        <input id="export_date_from" type="date" name="date_from" value="{{ request('date_from') }}"
                                class="w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-xs font-semibold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
                     </div>
                     <div class="w-1/2">
-                        <label class="mb-1.5 block text-xs font-extrabold text-slate-800">Date To</label>
-                        <input type="date" name="date_to" value="{{ request('date_to') }}"
+                        <label for="export_date_to" class="mb-1.5 block text-xs font-bold text-slate-800">Date To</label>
+                        <input id="export_date_to" type="date" name="date_to" value="{{ request('date_to') }}"
                                class="w-full rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-xs font-semibold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs">
                     </div>
                 </div>
@@ -218,7 +219,7 @@
 
             <div class="flex items-center justify-between border-t border-slate-100 pt-3">
                 <div class="flex items-center gap-2">
-                    <button type="submit" class="rounded-xl bg-blue-800 hover:bg-blue-900 px-5 py-2 text-xs font-extrabold text-white shadow-sm transition cursor-pointer flex items-center gap-2">
+                    <button type="submit" class="rounded-xl bg-blue-800 hover:bg-blue-900 active:scale-[0.98] px-5 py-2 text-xs font-extrabold text-white shadow-sm transition-[background-color,transform] cursor-pointer flex items-center gap-2">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/>
                         </svg>

@@ -18,7 +18,7 @@
             </span>
         </div>
 
-        <form method="GET" action="{{ route('history.index') }}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <form method="GET" action="{{ route('history.index') }}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 {{ \App\Models\Program::isTupadOnly() ? 'lg:grid-cols-4' : 'lg:grid-cols-5' }}">
             <div class="lg:col-span-2">
                 <label class="mb-1 block text-[11px] font-bold text-slate-600">Beneficiary Name</label>
                 <input type="text" name="search" value="{{ $search }}"
@@ -37,6 +37,7 @@
                 </select>
             </div>
 
+            @if(!\App\Models\Program::isTupadOnly())
             <div>
                 <label class="mb-1 block text-[11px] font-bold text-slate-600">Program</label>
                 <select name="program" onchange="this.form.submit()"
@@ -47,6 +48,7 @@
                     @endforeach
                 </select>
             </div>
+            @endif
 
             <div class="flex items-end gap-2">
                 <div class="flex-1 min-w-0">

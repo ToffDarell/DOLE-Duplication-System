@@ -53,21 +53,24 @@ class ProjectController extends Controller
 
     public function index(Request $request): View
     {
-        $programs = Program::withCount([
+        $programs = Program::enabled()->withCount([
             'projects',
             'beneficiaryPrograms as beneficiaries_count',
             'beneficiaryPrograms as unassigned_count' => fn ($q) => $q->whereNull('project_id'),
         ])->orderByRaw("CASE code WHEN 'TUPAD' THEN 1 WHEN 'SPES' THEN 2 WHEN 'DILP' THEN 3 WHEN 'GIP' THEN 4 ELSE 5 END")->get();
 
+        $enabledProgramIds = $programs->pluck('id');
+
         $selected = $request->filled('program')
             ? $programs->firstWhere('code', strtoupper((string) $request->input('program')))
-            : null;
+            : (Program::isTupadOnly() ? $programs->first() : null);
 
-        $totalProjectsCount = Project::count();
-        $totalAssignedBeneficiaries = BeneficiaryProgram::whereNotNull('project_id')->count();
+        $totalProjectsCount = Project::whereIn('program_id', $enabledProgramIds)->count();
+        $totalAssignedBeneficiaries = BeneficiaryProgram::whereIn('program_id', $enabledProgramIds)->whereNotNull('project_id')->count();
 
         $projects = Project::with('program')
             ->withCount('beneficiaryPrograms')
+            ->whereIn('program_id', $enabledProgramIds)
             ->when($selected, fn ($q) => $q->where('program_id', $selected->id))
             ->when($request->input('search'), function ($q, $s) {
                 $q->where(function ($sub) use ($s) {
@@ -86,7 +89,7 @@ class ProjectController extends Controller
 
     public function create(Request $request): View
     {
-        $programs = Program::orderByRaw("CASE code WHEN 'TUPAD' THEN 1 WHEN 'SPES' THEN 2 WHEN 'DILP' THEN 3 WHEN 'GIP' THEN 4 ELSE 5 END")->get();
+        $programs = Program::enabled()->orderByRaw("CASE code WHEN 'TUPAD' THEN 1 WHEN 'SPES' THEN 2 WHEN 'DILP' THEN 3 WHEN 'GIP' THEN 4 ELSE 5 END")->get();
         $municipalities = self::MUNICIPALITIES;
         $implementationTypes = self::IMPLEMENTATION_TYPES;
 
@@ -94,7 +97,7 @@ class ProjectController extends Controller
             'programs' => $programs,
             'municipalities' => $municipalities,
             'implementationTypes' => $implementationTypes,
-            'selectedProgramId' => $programs->firstWhere('code', strtoupper((string) $request->input('program')))?->id,
+            'selectedProgramId' => $programs->firstWhere('code', strtoupper((string) $request->input('program')))?->id ?? $programs->first()?->id,
         ]);
     }
 
@@ -120,7 +123,7 @@ class ProjectController extends Controller
     public function edit(Project $project): View
     {
         $project->load('program');
-        $programs = Program::orderByRaw("CASE code WHEN 'TUPAD' THEN 1 WHEN 'SPES' THEN 2 WHEN 'DILP' THEN 3 WHEN 'GIP' THEN 4 ELSE 5 END")->get();
+        $programs = Program::enabled()->orderByRaw("CASE code WHEN 'TUPAD' THEN 1 WHEN 'SPES' THEN 2 WHEN 'DILP' THEN 3 WHEN 'GIP' THEN 4 ELSE 5 END")->get();
         $municipalities = self::MUNICIPALITIES;
         $implementationTypes = self::IMPLEMENTATION_TYPES;
 

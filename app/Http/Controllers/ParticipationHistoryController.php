@@ -70,7 +70,7 @@ class ParticipationHistoryController extends Controller
             ->filter()
             ->values();
 
-        $programs = Program::orderBy('code')->get(['id', 'code', 'name']);
+        $programs = Program::enabled()->orderBy('code')->get(['id', 'code', 'name']);
         $municipalities = Beneficiary::BUKIDNON_MUNICIPALITIES;
 
         return view('history.index', compact(

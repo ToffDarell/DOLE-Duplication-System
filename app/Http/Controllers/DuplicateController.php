@@ -44,7 +44,13 @@ class DuplicateController extends Controller
             ->values();
 
         $baseCountQuery = DuplicateFlag::query();
-        $query = DuplicateFlag::with(['beneficiary.beneficiaryPrograms.program', 'matchedBeneficiary.beneficiaryPrograms.program', 'reviewer']);
+        $query = DuplicateFlag::with([
+            'beneficiary.beneficiaryPrograms.program',
+            'beneficiary.beneficiaryPrograms.project:id,name',
+            'matchedBeneficiary.beneficiaryPrograms.program',
+            'matchedBeneficiary.beneficiaryPrograms.project:id,name',
+            'reviewer',
+        ]);
 
         $this->applySharedFilters($baseCountQuery, $request);
         $this->applySharedFilters($query, $request);
@@ -476,7 +482,7 @@ class DuplicateController extends Controller
         } elseif ($filter === 'removed') {
             $query->where('status', 'resolved_duplicate');
         } elseif ($status = $request->input('filter_status', $request->input('status'))) {
-            if (! in_array($status, ['resolved_duplicate', 'resolved_not_duplicate', 'overridden'], true)) {
+            if (! in_array($status, ['all', 'resolved_duplicate', 'resolved_not_duplicate', 'overridden'], true)) {
                 $query->where('status', $status);
             }
         }

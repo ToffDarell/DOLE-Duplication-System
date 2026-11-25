@@ -1,0 +1,20 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - img "DOLE Official Logo" [ref=e5]
+    - heading "DOLE Bukidnon" [level=2] [ref=e6]
+    - paragraph [ref=e7]: Duplicate Detection System
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e11]: Email Address
+        - textbox "staff@dole-bukidnon.gov.ph" [active] [ref=e12]
+      - generic [ref=e13]:
+        - generic [ref=e14]: Password
+        - generic [ref=e15]:
+          - textbox "••••••••" [ref=e16]
+          - button "Toggle password visibility" [ref=e17] [cursor=pointer]
+      - generic [ref=e22] [cursor=pointer]:
+        - checkbox "Remember me" [ref=e23]
+        - text: Remember me
+      - button "Sign In to Portal" [ref=e24] [cursor=pointer]
+    - generic [ref=e25]: Department of Labor and Employment — Bukidnon Field Office

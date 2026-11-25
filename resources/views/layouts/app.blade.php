@@ -62,7 +62,7 @@
         @include('layouts.partials.sidebar')
 
         {{-- Main Layout Container --}}
-        <div class="transition-all duration-200 min-h-screen flex flex-col layout-main content-expanded" :class="sidebarOpen ? 'content-expanded' : 'content-collapsed'">
+        <div class="transition-[padding-left] duration-200 min-h-screen min-w-0 flex flex-col layout-main content-expanded" :class="sidebarOpen ? 'content-expanded' : 'content-collapsed'">
             {{-- Top Navigation Bar --}}
             @include('layouts.partials.topbar')
 
@@ -245,7 +245,7 @@
 
         document.addEventListener('change', function(e) {
             const select = e.target;
-            if (select.matches('form[method="GET"] select')) {
+            if (select.matches('form[method="GET"] select[data-auto-submit]')) {
                 if (select.form) {
                     select.form.submit();
                 }

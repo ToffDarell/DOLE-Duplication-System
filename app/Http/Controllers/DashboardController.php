@@ -40,6 +40,13 @@ class DashboardController extends Controller
             'Resolved / Overridden Records' => $resolvedDuplicates,
         ];
 
+        $pendingRiskBands = [
+            'exact' => DuplicateFlag::where('status', 'pending')->where('match_score', '>=', 100)->count(),
+            'high' => DuplicateFlag::where('status', 'pending')->whereBetween('match_score', [85, 99])->count(),
+            'moderate' => DuplicateFlag::where('status', 'pending')->whereBetween('match_score', [70, 84])->count(),
+            'low' => DuplicateFlag::where('status', 'pending')->where('match_score', '<', 70)->count(),
+        ];
+
         // 2. Program Distribution (Pie / Donut Chart)
         $rawProgramStats = BeneficiaryProgram::selectRaw('programs.code, COUNT(*) as total')
             ->join('programs', 'programs.id', '=', 'beneficiary_programs.program_id')
@@ -184,6 +191,7 @@ class DashboardController extends Controller
             'overriddenCount',
             'resolvedDuplicates',
             'duplicateStatusBreakdown',
+            'pendingRiskBands',
             'programDistribution',
             'trendMonths',
             'trendRegistrations',

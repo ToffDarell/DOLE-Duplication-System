@@ -41,18 +41,18 @@
             <form action="{{ route('login') }}" method="POST" class="space-y-4">
                 @csrf
                 <div>
-                    <label class="mb-1.5 block text-xs font-bold text-slate-700">Email Address</label>
-                    <input type="email" name="email" value="{{ old('email') }}" required autofocus
+                    <label for="login-email" class="mb-1.5 block text-xs font-bold text-slate-700">Email Address</label>
+                    <input id="login-email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username"
                            placeholder="staff@dole-bukidnon.gov.ph"
-                           class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 transition focus:border-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-800/20">
+                           class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:border-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-800/20">
                 </div>
 
                 <div x-data="{ showPass: false }">
-                    <label class="mb-1.5 block text-xs font-bold text-slate-700">Password</label>
+                    <label for="login-password" class="mb-1.5 block text-xs font-bold text-slate-700">Password</label>
                     <div class="relative">
-                        <input :type="showPass ? 'text' : 'password'" name="password" required placeholder="••••••••"
-                               class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 pr-11 text-sm text-slate-900 placeholder-slate-400 transition focus:border-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-800/20">
-                        <button type="button" @click="showPass = !showPass" class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-blue-800 focus:outline-none transition cursor-pointer" tabindex="-1" aria-label="Toggle password visibility">
+                        <input id="login-password" :type="showPass ? 'text' : 'password'" name="password" required autocomplete="current-password" placeholder="••••••••"
+                               class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 pr-11 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:border-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-800/20">
+                        <button type="button" @click="showPass = !showPass" class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-blue-800 focus:outline-none transition-colors cursor-pointer" tabindex="-1" aria-label="Toggle password visibility">
                             {{-- Eye icon (Hidden state) --}}
                             <svg x-show="!showPass" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
@@ -74,7 +74,7 @@
                 </div>
 
                 <button type="submit"
-                        class="w-full rounded-xl bg-blue-800 hover:bg-blue-900 px-4 py-2.5 text-sm font-bold text-white shadow-xs transition cursor-pointer">
+                        class="w-full rounded-xl bg-blue-800 hover:bg-blue-900 active:scale-[0.98] px-4 py-2.5 text-sm font-bold text-white shadow-xs transition-[background-color,transform] cursor-pointer">
                     Sign In to Portal
                 </button>
             </form>

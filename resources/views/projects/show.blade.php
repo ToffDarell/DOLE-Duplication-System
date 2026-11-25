@@ -18,13 +18,6 @@
     </div>
 </div>
 
-@if(session('success'))
-    <div class="mb-5 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-semibold text-emerald-800 shadow-2xs">
-        <svg class="h-4 w-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <span>{{ session('success') }}</span>
-    </div>
-@endif
-
 {{-- Project Overview Banner --}}
 @php
     $progBadge = match($project->program->code) {

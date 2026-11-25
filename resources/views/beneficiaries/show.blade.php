@@ -96,7 +96,7 @@
             $bannerText = 'text-orange-900';
             $bannerScore = 'text-orange-700';
             $bannerBtn = 'bg-orange-600 hover:bg-orange-700';
-        } elseif ($topScore >= 75) {
+        } elseif ($topScore >= 70) {
             $bannerWrap = 'border-amber-300 bg-amber-50';
             $bannerIcon = 'bg-amber-500';
             $bannerPill = 'bg-amber-600';

@@ -5,7 +5,7 @@
 
 @section('content')
 {{-- Indicator Key / Legend Card (Panelists: Mark Ian Mukara & Glaiza Mae Libe) --}}
-<div x-data="{ showLegend: false }" class="mb-5 rounded-2xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden transition-all">
+<div x-data="{ showLegend: false }" class="mb-5 rounded-2xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
     <div class="flex items-center justify-between p-3.5 sm:px-5 cursor-pointer hover:bg-slate-50/70 select-none" @click="showLegend = !showLegend">
         <div class="flex items-center gap-2.5">
             <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-800 shrink-0">
@@ -14,7 +14,7 @@
                 </svg>
             </div>
             <div>
-                <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Indicator Key &amp; Percentage Threshold Definitions</h3>
+                <h3 class="text-xs font-extrabold text-slate-900">Indicator Key &amp; Percentage Threshold Definitions</h3>
                 <p class="text-[11px] text-slate-500 font-medium">Click to <span x-text="showLegend ? 'collapse' : 'view'"></span> DOLE similarity thresholds and audit criteria</p>
             </div>
         </div>
@@ -76,24 +76,29 @@
 </div>
 
 {{-- Filter Tabs & Search Toolbar --}}
-<div class="mb-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
+@php
+    $activeDropdownFilterCount = collect(['program', 'municipality', 'barangay', 'risk_level', 'sex'])
+        ->filter(fn ($k) => request()->filled($k))
+        ->count();
+@endphp
+<div x-data="{ showMobileFilters: {{ $activeDropdownFilterCount > 0 ? 'true' : 'false' }} }" class="mb-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
     <form method="GET" action="{{ route('duplicates.index') }}" class="flex flex-col gap-3.5">
         @if(request('filter'))
             <input type="hidden" name="filter" value="{{ request('filter') }}">
         @endif
 
         {{-- Tier 1: Search Bar & Actions --}}
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
             {{-- Live Search Input --}}
-            <div class="flex items-center rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2 shadow-2xs transition focus-within:bg-white focus-within:border-blue-700 focus-within:ring-2 focus-within:ring-blue-100 flex-1 max-w-lg">
+            <div class="flex items-center rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2 shadow-2xs transition-colors focus-within:bg-white focus-within:border-blue-700 focus-within:ring-2 focus-within:ring-blue-100 flex-1 max-w-lg">
                 <svg class="h-4 w-4 text-slate-400 shrink-0 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
                 </svg>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Live search by beneficiary name, ID, or address..."
+                <input type="text" name="search" aria-label="Search duplicate flags" value="{{ request('search') }}" placeholder="Live search by beneficiary name, ID, or address..."
                        class="w-full border-0 bg-transparent p-0 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0">
                 @if(request('search'))
                     <a href="{{ route('duplicates.index', request()->except(['search', 'page'])) }}" 
-                       class="ml-2 text-slate-400 hover:text-slate-600 shrink-0" title="Clear search">
+                       class="ml-2 text-slate-400 hover:text-slate-600 shrink-0" title="Clear search" aria-label="Clear search">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                     </a>
                 @endif
@@ -101,7 +106,14 @@
 
             {{-- Action Buttons --}}
             <div class="flex items-center gap-2 shrink-0">
-                <button type="submit" class="rounded-xl bg-blue-800 hover:bg-blue-900 px-4 py-2 text-xs font-extrabold text-white shadow-2xs transition flex items-center gap-1.5 cursor-pointer">
+                <button type="button" @click="showMobileFilters = !showMobileFilters"
+                        class="sm:hidden inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
+                    <svg class="h-3.5 w-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"/>
+                    </svg>
+                    <span>Filters{{ $activeDropdownFilterCount > 0 ? " ({$activeDropdownFilterCount})" : '' }}</span>
+                </button>
+                <button type="submit" class="flex-1 sm:flex-none justify-center rounded-xl bg-blue-800 hover:bg-blue-900 active:scale-[0.98] px-4 py-2 text-xs font-extrabold text-white shadow-2xs transition-[background-color,transform] flex items-center gap-1.5 cursor-pointer">
                     <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/>
                     </svg>
@@ -109,7 +121,7 @@
                 </button>
                 @if(request()->hasAny(['program', 'municipality', 'barangay', 'risk_level', 'sex', 'search', 'filter']))
                     <a href="{{ route('duplicates.index') }}" 
-                       class="rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition"
+                       class="rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition-colors"
                        title="Reset all filters">
                         Reset
                     </a>
@@ -117,23 +129,25 @@
             </div>
         </div>
 
-        {{-- Tier 2: 5 Category Selectors (Program, Municipality, Barangay, Risk Level, Sex) --}}
-        <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
-            {{-- Program --}}
-            <div>
-                <label class="mb-1 block text-[11px] font-bold text-slate-600 uppercase tracking-wider">Program</label>
-                <select name="program" onchange="this.form.submit()"
-                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('program') ? 'border-blue-700 bg-blue-50/50 text-blue-900 ring-1 ring-blue-700' : '' }}">
-                    <option value="">All Programs</option>
-                    @foreach(['TUPAD', 'SPES', 'DILP', 'GIP'] as $prog)
-                        <option value="{{ $prog }}" {{ strcasecmp(request('program'), $prog) === 0 ? 'selected' : '' }}>{{ $prog }}</option>
-                    @endforeach
-                </select>
-            </div>
+        {{-- Tier 2: Category Selectors (Collapsible on Mobile, Always Visible on sm+) --}}
+        <div :class="showMobileFilters ? 'grid' : 'hidden sm:grid'" class="grid-cols-1 gap-2.5 sm:grid-cols-2 {{ \App\Models\Program::isTupadOnly() ? 'lg:grid-cols-4' : 'lg:grid-cols-5' }}">
+            @if(!\App\Models\Program::isTupadOnly())
+                {{-- Program --}}
+                <div>
+                    <label for="duplicate_program_select" class="mb-1 block text-xs font-bold text-slate-600">Program</label>
+                    <select id="duplicate_program_select" name="program" onchange="this.form.submit()"
+                            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('program') ? 'border-blue-700 bg-blue-50/50 text-blue-900 ring-1 ring-blue-700' : '' }}">
+                        <option value="">All Programs</option>
+                        @foreach(\App\Models\Program::enabledCodes() as $prog)
+                            <option value="{{ $prog }}" {{ strcasecmp(request('program'), $prog) === 0 ? 'selected' : '' }}>{{ $prog }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
 
             {{-- Municipality --}}
             <div>
-                <label class="mb-1 block text-[11px] font-bold text-slate-600 uppercase tracking-wider">Municipality</label>
+                <label for="duplicate_municipality_select" class="mb-1 block text-xs font-bold text-slate-600">Municipality</label>
                 <select name="municipality" id="duplicate_municipality_select" onchange="this.form.submit()"
                         class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('municipality') ? 'border-blue-700 bg-blue-50/50 text-blue-900 ring-1 ring-blue-700' : '' }}">
                     <option value="">All Municipalities</option>
@@ -145,7 +159,7 @@
 
             {{-- Dependent Barangay --}}
             <div>
-                <label class="mb-1 flex items-center justify-between text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                <label for="duplicate_barangay_select" class="mb-1 flex items-center justify-between text-xs font-bold text-slate-600">
                     <span>Barangay</span>
                 </label>
                 <select name="barangay" id="duplicate_barangay_select" onchange="this.form.submit()"
@@ -159,8 +173,8 @@
 
             {{-- Duplication Risk Level --}}
             <div>
-                <label class="mb-1 block text-[11px] font-bold text-slate-600 uppercase tracking-wider">Risk Level</label>
-                <select name="risk_level" onchange="this.form.submit()"
+                <label for="duplicate_risk_select" class="mb-1 block text-xs font-bold text-slate-600">Risk Level</label>
+                <select id="duplicate_risk_select" name="risk_level" onchange="this.form.submit()"
                         class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('risk_level') ? 'border-blue-700 bg-blue-50/50 text-blue-900 ring-1 ring-blue-700' : '' }}">
                     <option value="">All Risk Levels</option>
                     <option value="exact" {{ request('risk_level') === 'exact' ? 'selected' : '' }}>Exact (100% Match)</option>
@@ -172,8 +186,8 @@
 
             {{-- Sex --}}
             <div>
-                <label class="mb-1 block text-[11px] font-bold text-slate-600 uppercase tracking-wider">Sex</label>
-                <select name="sex" onchange="this.form.submit()"
+                <label for="duplicate_sex_select" class="mb-1 block text-xs font-bold text-slate-600">Sex</label>
+                <select id="duplicate_sex_select" name="sex" onchange="this.form.submit()"
                         class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('sex') ? 'border-blue-700 bg-blue-50/50 text-blue-900 ring-1 ring-blue-700' : '' }}">
                     <option value="">All Sexes</option>
                     <option value="Male" {{ strcasecmp(request('sex'), 'Male') === 0 ? 'selected' : '' }}>Male</option>
@@ -402,13 +416,21 @@
     formatPrograms(beneficiary) {
         const list = beneficiary?.beneficiary_programs || [];
         if (!list.length) return '—';
+        const isTupadOnly = {{ \App\Models\Program::isTupadOnly() ? 'true' : 'false' }};
         const seen = new Set();
         const labels = [];
         list.forEach(bp => {
             const code = bp?.program?.code;
-            if (!code) return;
-            const label = bp.availment_year ? (code + ' (' + bp.availment_year + ')') : code;
-            if (!seen.has(label)) {
+            const projName = bp?.project?.name;
+            let label = '';
+            if (isTupadOnly && projName) {
+                label = bp.availment_year ? (projName + ' (' + bp.availment_year + ')') : projName;
+            } else if (isTupadOnly && code) {
+                label = 'Unassigned (' + code + (bp.availment_year ? ' ' + bp.availment_year : '') + ')';
+            } else if (code) {
+                label = bp.availment_year ? (code + ' (' + bp.availment_year + ')') : code;
+            }
+            if (label && !seen.has(label)) {
                 seen.add(label);
                 labels.push(label);
             }
@@ -532,17 +554,28 @@
                 $badgeLabel = 'Below Threshold';
             }
 
+            $isTupadOnly = \App\Models\Program::isTupadOnly();
             $candFirstName = $flag->beneficiary?->first_name ?? 'Candidate';
             $matchFirstName = $flag->matchedBeneficiary?->first_name ?? 'Masterlist';
             $candPrograms = $flag->beneficiary?->beneficiaryPrograms
-                ?->map(fn ($bp) => $bp->program ? ($bp->program->code.($bp->availment_year ? " ({$bp->availment_year})" : '')) : null)
+                ?->map(fn ($bp) => ($isTupadOnly && $bp->project?->name)
+                    ? ($bp->project->name.($bp->availment_year ? " ({$bp->availment_year})" : ''))
+                    : ($isTupadOnly && $bp->program
+                        ? ('Unassigned ('.$bp->program->code.($bp->availment_year ? " {$bp->availment_year}" : '').')')
+                        : ($bp->program ? ($bp->program->code.($bp->availment_year ? " ({$bp->availment_year})" : '')) : null)))
                 ->filter()->unique()->values() ?? collect();
             $matchPrograms = $flag->matchedBeneficiary?->beneficiaryPrograms
-                ?->map(fn ($bp) => $bp->program ? ($bp->program->code.($bp->availment_year ? " ({$bp->availment_year})" : '')) : null)
+                ?->map(fn ($bp) => ($isTupadOnly && $bp->project?->name)
+                    ? ($bp->project->name.($bp->availment_year ? " ({$bp->availment_year})" : ''))
+                    : ($isTupadOnly && $bp->program
+                        ? ('Unassigned ('.$bp->program->code.($bp->availment_year ? " {$bp->availment_year}" : '').')')
+                        : ($bp->program ? ($bp->program->code.($bp->availment_year ? " ({$bp->availment_year})" : '')) : null)))
                 ->filter()->unique()->values() ?? collect();
-            $headerPrograms = $flag->beneficiary?->beneficiaryPrograms?->pluck('program.code')
-                ->merge($flag->matchedBeneficiary?->beneficiaryPrograms?->pluck('program.code') ?? collect())
-                ->filter()->unique()->values() ?? collect();
+            $headerPrograms = $isTupadOnly
+                ? collect()
+                : ($flag->beneficiary?->beneficiaryPrograms?->pluck('program.code')
+                    ->merge($flag->matchedBeneficiary?->beneficiaryPrograms?->pluck('program.code') ?? collect())
+                    ->filter()->unique()->values() ?? collect());
         @endphp
 
         <div class="rounded-2xl border bg-white p-5 sm:p-6 shadow-xs transition hover:shadow-sm"
@@ -609,41 +642,24 @@
                     </div>
                 </div>
 
-                {{-- Action Buttons: Contextual Names (No mystery Profile 1 / Profile 2) --}}
-                <div class="flex flex-wrap items-center gap-2">
-                    {{-- Side-by-Side Comparison Trigger Button --}}
+                {{-- Action Buttons: Clean 2-Button Focal Hierarchy (Compare + Resolve) --}}
+                <div class="flex flex-wrap items-center gap-2 shrink-0">
                     <button type="button" @click="showComparisonModal({{ json_encode($flag) }})"
-                            class="inline-flex items-center gap-1.5 rounded-xl border border-blue-700 bg-blue-50 px-3 py-1.5 text-xs font-extrabold text-blue-800 shadow-2xs hover:bg-blue-700 hover:text-white transition cursor-pointer">
+                            class="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-blue-600 hover:text-blue-800 transition cursor-pointer active:scale-[0.98]">
                         <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/>
                         </svg>
                         <span>Compare</span>
                     </button>
 
-                    @if($flag->beneficiary)
-                        <a href="{{ route('beneficiaries.show', $flag->beneficiary) }}" 
-                           class="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-2xs"
-                           title="View {{ $flag->beneficiary->full_name }}'s profile">
-                            <svg class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
-                            <span>Profile: {{ $candFirstName }}</span>
-                        </a>
-                    @else
+                    @if(!$flag->beneficiary)
                         <span class="rounded-xl bg-rose-100 border border-rose-200 px-2.5 py-1 text-[11px] font-extrabold text-rose-900">
                             Candidate Removed
                         </span>
                     @endif
 
-                    @if($flag->matchedBeneficiary)
-                        <a href="{{ route('beneficiaries.show', $flag->matchedBeneficiary) }}" 
-                           class="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-2xs"
-                           title="View {{ $flag->matchedBeneficiary->full_name }}'s profile">
-                            <svg class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
-                            <span>Profile: {{ $matchFirstName }}</span>
-                        </a>
-                    @endif
-
                     @if($flag->status === 'pending')
-                        <button @click="showResolveModal({{ json_encode($flag) }})" class="inline-flex items-center gap-1.5 rounded-xl bg-blue-800 px-3.5 py-1.5 text-xs font-extrabold text-white hover:bg-blue-900 shadow-2xs cursor-pointer">
+                        <button @click="showResolveModal({{ json_encode($flag) }})" class="inline-flex items-center gap-1.5 rounded-xl bg-blue-800 px-4 py-1.5 text-xs font-extrabold text-white hover:bg-blue-900 shadow-2xs transition cursor-pointer active:scale-[0.98]">
                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
                             <span>Resolve</span>
                         </button>
@@ -656,11 +672,21 @@
                 <div class="rounded-xl border {{ $isHousehold ? 'border-blue-200 bg-white' : 'border-amber-200 bg-white' }} p-3.5 shadow-2xs">
                     <div class="mb-2 flex items-center justify-between">
                         <p class="text-[10px] font-extrabold uppercase tracking-wider {{ $isHousehold ? 'text-blue-800' : 'text-amber-800' }}">Incoming / Uploaded Record (Candidate)</p>
-                        <span class="rounded px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-700">NEW</span>
+                        @if($flag->beneficiary)
+                            <a href="{{ route('beneficiaries.show', $flag->beneficiary) }}" class="text-[10px] font-bold text-blue-700 hover:underline">View Profile &rarr;</a>
+                        @else
+                            <span class="rounded px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-700">NEW</span>
+                        @endif
                     </div>
-                    <p class="text-sm font-bold text-slate-900">{{ $flag->beneficiary?->full_name ?? ($flag->matched_fields['rejected_applicant_name'] ?? 'Candidate') }}</p>
+                    <p class="text-sm font-bold text-slate-900">
+                        @if($flag->beneficiary)
+                            <a href="{{ route('beneficiaries.show', $flag->beneficiary) }}" class="hover:text-blue-800 hover:underline">{{ $flag->beneficiary->full_name }}</a>
+                        @else
+                            {{ $flag->matched_fields['rejected_applicant_name'] ?? 'Candidate' }}
+                        @endif
+                    </p>
                     <p class="text-xs font-bold text-slate-700 mt-0.5">
-                        Program:
+                        {{ $isTupadOnly ? 'Project / Batch:' : 'Program:' }}
                         @if($candPrograms->isNotEmpty())
                             <span class="inline-flex rounded bg-blue-50 border border-blue-200 px-1.5 py-0.5 text-[10px] font-extrabold text-blue-900">{{ $candPrograms->implode(', ') }}</span>
                         @else
@@ -675,11 +701,21 @@
                 <div class="rounded-xl border {{ $isHousehold ? 'border-blue-200 bg-white' : 'border-amber-200 bg-white' }} p-3.5 shadow-2xs">
                     <div class="mb-2 flex items-center justify-between">
                         <p class="text-[10px] font-extrabold uppercase tracking-wider {{ $isHousehold ? 'text-blue-800' : 'text-amber-800' }}">Existing Masterlist Record</p>
-                        <span class="rounded px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-700">EXISTING</span>
+                        @if($flag->matchedBeneficiary)
+                            <a href="{{ route('beneficiaries.show', $flag->matchedBeneficiary) }}" class="text-[10px] font-bold text-blue-700 hover:underline">View Profile &rarr;</a>
+                        @else
+                            <span class="rounded px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-700">EXISTING</span>
+                        @endif
                     </div>
-                    <p class="text-sm font-bold text-slate-900">{{ $flag->matchedBeneficiary?->full_name }}</p>
+                    <p class="text-sm font-bold text-slate-900">
+                        @if($flag->matchedBeneficiary)
+                            <a href="{{ route('beneficiaries.show', $flag->matchedBeneficiary) }}" class="hover:text-blue-800 hover:underline">{{ $flag->matchedBeneficiary->full_name }}</a>
+                        @else
+                            —
+                        @endif
+                    </p>
                     <p class="text-xs font-bold text-slate-700 mt-0.5">
-                        Program:
+                        {{ $isTupadOnly ? 'Project / Batch:' : 'Program:' }}
                         @if($matchPrograms->isNotEmpty())
                             <span class="inline-flex rounded bg-blue-50 border border-blue-200 px-1.5 py-0.5 text-[10px] font-extrabold text-blue-900">{{ $matchPrograms->implode(', ') }}</span>
                         @else
@@ -845,9 +881,9 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 text-xs font-semibold">
-                            {{-- DOLE Program(s) --}}
+                            {{-- DOLE Project / Program --}}
                             <tr class="transition hover:bg-slate-50">
-                                <td class="px-4 py-3 font-extrabold text-slate-900 bg-slate-50/50 border-r border-slate-200">DOLE Program(s)</td>
+                                <td class="px-4 py-3 font-extrabold text-slate-900 bg-slate-50/50 border-r border-slate-200">{{ \App\Models\Program::isTupadOnly() ? 'TUPAD Project / Batch' : 'DOLE Program(s)' }}</td>
                                 <td class="px-4 py-3 border-r border-slate-200"
                                     :class="isMatch(formatPrograms(activeFlag?.matched_beneficiary), formatPrograms(activeFlag?.beneficiary)) && formatPrograms(activeFlag?.matched_beneficiary) !== '—' ? 'bg-emerald-50 text-emerald-950 font-extrabold' : 'bg-blue-50/40 text-blue-950 font-extrabold'">
                                     <span x-text="formatPrograms(activeFlag?.matched_beneficiary)"></span>

@@ -174,11 +174,11 @@
                     <svg class="h-4 w-4 text-slate-400 shrink-0 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
                     </svg>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name, ID number, or address..."
+                    <input type="text" name="search" aria-label="Search beneficiaries" value="{{ request('search') }}" placeholder="Search by name, ID number, or address..."
                            class="w-full border-0 bg-transparent p-0 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0">
                     @if(request('search'))
                         <a href="{{ route('beneficiaries.index', request()->except('search')) }}" 
-                           class="ml-2 text-slate-400 hover:text-slate-600 shrink-0" title="Clear search">
+                           class="ml-2 text-slate-400 hover:text-slate-600 shrink-0" title="Clear search" aria-label="Clear search">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                         </a>
                     @endif
@@ -186,7 +186,8 @@
 
                 {{-- Dropdowns Group --}}
                 <div class="flex items-center gap-2 shrink-0">
-                    <select name="program" onchange="this.form.submit()"
+                    @if(!\App\Models\Program::isTupadOnly())
+                    <select name="program" aria-label="Filter by program" onchange="this.form.submit()"
                             class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('program') ? 'border-blue-700 text-blue-900 bg-blue-50/50 ring-1 ring-blue-700' : '' }}">
                         <option value="">All Programs</option>
                         @foreach($programs as $prog)
@@ -195,8 +196,9 @@
                             </option>
                         @endforeach
                     </select>
+                    @endif
 
-                    <select name="municipality" onchange="this.form.submit()"
+                    <select name="municipality" aria-label="Filter by municipality" onchange="this.form.submit()"
                             class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 focus:border-blue-700 focus:outline-none shadow-2xs {{ request('municipality') ? 'border-blue-700 text-blue-900 bg-blue-50/50 ring-1 ring-blue-700' : '' }}">
                         <option value="">All LGUs</option>
                         @foreach($municipalities as $muni)
@@ -208,7 +210,7 @@
 
                     @if(request()->hasAny(['search', 'program', 'municipality', 'sector', 'has_duplicates']))
                         <a href="{{ route('beneficiaries.index') }}" 
-                           class="rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition"
+                           class="rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition-colors"
                            title="Reset all filters">
                             Reset
                         </a>
@@ -222,31 +224,26 @@
                 
                 {{-- All Records --}}
                 <a href="{{ route('beneficiaries.index', request()->except(['program', 'sector', 'has_duplicates'])) }}"
-                   class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ !request('program') && !request('sector') && !request('has_duplicates') ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100' }}">
+                   class="rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors {{ !request('program') && !request('sector') && !request('has_duplicates') ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100' }}">
                     All Records
                 </a>
 
-                {{-- TUPAD --}}
-                <a href="{{ route('beneficiaries.index', array_merge(request()->except('program'), ['program' => 'TUPAD'])) }}"
-                   class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ request('program') === 'TUPAD' ? 'bg-blue-800 text-white' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100' }}">
-                    TUPAD
-                </a>
-
-                {{-- SPES --}}
-                <a href="{{ route('beneficiaries.index', array_merge(request()->except('program'), ['program' => 'SPES'])) }}"
-                   class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ request('program') === 'SPES' ? 'bg-purple-800 text-white' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100' }}">
-                    SPES
-                </a>
-
-                {{-- DILP --}}
-                <a href="{{ route('beneficiaries.index', array_merge(request()->except('program'), ['program' => 'DILP'])) }}"
-                   class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ request('program') === 'DILP' ? 'bg-emerald-800 text-white' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100' }}">
-                    DILP
-                </a>
-
-                {{-- GIP --}}
-                <a href="{{ route('beneficiaries.index', array_merge(request()->except('program'), ['program' => 'GIP'])) }}"
-                   class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ request('program') === 'GIP' ? 'bg-cyan-800 text-white' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100' }}">GIP</a>
+                {{-- Enabled Program Quick Filter Pills (Multi-Program Mode Only) --}}
+                @if(!\App\Models\Program::isTupadOnly())
+                @foreach($programs as $prog)
+                    @php
+                        $pillActive = match($prog->code) {
+                            'TUPAD' => 'bg-blue-800 text-white',
+                            'SPES' => 'bg-purple-800 text-white',
+                            'DILP' => 'bg-emerald-800 text-white',
+                            'GIP' => 'bg-cyan-800 text-white',
+                            default => 'bg-blue-800 text-white',
+                        };
+                    @endphp
+                    <a href="{{ route('beneficiaries.index', array_merge(request()->except('program'), ['program' => $prog->code])) }}"
+                       class="rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors {{ request('program') === $prog->code ? $pillActive : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100' }}">{{ $prog->code }}</a>
+                @endforeach
+                @endif
 
                 {{-- Senior Citizens --}}
                 <a href="{{ route('beneficiaries.index', array_merge(request()->except('sector'), ['sector' => 'senior'])) }}"
@@ -280,7 +277,7 @@
                     <tr>
                         @hasanyrole('Admin|Encoder')
                         <th class="w-10 px-4 py-3.5 text-center shrink-0">
-                            <input type="checkbox" x-model="selectAll" @change="toggleAll()" title="Select All on Page"
+                            <input type="checkbox" x-model="selectAll" @change="toggleAll()" title="Select All on Page" aria-label="Select all beneficiaries on page"
                                    class="rounded border-slate-300 text-blue-800 focus:ring-blue-500/20 cursor-pointer">
                         </th>
                         @endhasanyrole
@@ -301,7 +298,7 @@
                         <tr class="transition-colors hover:bg-slate-50/80" :class="selected.includes('{{ $b->id }}') ? 'bg-blue-50/40' : ''">
                             @hasanyrole('Admin|Encoder')
                             <td class="w-10 px-4 py-3.5 text-center shrink-0">
-                                <input type="checkbox" value="{{ $b->id }}" x-model="selected" @change="updateSelectAll()"
+                                <input type="checkbox" value="{{ $b->id }}" x-model="selected" @change="updateSelectAll()" aria-label="Select {{ $b->full_name }}"
                                        class="beneficiary-cb rounded border-slate-300 text-blue-800 focus:ring-blue-500/20 cursor-pointer">
                             </td>
                             @endhasanyrole
@@ -384,21 +381,21 @@
                                 </div>
                             </td>
 
-                            {{-- Actions Column: Gentle, Quiet Icons (Fixed Width, Fully Visible) --}}
-                            <td class="px-5 py-3.5 text-right whitespace-nowrap w-32 shrink-0">
+                            {{-- Actions Column: Accessible 32px+ Hit Areas with Clear Hover Contrast --}}
+                            <td class="px-5 py-3.5 text-right whitespace-nowrap w-40 shrink-0">
                                 <div class="flex justify-end items-center gap-1">
                                     {{-- View Profile --}}
                                     <a href="{{ route('beneficiaries.show', $b) }}" 
-                                       class="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition" 
-                                       title="View Profile Details">
+                                       class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-slate-500 hover:border-slate-200 hover:text-blue-800 hover:bg-blue-50 active:scale-[0.96] transition-[background-color,color,border-color,transform]" 
+                                       title="View Profile Details" aria-label="View profile of {{ $b->full_name }}">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.573 16.49 16.638 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                     </a>
 
                                     {{-- Merge Duplicate --}}
                                     @hasanyrole('Admin|Validator')
                                     <button type="button" @click="openMergeModal({{ json_encode($b) }})"
-                                            class="rounded-lg p-1.5 text-slate-400 hover:text-indigo-700 hover:bg-indigo-50 transition cursor-pointer"
-                                            title="Merge Duplicate Record">
+                                            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-slate-500 hover:border-indigo-200 hover:text-indigo-700 hover:bg-indigo-50 active:scale-[0.96] transition-[background-color,color,border-color,transform] cursor-pointer"
+                                            title="Merge Duplicate Record" aria-label="Merge duplicate for {{ $b->full_name }}">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 7.5h-.75A2.25 2.25 0 004.5 9.75v7.5a2.25 2.25 0 002.25 2.25h7.5a2.25 2.25 0 002.25-2.25v-.75m-6-3l3 3m0 0l3-3m-3 3V3.75" />
                                         </svg>
@@ -408,8 +405,8 @@
                                     {{-- Edit Beneficiary --}}
                                     @hasanyrole('Admin|Encoder')
                                     <a href="{{ route('beneficiaries.edit', $b) }}" 
-                                       class="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition" 
-                                       title="Edit Beneficiary">
+                                       class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-slate-500 hover:border-slate-200 hover:text-slate-900 hover:bg-slate-100 active:scale-[0.96] transition-[background-color,color,border-color,transform]" 
+                                       title="Edit Beneficiary" aria-label="Edit {{ $b->full_name }}">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
                                     </a>
 
@@ -422,7 +419,8 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" 
-                                                class="rounded-lg p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" 
+                                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-slate-500 hover:border-rose-200 hover:text-rose-600 hover:bg-rose-50 active:scale-[0.96] transition-[background-color,color,border-color,transform] cursor-pointer"
+                                                aria-label="Archive {{ $b->full_name }}" 
                                                 title="Archive Beneficiary">
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
                                         </button>

@@ -98,7 +98,7 @@ class BeneficiaryController extends Controller
         $beneficiaries = $query->paginate($request->input('per_page', 15))->withQueryString();
 
         // Get filter dropdown datasets
-        $programs = Program::all();
+        $programs = Program::enabled()->get();
         $municipalities = Beneficiary::distinct()->whereNotNull('municipality')->pluck('municipality')->sort();
 
         return view('beneficiaries.index', compact('beneficiaries', 'programs', 'municipalities'));
@@ -106,7 +106,7 @@ class BeneficiaryController extends Controller
 
     public function create(): View
     {
-        $programs = Program::all();
+        $programs = Program::enabled()->get();
         $dilpGroups = DilpGroup::all();
         $municipalities = $this->getBukidnonMunicipalities();
 
@@ -679,7 +679,7 @@ class BeneficiaryController extends Controller
 
     public function edit(Beneficiary $beneficiary): View
     {
-        $programs = Program::all();
+        $programs = Program::enabled()->get();
         $dilpGroups = DilpGroup::all();
         $municipalities = $this->getBukidnonMunicipalities();
         $beneficiary->load(['beneficiaryPrograms.program', 'beneficiaryPrograms.tupadProfile', 'beneficiaryPrograms.dilpGroup']);
@@ -927,7 +927,7 @@ class BeneficiaryController extends Controller
         }
 
         $beneficiaries = $query->latest('deleted_at')->paginate(15)->withQueryString();
-        $programs = Program::all();
+        $programs = Program::enabled()->get();
         $municipalities = Beneficiary::withTrashed()->distinct()->whereNotNull('municipality')->pluck('municipality')->sort();
 
         return view('beneficiaries.archived', compact('beneficiaries', 'programs', 'municipalities'));

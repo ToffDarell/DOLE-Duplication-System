@@ -1,0 +1,357 @@
+- generic [ref=f1e2]:
+  - complementary [ref=f1e3]:
+    - link [ref=f1e5] [cursor=pointer]:
+      - /url: http://127.0.0.1:8000
+      - img "DOLE Logo" [ref=f1e7]
+      - generic [ref=f1e8]:
+        - heading "DOLE Bukidnon" [level=1] [ref=f1e9]
+        - paragraph [ref=f1e10]: Duplicate Detection
+    - navigation [ref=f1e11]:
+      - generic [ref=f1e12]:
+        - paragraph [ref=f1e13]: Overview
+        - list [ref=f1e14]:
+          - listitem [ref=f1e15]:
+            - link "Dashboard" [ref=f1e16] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000
+      - generic [ref=f1e20]:
+        - paragraph [ref=f1e21]: Operations
+        - list [ref=f1e22]:
+          - listitem [ref=f1e23]:
+            - link "Projects" [ref=f1e24] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/projects
+          - listitem [ref=f1e28]:
+            - link "Participation History" [ref=f1e29] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/participation-history
+          - listitem [ref=f1e33]:
+            - link "Import Excel / CSV" [ref=f1e34] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/import
+      - generic [ref=f1e38]:
+        - paragraph [ref=f1e39]: Verification
+        - list [ref=f1e40]:
+          - listitem [ref=f1e41]:
+            - link "Duplicate Flags 165" [ref=f1e42] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/duplicates
+              - generic [ref=f1e45]: Duplicate Flags
+              - generic "Pending validation queue" [ref=f1e46]: "165"
+          - listitem [ref=f1e47]:
+            - link "Audit Trail" [ref=f1e48] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/audit-logs
+      - generic [ref=f1e52]:
+        - paragraph [ref=f1e53]: System & Reports
+        - list [ref=f1e54]:
+          - listitem [ref=f1e55]:
+            - link "Report Generator" [ref=f1e56] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/reports
+          - listitem [ref=f1e60]:
+            - link "Archives / Trash 1" [ref=f1e61] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/beneficiaries/archived
+              - generic [ref=f1e64]: Archives / Trash
+              - generic [ref=f1e65]: "1"
+          - listitem [ref=f1e66]:
+            - link "User Accounts" [ref=f1e67] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/users
+          - listitem [ref=f1e71]:
+            - link "Settings" [ref=f1e72] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/settings
+    - button "Collapse Sidebar" [ref=f1e78]
+  - generic [ref=f1e82]:
+    - banner [ref=f1e83]:
+      - generic [ref=f1e85]:
+        - heading "System Analytics & Intelligence Dashboard" [level=2] [ref=f1e86]
+        - paragraph [ref=f1e87]: Real-time performance metrics, duplicate detection analytics, program allocations, and geographic insights
+      - generic [ref=f1e88]:
+        - link "165 Pending Review" [ref=f1e89] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/duplicates
+        - button "S System Administrator Admin" [ref=f1e93]:
+          - generic [ref=f1e94]: S
+          - generic [ref=f1e95]:
+            - paragraph [ref=f1e96]: System Administrator
+            - paragraph [ref=f1e97]: Admin
+    - main [ref=f1e100]:
+      - generic [ref=f1e101]:
+        - generic [ref=f1e102]:
+          - img "DOLE Official Logo" [ref=f1e104]
+          - generic [ref=f1e105]:
+            - generic [ref=f1e106]:
+              - generic [ref=f1e107]: DOLE Bukidnon Field Office
+              - generic [ref=f1e108]: CY 2026 Intelligence
+              - generic [ref=f1e109]: · Synced Nov 25, 02:16 PM
+            - heading "Centralized Analytics & Duplicate Engine Report" [level=2] [ref=f1e110]
+        - generic [ref=f1e111]:
+          - link "Import TUPAD Excel" [ref=f1e112] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/import
+          - link "Review Pending 165" [ref=f1e115] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/duplicates?status=pending
+            - text: Review Pending
+            - generic [ref=f1e118]: "165"
+      - generic [ref=f1e119]:
+        - link "Total Beneficiaries Registered 638 Master profiles across Bukidnon LGUs →" [ref=f1e120] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/beneficiaries
+          - generic [ref=f1e121]:
+            - paragraph [ref=f1e123]: Total Beneficiaries Registered
+            - paragraph [ref=f1e127]: "638"
+          - generic [ref=f1e128]:
+            - generic [ref=f1e129]: Master profiles across Bukidnon LGUs
+            - generic [ref=f1e130]: →
+        - link "Total Duplicates Flagged 166 165 pending · 1 cleared / resolved →" [ref=f1e131] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/duplicates?status=all
+          - generic [ref=f1e132]:
+            - paragraph [ref=f1e134]: Total Duplicates Flagged
+            - paragraph [ref=f1e138]: "166"
+          - generic [ref=f1e139]:
+            - generic [ref=f1e140]: 165 pending · 1 cleared / resolved
+            - generic [ref=f1e141]: →
+        - link "Pending Validation Queue 165 Requires validator review & decision →" [ref=f1e142] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/duplicates?status=pending
+          - generic [ref=f1e143]:
+            - paragraph [ref=f1e145]: Pending Validation Queue
+            - paragraph [ref=f1e149]: "165"
+          - generic [ref=f1e150]:
+            - generic [ref=f1e151]: Requires validator review & decision
+            - generic [ref=f1e152]: →
+        - link "Total Program Availments 1,238 Registered TUPAD beneficiaries →" [ref=f1e153] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/projects
+          - generic [ref=f1e154]:
+            - paragraph [ref=f1e156]: Total Program Availments
+            - paragraph [ref=f1e160]: 1,238
+          - generic [ref=f1e161]:
+            - generic [ref=f1e162]: Registered TUPAD beneficiaries
+            - generic [ref=f1e163]: →
+      - generic [ref=f1e165] [cursor=pointer]:
+        - generic [ref=f1e170]:
+          - heading "Duplication Risk Level & Indicator Legend" [level=3] [ref=f1e171]
+          - paragraph [ref=f1e172]: Click to view official DOLE scoring thresholds
+        - generic [ref=f1e173]: Official Scoring Metric
+      - generic [ref=f1e178]:
+        - generic [ref=f1e179]:
+          - generic [ref=f1e180]:
+            - heading "Municipal Breakdown & Duplicate Distribution" [level=3] [ref=f1e181]
+            - paragraph [ref=f1e182]: Cross-sectional analysis of registered beneficiaries and duplicate incidences across Bukidnon Municipalities
+          - link "Generate Municipal Reports →" [ref=f1e183] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/reports
+        - generic [ref=f1e184]:
+          - generic [ref=f1e185]:
+            - generic [ref=f1e187]:
+              - generic [ref=f1e188]:
+                - heading "Total Beneficiaries per Municipality" [level=4] [ref=f1e189]
+                - paragraph [ref=f1e190]: Beneficiary volume distribution across Bukidnon
+              - generic [ref=f1e191]: Horizontal Bar
+            - paragraph [ref=f1e195]: Aggregated count of active beneficiaries grouped by local government unit.
+          - generic [ref=f1e196]:
+            - generic [ref=f1e198]:
+              - generic [ref=f1e199]:
+                - heading "Duplicates by Municipality" [level=4] [ref=f1e200]
+                - paragraph [ref=f1e201]: Proportion of flagged duplicate records
+              - generic [ref=f1e202]: Pie Distribution
+            - paragraph [ref=f1e206]: Pinpoints municipalities with higher rates of duplicate submission warnings.
+      - generic [ref=f1e207]:
+        - generic [ref=f1e208]:
+          - generic [ref=f1e210]:
+            - generic [ref=f1e211]:
+              - heading "Duplicate Status Breakdown" [level=3] [ref=f1e212]
+              - paragraph [ref=f1e213]: Real-time status of clean vs flagged vs validated records
+            - generic [ref=f1e214]: Donut Analysis
+          - paragraph [ref=f1e218]: Gives DOLE Validators an immediate view of pending duplicate flags requiring action.
+        - generic [ref=f1e219]:
+          - generic [ref=f1e220]:
+            - generic [ref=f1e221]:
+              - generic [ref=f1e222]:
+                - heading "Pending Flags by DOLE Score Band" [level=3] [ref=f1e223]
+                - paragraph [ref=f1e224]: Click any band to jump straight into its filtered review queue
+              - generic [ref=f1e225]: 165 Pending
+            - generic [ref=f1e226]:
+              - link "100% Exact Match All core identity fields match identically 3 →" [ref=f1e227] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/duplicates?risk_level=exact
+                - generic [ref=f1e228]:
+                  - generic [ref=f1e229]: 100%
+                  - generic [ref=f1e230]:
+                    - paragraph [ref=f1e231]: Exact Match
+                    - paragraph [ref=f1e232]: All core identity fields match identically
+                - generic [ref=f1e233]: 3 →
+              - link "85%–99% Wrong Spelling / Human Error Misspelled names or 1-digit birthdate typos 10 →" [ref=f1e234] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/duplicates?risk_level=high
+                - generic [ref=f1e235]:
+                  - generic [ref=f1e236]: 85%–99%
+                  - generic [ref=f1e237]:
+                    - paragraph [ref=f1e238]: Wrong Spelling / Human Error
+                    - paragraph [ref=f1e239]: Misspelled names or 1-digit birthdate typos
+                - generic [ref=f1e240]: 10 →
+              - link "70%–84% Missing Suffix / Middle Name Missing Jr./Sr., different middle name, or namesake 8 →" [ref=f1e241] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/duplicates?risk_level=moderate
+                - generic [ref=f1e242]:
+                  - generic [ref=f1e243]: 70%–84%
+                  - generic [ref=f1e244]:
+                    - paragraph [ref=f1e245]: Missing Suffix / Middle Name
+                    - paragraph [ref=f1e246]: Missing Jr./Sr., different middle name, or namesake
+                - generic [ref=f1e247]: 8 →
+              - link "< 70% Below Threshold / Household Review Distinct individuals flagged for household check 144 →" [ref=f1e248] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/duplicates?risk_level=low
+                - generic [ref=f1e249]:
+                  - generic [ref=f1e250]: < 70%
+                  - generic [ref=f1e251]:
+                    - paragraph [ref=f1e252]: Below Threshold / Household Review
+                    - paragraph [ref=f1e253]: Distinct individuals flagged for household check
+                - generic [ref=f1e254]: 144 →
+          - paragraph [ref=f1e256]: Prioritize 100% Exact and 85%–99% flags first; bulk-clear < 70% flags after barangay verification.
+      - generic [ref=f1e257]:
+        - generic [ref=f1e258]:
+          - generic [ref=f1e260]:
+            - generic [ref=f1e261]:
+              - heading "Registration & Duplicate Trends" [level=3] [ref=f1e262]
+              - paragraph [ref=f1e263]: Monthly new registrations vs policy violations flagged (CY 2026)
+            - generic [ref=f1e264]:
+              - generic [ref=f1e265]: Registrations
+              - generic [ref=f1e267]: Duplicates
+          - paragraph [ref=f1e272]: Identifies seasonal registration surges and spike patterns in potential duplicate entries.
+        - generic [ref=f1e273]:
+          - generic [ref=f1e275]:
+            - generic [ref=f1e276]:
+              - heading "Top Density Areas" [level=3] [ref=f1e277]
+              - paragraph [ref=f1e278]: High concentration municipalities in Bukidnon
+            - generic [ref=f1e279]: Density Hubs
+          - paragraph [ref=f1e284]: Visualizes high-density areas requiring closer monitoring for duplicate submissions.
+      - generic [ref=f1e285]:
+        - generic [ref=f1e287]:
+          - generic [ref=f1e288]:
+            - heading "Pending Flags Queue" [level=3] [ref=f1e289]
+            - link "View Console →" [ref=f1e290] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/duplicates
+          - generic [ref=f1e291]:
+            - generic [ref=f1e292]:
+              - generic [ref=f1e293]: 100%
+              - generic [ref=f1e294]:
+                - paragraph [ref=f1e295]: MAGBANUA, ROBERTO SANTOS
+                - paragraph [ref=f1e296]: matches MAGBANUA, ROBERTO SANTOS
+              - link "Review" [ref=f1e297] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/duplicates
+            - generic [ref=f1e298]:
+              - generic [ref=f1e299]: 100%
+              - generic [ref=f1e300]:
+                - paragraph [ref=f1e301]: BAUTISTA, MARITES RIVERA
+                - paragraph [ref=f1e302]: matches BAUTISTA, MARITES RIVERA
+              - link "Review" [ref=f1e303] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/duplicates
+            - generic [ref=f1e304]:
+              - generic [ref=f1e305]: 100%
+              - generic [ref=f1e306]:
+                - paragraph [ref=f1e307]: SALVADOR, EDGARDO CRUZ
+                - paragraph [ref=f1e308]: matches SALVADOR, EDGARDO CRUZ
+              - link "Review" [ref=f1e309] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/duplicates
+            - generic [ref=f1e310]:
+              - generic [ref=f1e311]: 95%
+              - generic [ref=f1e312]:
+                - paragraph [ref=f1e313]: DELA CURZ, DANILO TORRES
+                - paragraph [ref=f1e314]: matches DELA CRUZ, DANILO TORRES
+              - link "Review" [ref=f1e315] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/duplicates
+            - generic [ref=f1e316]:
+              - generic [ref=f1e317]: 95%
+              - generic [ref=f1e318]:
+                - paragraph [ref=f1e319]: MENDOZA, JENIFER AQUINO
+                - paragraph [ref=f1e320]: matches MENDOZA, JENNIFER AQUINO
+              - link "Review" [ref=f1e321] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/duplicates
+            - generic [ref=f1e322]:
+              - generic [ref=f1e323]: 95%
+              - generic [ref=f1e324]:
+                - paragraph [ref=f1e325]: FERNANDEZ, CRISTIAN REYES
+                - paragraph [ref=f1e326]: matches FERNANDEZ, CHRISTIAN REYES
+              - link "Review" [ref=f1e327] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/duplicates
+        - generic [ref=f1e328]:
+          - generic [ref=f1e329]:
+            - generic [ref=f1e330]:
+              - heading "Recently Registered Beneficiaries" [level=3] [ref=f1e331]
+              - paragraph [ref=f1e332]: Latest additions to the Bukidnon regional beneficiary database
+            - link "View Full Registry →" [ref=f1e333] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/beneficiaries
+          - table [ref=f1e335]:
+            - rowgroup [ref=f1e336]:
+              - row [ref=f1e337]:
+                - columnheader "Beneficiary Name" [ref=f1e338]
+                - columnheader "Municipality" [ref=f1e339]
+                - columnheader "Date of Birth" [ref=f1e340]
+                - columnheader "Encoded By" [ref=f1e341]
+                - columnheader "Action" [ref=f1e342]
+            - rowgroup [ref=f1e343]:
+              - row [ref=f1e344]:
+                - cell [ref=f1e345]:
+                  - link "MAGBANUA, ROBERTO SANTOS" [ref=f1e346] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10416
+                - cell "Valencia City" [ref=f1e347]
+                - cell "Mar 14, 1988" [ref=f1e348]
+                - cell "System Administrator" [ref=f1e349]
+                - cell [ref=f1e350]:
+                  - link "View Profile" [ref=f1e351] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10416
+              - row [ref=f1e356]:
+                - cell [ref=f1e357]:
+                  - link "MAGBANUA, ROBERTO SANTOS" [ref=f1e358] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10417
+                - cell "Valencia City" [ref=f1e359]
+                - cell "Mar 14, 1988" [ref=f1e360]
+                - cell "System Administrator" [ref=f1e361]
+                - cell [ref=f1e362]:
+                  - link "View Profile" [ref=f1e363] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10417
+              - row [ref=f1e368]:
+                - cell [ref=f1e369]:
+                  - link "BAUTISTA, MARITES RIVERA" [ref=f1e370] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10418
+                - cell "Malaybalay City" [ref=f1e371]
+                - cell "Jul 21, 1984" [ref=f1e372]
+                - cell "System Administrator" [ref=f1e373]
+                - cell [ref=f1e374]:
+                  - link "View Profile" [ref=f1e375] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10418
+              - row [ref=f1e380]:
+                - cell [ref=f1e381]:
+                  - link "BAUTISTA, MARITES RIVERA" [ref=f1e382] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10419
+                - cell "Malaybalay City" [ref=f1e383]
+                - cell "Jul 21, 1984" [ref=f1e384]
+                - cell "System Administrator" [ref=f1e385]
+                - cell [ref=f1e386]:
+                  - link "View Profile" [ref=f1e387] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10419
+              - row [ref=f1e392]:
+                - cell [ref=f1e393]:
+                  - link "VILLARREAL, KATRINA DIZON" [ref=f1e394] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10420
+                - cell "Manolo Fortich" [ref=f1e395]
+                - cell "Feb 11, 2005" [ref=f1e396]
+                - cell "System Administrator" [ref=f1e397]
+                - cell [ref=f1e398]:
+                  - link "View Profile" [ref=f1e399] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10420
+              - row [ref=f1e404]:
+                - cell [ref=f1e405]:
+                  - link "SALVADOR, EDGARDO CRUZ" [ref=f1e406] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10422
+                - cell "Maramag" [ref=f1e407]
+                - cell "Nov 05, 1979" [ref=f1e408]
+                - cell "System Administrator" [ref=f1e409]
+                - cell [ref=f1e410]:
+                  - link "View Profile" [ref=f1e411] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10422
+              - row [ref=f1e416]:
+                - cell [ref=f1e417]:
+                  - link "SALVADOR, EDGARDO CRUZ" [ref=f1e418] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10423
+                - cell "Maramag" [ref=f1e419]
+                - cell "Nov 05, 1979" [ref=f1e420]
+                - cell "System Administrator" [ref=f1e421]
+                - cell [ref=f1e422]:
+                  - link "View Profile" [ref=f1e423] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10423
+              - row [ref=f1e428]:
+                - cell [ref=f1e429]:
+                  - link "DELA CRUZ, DANILO TORRES" [ref=f1e430] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10424
+                - cell "Valencia City" [ref=f1e431]
+                - cell "Jun 18, 1991" [ref=f1e432]
+                - cell "System Administrator" [ref=f1e433]
+                - cell [ref=f1e434]:
+                  - link "View Profile" [ref=f1e435] [cursor=pointer]:
+                    - /url: http://127.0.0.1:8000/beneficiaries/10424
